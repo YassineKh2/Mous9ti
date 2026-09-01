@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   NoteDisplayMode,
   NoteName,
   ScaleDefinition,
   StreakData,
   Tuning,
+  AppSettings,
 } from "../types";
 import { Metronome } from "../components/Metronome";
 import { RandomDrill } from "../components/RandomDrill";
@@ -27,6 +28,7 @@ interface DashboardPageProps {
   onToggleSession: () => void;
   onEndSession: () => void;
   onLogBpm: (bpm: number) => void;
+  settings: AppSettings;
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
@@ -38,7 +40,16 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onToggleSession,
   onEndSession,
   onLogBpm,
+  settings,
 }) => {
+  // Get tuning from settings
+  const defaultTuning = useMemo(() => {
+    return (
+      GUITAR_TUNINGS.find((t) => t.name === settings.defaultTuning) ??
+      GUITAR_TUNINGS[0]
+    );
+  }, [settings.defaultTuning]);
+
   // Instrument view toggle: guitar vs piano vs both
   const [instrumentView, setInstrumentView] = useState<
     "guitar" | "piano" | "both"
@@ -52,12 +63,25 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       null,
   );
   const [displayMode, setDisplayMode] = useState<NoteDisplayMode>("name");
-  const [currentTuning, setCurrentTuning] = useState<Tuning>(GUITAR_TUNINGS[0]);
-  const [fretCount, setFretCount] = useState<number>(22);
+  const [currentTuning, setCurrentTuning] = useState<Tuning>(defaultTuning);
+  const [fretCount, setFretCount] = useState<number>(settings.fretCount);
 
   // Active Random Note state
   const [activeRandomNote, setActiveRandomNote] = useState<string>("F#");
   const [showTargetNote, setShowTargetNote] = useState<boolean>(false);
+
+  // Sync fretCount from settings when it changes
+  useEffect(() => {
+    setFretCount(settings.fretCount);
+  }, [settings.fretCount]);
+
+  // Sync tuning from settings when it changes
+  useEffect(() => {
+    const newTuning =
+      GUITAR_TUNINGS.find((t) => t.name === settings.defaultTuning) ??
+      GUITAR_TUNINGS[0];
+    setCurrentTuning(newTuning);
+  }, [settings.defaultTuning]);
 
   return (
     <div className="space-y-6 pb-12">
@@ -68,6 +92,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           bpm={metronomeBpm}
           onBpmChange={onBpmChange}
           onLogBpmToSession={onLogBpm}
+          settings={settings}
         />
 
         {/* Random Note Drill */}

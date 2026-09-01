@@ -201,12 +201,12 @@ export function App() {
         if (audioEngine.isRunning()) {
           audioEngine.stopMetronome();
         } else {
+          const engineState = audioEngine.getMetronomeState();
           audioEngine.startMetronome(
             metronomeBpm,
-            "4/4",
-            "quarter",
-            "click",
-            () => {},
+            engineState.timeSignature,
+            engineState.subdivision,
+            engineState.soundType,
           );
         }
       } else if (e.key === "1") {
@@ -468,6 +468,7 @@ export function App() {
             onToggleSession={handleToggleSession}
             onEndSession={handleEndSession}
             onLogBpm={handleLogBpm}
+            settings={settings}
           />
         )}
 
@@ -475,6 +476,7 @@ export function App() {
           <ScalesPage
             initialScaleTarget={pendingScaleSearch}
             onInitialScaleHandled={() => setPendingScaleSearch(null)}
+            settings={settings}
           />
         )}
 

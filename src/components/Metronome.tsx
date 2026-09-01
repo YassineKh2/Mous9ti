@@ -1,29 +1,37 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { 
-  Play, 
-  Square, 
-  Plus, 
-  Minus, 
-  Volume2
-} from 'lucide-react';
-import { MetronomeSound, MetronomeSubdivision, TimeSignature } from '../types';
-import { audioEngine } from '../lib/audio';
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Play, Square, Plus, Minus, Volume2 } from "lucide-react";
+import {
+  MetronomeSound,
+  MetronomeSubdivision,
+  TimeSignature,
+  AppSettings,
+} from "../types";
+import { audioEngine } from "../lib/audio";
 
 interface MetronomeProps {
   bpm: number;
   onBpmChange: (newBpm: number) => void;
   onLogBpmToSession?: (bpm: number) => void;
+  settings: AppSettings;
 }
 
 export const Metronome: React.FC<MetronomeProps> = ({
   bpm,
   onBpmChange,
-  onLogBpmToSession
+  onLogBpmToSession,
+  settings,
 }) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [timeSignature, setTimeSignature] = useState<TimeSignature>('4/4');
-  const [subdivision, setSubdivision] = useState<MetronomeSubdivision>('quarter');
-  const [soundType, setSoundType] = useState<MetronomeSound>('click');
+  const [isHydratedFromEngine, setIsHydratedFromEngine] =
+    useState<boolean>(false);
+  const [isPlaying, setIsPlaying] = useState<boolean>(() =>
+    audioEngine.isRunning(),
+  );
+  const [timeSignature, setTimeSignature] = useState<TimeSignature>("4/4");
+  const [subdivision, setSubdivision] =
+    useState<MetronomeSubdivision>("quarter");
+  const [soundType, setSoundType] = useState<MetronomeSound>(
+    settings.metronomeSound,
+  );
   const [currentBeat, setCurrentBeat] = useState<number>(0);
   const [isAccentBeat, setIsAccentBeat] = useState<boolean>(false);
 
@@ -33,13 +41,54 @@ export const Metronome: React.FC<MetronomeProps> = ({
   // Metronome run duration tracker for auto-saving (>30s)
   const startTimeRef = useRef<number | null>(null);
 
-  // Time signature beats
-  const beatsInBar = parseInt(timeSignature.split('/')[0], 10) || 4;
+  const handleBeatCallback = useCallback(
+    (beat: number, isAccent: boolean, _isSub: boolean) => {
+      setCurrentBeat(beat);
+      setIsAccentBeat(isAccent);
+    },
+    [],
+  );
 
-  const handleBeatCallback = useCallback((beat: number, isAccent: boolean, _isSub: boolean) => {
-    setCurrentBeat(beat);
-    setIsAccentBeat(isAccent);
-  }, []);
+  // Sync sound type from settings when it changes
+  useEffect(() => {
+    if (!audioEngine.isRunning()) {
+      setSoundType(settings.metronomeSound);
+    }
+  }, [settings.metronomeSound]);
+
+  // Hydrate from current engine state and keep UI playback status synced across page switches
+  useEffect(() => {
+    const engineState = audioEngine.getMetronomeState();
+
+    setIsPlaying(engineState.isPlaying);
+    setTimeSignature(engineState.timeSignature as TimeSignature);
+    setSubdivision(engineState.subdivision);
+    setSoundType(engineState.soundType);
+    setCurrentBeat(engineState.currentBeat);
+
+    if (engineState.bpm !== bpm) {
+      onBpmChange(engineState.bpm);
+    }
+
+    audioEngine.setMetronomeBeatCallback(handleBeatCallback);
+
+    const unsubscribe = audioEngine.onMetronomeStateChange((playing) => {
+      setIsPlaying(playing);
+      if (!playing) {
+        startTimeRef.current = null;
+      }
+    });
+
+    setIsHydratedFromEngine(true);
+
+    return () => {
+      audioEngine.setMetronomeBeatCallback(null);
+      unsubscribe();
+    };
+  }, [onBpmChange, handleBeatCallback]);
+
+  // Time signature beats
+  const beatsInBar = parseInt(timeSignature.split("/")[0], 10) || 4;
 
   const togglePlay = useCallback(() => {
     if (isPlaying) {
@@ -57,17 +106,43 @@ export const Metronome: React.FC<MetronomeProps> = ({
     } else {
       // Starting
       startTimeRef.current = Date.now();
-      audioEngine.startMetronome(bpm, timeSignature, subdivision, soundType, handleBeatCallback);
+      audioEngine.startMetronome(
+        bpm,
+        timeSignature,
+        subdivision,
+        soundType,
+        handleBeatCallback,
+      );
       setIsPlaying(true);
     }
-  }, [isPlaying, bpm, timeSignature, subdivision, soundType, handleBeatCallback, onLogBpmToSession]);
+  }, [
+    isPlaying,
+    bpm,
+    timeSignature,
+    subdivision,
+    soundType,
+    handleBeatCallback,
+    onLogBpmToSession,
+  ]);
 
   // Update metronome if playing and params change
   useEffect(() => {
-    if (isPlaying) {
-      audioEngine.updateMetronomeParams(bpm, timeSignature, subdivision, soundType);
+    if (isPlaying && isHydratedFromEngine) {
+      audioEngine.updateMetronomeParams(
+        bpm,
+        timeSignature,
+        subdivision,
+        soundType,
+      );
     }
-  }, [bpm, timeSignature, subdivision, soundType, isPlaying]);
+  }, [
+    bpm,
+    timeSignature,
+    subdivision,
+    soundType,
+    isPlaying,
+    isHydratedFromEngine,
+  ]);
 
   // Tap tempo handler
   const handleTapTempo = () => {
@@ -146,10 +221,10 @@ export const Metronome: React.FC<MetronomeProps> = ({
               key={i}
               className={`flex-1 h-2 rounded-sm transition-all duration-75 ${
                 isAccent
-                  ? 'bg-on-surface shadow-[0_0_10px_rgba(229,226,225,0.9)] scale-y-125'
+                  ? "bg-on-surface shadow-[0_0_10px_rgba(229,226,225,0.9)] scale-y-125"
                   : isCurrent
-                  ? 'bg-primary shadow-[0_0_10px_rgba(173,198,255,0.8)] scale-y-110'
-                  : 'bg-outline-variant/20'
+                    ? "bg-primary shadow-[0_0_10px_rgba(173,198,255,0.8)] scale-y-110"
+                    : "bg-outline-variant/20"
               }`}
             />
           );
@@ -169,18 +244,18 @@ export const Metronome: React.FC<MetronomeProps> = ({
       {/* Subdivision Selector Buttons */}
       <div className="flex justify-center gap-1.5 my-2.5">
         {[
-          { id: 'quarter', label: '1/4' },
-          { id: 'eighth', label: '1/8' },
-          { id: 'sixteenth', label: '1/16' },
-          { id: 'triplet', label: '3' },
+          { id: "quarter", label: "1/4" },
+          { id: "eighth", label: "1/8" },
+          { id: "sixteenth", label: "1/16" },
+          { id: "triplet", label: "3" },
         ].map((s) => (
           <button
             key={s.id}
             onClick={() => setSubdivision(s.id as MetronomeSubdivision)}
             className={`px-3 py-1 rounded font-mono text-[10px] tracking-wider transition-colors ${
               subdivision === s.id
-                ? 'bg-primary/20 text-primary border border-primary/50 font-bold'
-                : 'border border-outline-variant/30 text-on-surface-variant hover:text-on-surface hover:bg-outline-variant/10'
+                ? "bg-primary/20 text-primary border border-primary/50 font-bold"
+                : "border border-outline-variant/30 text-on-surface-variant hover:text-on-surface hover:bg-outline-variant/10"
             }`}
           >
             {s.label}
@@ -227,11 +302,15 @@ export const Metronome: React.FC<MetronomeProps> = ({
           onClick={togglePlay}
           className={`w-11 h-11 rounded-full flex items-center justify-center transition-all shadow-lg active:scale-95 ${
             isPlaying
-              ? 'bg-error-container text-on-error-container border border-error/50 hover:opacity-80'
-              : 'bg-primary text-on-primary hover:bg-primary-container shadow-primary/20'
+              ? "bg-error-container text-on-error-container border border-error/50 hover:opacity-80"
+              : "bg-primary text-on-primary hover:bg-primary-container shadow-primary/20"
           }`}
         >
-          {isPlaying ? <Square size={18} fill="currentColor" /> : <Play size={20} className="ml-0.5" fill="currentColor" />}
+          {isPlaying ? (
+            <Square size={18} fill="currentColor" />
+          ) : (
+            <Play size={20} className="ml-0.5" fill="currentColor" />
+          )}
         </button>
       </div>
     </div>

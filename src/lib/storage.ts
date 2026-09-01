@@ -11,7 +11,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   accentColor: "#3b82f6", // Electric Blue
   defaultTuning: "E Standard",
   fretCount: 15,
-  soundVolume: 0.8,
+  soundVolume: 1,
   metronomeSound: "click",
   fretboardWood: "ebony",
   autoSaveSession: true,

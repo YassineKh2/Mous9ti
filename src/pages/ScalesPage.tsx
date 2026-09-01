@@ -1,5 +1,11 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import { NoteDisplayMode, NoteName, ScaleDefinition, Tuning } from "../types";
+import {
+  NoteDisplayMode,
+  NoteName,
+  ScaleDefinition,
+  Tuning,
+  AppSettings,
+} from "../types";
 import {
   ALL_ROOT_NOTES,
   SCALES_DATABASE,
@@ -33,19 +39,29 @@ type PlaybackDirection = "ascending" | "descending" | "both";
 interface ScalesPageProps {
   initialScaleTarget?: { scaleId: string; root: NoteName } | null;
   onInitialScaleHandled?: () => void;
+  settings: AppSettings;
 }
 
 export const ScalesPage: React.FC<ScalesPageProps> = ({
   initialScaleTarget,
   onInitialScaleHandled,
+  settings,
 }) => {
+  // Get tuning from settings
+  const defaultTuning = useMemo(() => {
+    return (
+      GUITAR_TUNINGS.find((t) => t.name === settings.defaultTuning) ??
+      GUITAR_TUNINGS[0]
+    );
+  }, [settings.defaultTuning]);
+
   const [selectedRoot, setSelectedRoot] = useState<NoteName>("A");
   const [selectedScale, setSelectedScale] = useState<ScaleDefinition>(
     SCALES_DATABASE[4],
   ); // A Minor Pentatonic
   const [displayMode, setDisplayMode] = useState<NoteDisplayMode>("name");
-  const [currentTuning, setCurrentTuning] = useState<Tuning>(GUITAR_TUNINGS[0]);
-  const [fretCount, setFretCount] = useState<number>(22);
+  const [currentTuning, setCurrentTuning] = useState<Tuning>(defaultTuning);
+  const [fretCount, setFretCount] = useState<number>(settings.fretCount);
   const [activeCagedBox, setActiveCagedBox] = useState<string | null>(null);
   const [pianoFocusRange, setPianoFocusRange] = useState<
     "all" | "octave4" | "octave3" | "octave34"
@@ -100,6 +116,19 @@ export const ScalesPage: React.FC<ScalesPageProps> = ({
     setActivePlayingString(null);
     setActivePlayingFret(null);
   };
+
+  // Sync fretCount from settings when it changes
+  useEffect(() => {
+    setFretCount(settings.fretCount);
+  }, [settings.fretCount]);
+
+  // Sync tuning from settings when it changes
+  useEffect(() => {
+    const newTuning =
+      GUITAR_TUNINGS.find((t) => t.name === settings.defaultTuning) ??
+      GUITAR_TUNINGS[0];
+    setCurrentTuning(newTuning);
+  }, [settings.defaultTuning]);
 
   // Close menus when clicking outside
   useEffect(() => {
