@@ -49,7 +49,7 @@ export const Fretboard: React.FC<FretboardProps> = ({
     controlledTuning || GUITAR_TUNINGS[0],
   );
   const [internalFretCount, setInternalFretCount] = useState<number>(
-    controlledFretCount || 22,
+    controlledFretCount || 15,
   );
   const [internalDisplayMode, setInternalDisplayMode] =
     useState<NoteDisplayMode>(controlledDisplayMode || "name");
