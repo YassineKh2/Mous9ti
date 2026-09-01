@@ -89,6 +89,18 @@ export const RandomDrill: React.FC<RandomDrillProps> = ({
     return () => clearInterval(intervalId);
   }, [autoAdvance, pickNextRandomNote]);
 
+  // Global shortcut routed from App (N key)
+  useEffect(() => {
+    const handleNextNoteShortcut = () => pickNextRandomNote();
+
+    window.addEventListener("random-drill-next-note", handleNextNoteShortcut);
+    return () =>
+      window.removeEventListener(
+        "random-drill-next-note",
+        handleNextNoteShortcut,
+      );
+  }, [pickNextRandomNote]);
+
   return (
     <div className="bg-surface-container border border-outline-variant/30 rounded-lg p-5 flex flex-col justify-between relative shadow-xl">
       {/* Top Header */}
@@ -123,7 +135,7 @@ export const RandomDrill: React.FC<RandomDrillProps> = ({
             {currentNote}
           </span>
           <span className="text-[10px] font-mono text-on-surface-variant group-hover:text-primary transition-colors mt-1">
-            Click or Space for Next
+            Click or N for Next
           </span>
         </div>
 

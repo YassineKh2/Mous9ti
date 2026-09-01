@@ -209,6 +209,9 @@ export function App() {
             engineState.soundType,
           );
         }
+      } else if (e.key.toLowerCase() === "n") {
+        e.preventDefault();
+        window.dispatchEvent(new Event("random-drill-next-note"));
       } else if (e.key === "1") {
         setActiveTab("dashboard");
       } else if (e.key === "2") {
