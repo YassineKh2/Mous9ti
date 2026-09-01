@@ -1,25 +1,53 @@
-import React, { useState } from 'react';
-import { Exercise } from '../types';
-import { EXERCISES_DATABASE } from '../data/exercisesData';
-import { Dumbbell, Play, CheckCircle, Target, Sparkles, Filter } from 'lucide-react';
+import React, { useState } from "react";
+import { Exercise } from "../types";
+import { EXERCISES_DATABASE } from "../data/exercisesData";
+import {
+  Dumbbell,
+  Play,
+  CheckCircle,
+  Target,
+  Sparkles,
+  Filter,
+} from "lucide-react";
 
 interface ExercisesPageProps {
   onStartExercisePractice: (exercise: Exercise) => void;
+  initialExerciseId?: string | null;
+  onInitialExerciseHandled?: () => void;
 }
 
-export const ExercisesPage: React.FC<ExercisesPageProps> = ({ onStartExercisePractice }) => {
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
-  const [selectedDifficulty, setSelectedDifficulty] = useState<string>('All');
-  const [activeExercise, setActiveExercise] = useState<Exercise>(EXERCISES_DATABASE[0]);
+export const ExercisesPage: React.FC<ExercisesPageProps> = ({
+  onStartExercisePractice,
+  initialExerciseId,
+  onInitialExerciseHandled,
+}) => {
+  const [selectedCategory, setSelectedCategory] = useState<string>("All");
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string>("All");
+  const [activeExercise, setActiveExercise] = useState<Exercise>(
+    EXERCISES_DATABASE[0],
+  );
 
-  const categories = ['All', 'Technique', 'Theory', 'Rhythm', 'Speed Building'];
-  const difficulties = ['All', 'Beginner', 'Intermediate', 'Advanced'];
+  const categories = ["All", "Technique", "Theory", "Rhythm", "Speed Building"];
+  const difficulties = ["All", "Beginner", "Intermediate", "Advanced"];
 
   const filteredExercises = EXERCISES_DATABASE.filter((ex) => {
-    const matchesCat = selectedCategory === 'All' || ex.category === selectedCategory;
-    const matchesDiff = selectedDifficulty === 'All' || ex.difficulty === selectedDifficulty;
+    const matchesCat =
+      selectedCategory === "All" || ex.category === selectedCategory;
+    const matchesDiff =
+      selectedDifficulty === "All" || ex.difficulty === selectedDifficulty;
     return matchesCat && matchesDiff;
   });
+
+  React.useEffect(() => {
+    if (!initialExerciseId) return;
+    const found = EXERCISES_DATABASE.find((ex) => ex.id === initialExerciseId);
+    if (found) {
+      setActiveExercise(found);
+      setSelectedCategory("All");
+      setSelectedDifficulty("All");
+    }
+    onInitialExerciseHandled?.();
+  }, [initialExerciseId, onInitialExerciseHandled]);
 
   return (
     <div className="space-y-6 pb-12">
@@ -32,7 +60,8 @@ export const ExercisesPage: React.FC<ExercisesPageProps> = ({ onStartExercisePra
               Guitar Technique & Theory Drills
             </h1>
             <p className="text-xs text-on-surface-variant mt-1">
-              Curated routines for finger independence, alternate picking, rhythm, and speed building
+              Curated routines for finger independence, alternate picking,
+              rhythm, and speed building
             </p>
           </div>
         </div>
@@ -47,8 +76,8 @@ export const ExercisesPage: React.FC<ExercisesPageProps> = ({ onStartExercisePra
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-3 py-1.5 rounded-full text-xs font-mono whitespace-nowrap transition-all ${
                   selectedCategory === cat
-                    ? 'bg-primary text-on-primary font-bold shadow'
-                    : 'bg-surface-container-low text-on-surface-variant hover:text-on-surface border border-outline-variant/30'
+                    ? "bg-primary text-on-primary font-bold shadow"
+                    : "bg-surface-container-low text-on-surface-variant hover:text-on-surface border border-outline-variant/30"
                 }`}
               >
                 {cat}
@@ -64,8 +93,8 @@ export const ExercisesPage: React.FC<ExercisesPageProps> = ({ onStartExercisePra
                 onClick={() => setSelectedDifficulty(diff)}
                 className={`px-2.5 py-1 text-[11px] font-mono rounded transition-all ${
                   selectedDifficulty === diff
-                    ? 'bg-primary text-on-primary font-bold'
-                    : 'text-on-surface-variant hover:text-on-surface'
+                    ? "bg-primary text-on-primary font-bold"
+                    : "text-on-surface-variant hover:text-on-surface"
                 }`}
               >
                 {diff}
@@ -87,8 +116,8 @@ export const ExercisesPage: React.FC<ExercisesPageProps> = ({ onStartExercisePra
                 onClick={() => setActiveExercise(ex)}
                 className={`p-4 rounded-lg border transition-all cursor-pointer ${
                   isSelected
-                    ? 'bg-surface-container-low border-primary shadow-lg'
-                    : 'bg-surface-container border-outline-variant/30 hover:border-outline-variant'
+                    ? "bg-surface-container-low border-primary shadow-lg"
+                    : "bg-surface-container border-outline-variant/30 hover:border-outline-variant"
                 }`}
               >
                 <div className="flex items-center justify-between mb-1.5">
@@ -97,11 +126,11 @@ export const ExercisesPage: React.FC<ExercisesPageProps> = ({ onStartExercisePra
                   </span>
                   <span
                     className={`text-[10px] font-mono font-bold ${
-                      ex.difficulty === 'Beginner'
-                        ? 'text-tertiary'
-                        : ex.difficulty === 'Intermediate'
-                        ? 'text-secondary'
-                        : 'text-error'
+                      ex.difficulty === "Beginner"
+                        ? "text-tertiary"
+                        : ex.difficulty === "Intermediate"
+                          ? "text-secondary"
+                          : "text-error"
                     }`}
                   >
                     {ex.difficulty}
@@ -116,7 +145,12 @@ export const ExercisesPage: React.FC<ExercisesPageProps> = ({ onStartExercisePra
                 </p>
 
                 <div className="flex items-center justify-between pt-3 mt-3 border-t border-outline-variant/30 text-[10px] font-mono text-on-surface-variant">
-                  <span>Tempo: <strong className="text-on-surface">{ex.suggestedBpm} BPM</strong></span>
+                  <span>
+                    Tempo:{" "}
+                    <strong className="text-on-surface">
+                      {ex.suggestedBpm} BPM
+                    </strong>
+                  </span>
                   <span className="text-primary flex items-center gap-1">
                     Click to view TAB & drill →
                   </span>
@@ -138,7 +172,10 @@ export const ExercisesPage: React.FC<ExercisesPageProps> = ({ onStartExercisePra
                   </span>
                   <span className="text-on-surface-variant">•</span>
                   <span className="text-[10px] font-mono text-on-surface-variant">
-                    Difficulty: <strong className="text-on-surface">{activeExercise.difficulty}</strong>
+                    Difficulty:{" "}
+                    <strong className="text-on-surface">
+                      {activeExercise.difficulty}
+                    </strong>
                   </span>
                 </div>
                 <h2 className="font-mono text-lg font-bold text-on-surface mt-1">
@@ -190,7 +227,9 @@ export const ExercisesPage: React.FC<ExercisesPageProps> = ({ onStartExercisePra
                 Execution Method:
               </span>
               <p className="text-xs text-on-surface-variant leading-relaxed">
-                {activeExercise.description} Start slow at 50% tempo until note articulation is 100% clean and relaxed before increasing BPM in +5 increments.
+                {activeExercise.description} Start slow at 50% tempo until note
+                articulation is 100% clean and relaxed before increasing BPM in
+                +5 increments.
               </p>
             </div>
           </div>

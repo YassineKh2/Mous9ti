@@ -1,19 +1,34 @@
-import React from 'react';
-import { 
-  LayoutDashboard, 
-  Sparkles, 
-  Grid3X3, 
-  Dumbbell, 
-  Compass, 
-  BarChart3, 
-  Settings, 
-  Flame, 
+import React from "react";
+import {
+  LayoutDashboard,
+  Sparkles,
+  Grid3X3,
+  Dumbbell,
+  Compass,
+  BarChart3,
+  Settings,
+  Flame,
   Music,
   Search,
-  Sliders
-} from 'lucide-react';
+  Sliders,
+} from "lucide-react";
 
-export type ActiveTab = 'dashboard' | 'scales' | 'chords' | 'exercises' | 'tools' | 'stats';
+export type ActiveTab =
+  | "dashboard"
+  | "scales"
+  | "chords"
+  | "exercises"
+  | "tools"
+  | "stats";
+
+export interface GlobalSearchResult {
+  id: string;
+  label: string;
+  subtitle?: string;
+  tab: ActiveTab;
+  kind: "tab" | "scale" | "chord" | "exercise";
+  payload?: Record<string, string>;
+}
 
 interface NavigationProps {
   activeTab: ActiveTab;
@@ -23,6 +38,8 @@ interface NavigationProps {
   graceActive?: boolean;
   searchQuery: string;
   onSearchChange: (q: string) => void;
+  searchResults: GlobalSearchResult[];
+  onSelectSearchResult: (result: GlobalSearchResult) => void;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
@@ -32,15 +49,21 @@ export const Navigation: React.FC<NavigationProps> = ({
   streakDays,
   graceActive = false,
   searchQuery,
-  onSearchChange
+  onSearchChange,
+  searchResults,
+  onSelectSearchResult,
 }) => {
   const navItems: { id: ActiveTab; label: string; icon: React.ReactNode }[] = [
-    { id: 'dashboard', label: 'DASHBOARD', icon: <LayoutDashboard size={18} /> },
-    { id: 'scales', label: 'SCALES', icon: <Sparkles size={18} /> },
-    { id: 'chords', label: 'CHORDS', icon: <Grid3X3 size={18} /> },
-    { id: 'exercises', label: 'EXERCISES', icon: <Dumbbell size={18} /> },
-    { id: 'tools', label: 'TOOLS', icon: <Compass size={18} /> },
-    { id: 'stats', label: 'STATS', icon: <BarChart3 size={18} /> },
+    {
+      id: "dashboard",
+      label: "DASHBOARD",
+      icon: <LayoutDashboard size={18} />,
+    },
+    { id: "scales", label: "SCALES", icon: <Sparkles size={18} /> },
+    { id: "chords", label: "CHORDS", icon: <Grid3X3 size={18} /> },
+    { id: "exercises", label: "EXERCISES", icon: <Dumbbell size={18} /> },
+    { id: "tools", label: "TOOLS", icon: <Compass size={18} /> },
+    { id: "stats", label: "STATS", icon: <BarChart3 size={18} /> },
   ];
 
   return (
@@ -72,14 +95,18 @@ export const Navigation: React.FC<NavigationProps> = ({
                 onClick={() => onSelectTab(item.id)}
                 className={`w-full flex items-center px-4 py-3 rounded text-left transition-all duration-200 group border-l-2 ${
                   isActive
-                    ? 'bg-primary-container text-on-primary-container border-primary font-semibold shadow-sm'
-                    : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface border-transparent'
+                    ? "bg-primary-container text-on-primary-container border-primary font-semibold shadow-sm"
+                    : "text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface border-transparent"
                 }`}
               >
-                <span className={`mr-3.5 transition-colors ${isActive ? 'text-on-primary-container' : 'text-on-surface-variant group-hover:text-on-surface'}`}>
+                <span
+                  className={`mr-3.5 transition-colors ${isActive ? "text-on-primary-container" : "text-on-surface-variant group-hover:text-on-surface"}`}
+                >
                   {item.icon}
                 </span>
-                <span className="font-mono text-xs tracking-wider">{item.label}</span>
+                <span className="font-mono text-xs tracking-wider">
+                  {item.label}
+                </span>
               </button>
             );
           })}
@@ -114,7 +141,9 @@ export const Navigation: React.FC<NavigationProps> = ({
           >
             <div className="flex items-center gap-3">
               <Sliders size={16} />
-              <span className="font-mono text-xs tracking-wider uppercase">Studio Settings</span>
+              <span className="font-mono text-xs tracking-wider uppercase">
+                Studio Settings
+              </span>
             </div>
             <Settings size={14} className="text-on-surface-variant" />
           </button>
@@ -126,7 +155,10 @@ export const Navigation: React.FC<NavigationProps> = ({
         {/* Search Theory Input */}
         <div className="flex items-center gap-3 w-full max-w-md">
           <div className="relative w-full">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" />
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant"
+            />
             <input
               type="text"
               placeholder="Search theory, scales, chords, exercises..."
@@ -134,6 +166,41 @@ export const Navigation: React.FC<NavigationProps> = ({
               onChange={(e) => onSearchChange(e.target.value)}
               className="w-full bg-surface-container border border-outline-variant/30 rounded py-1.5 pl-9 pr-4 text-xs font-mono text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all"
             />
+
+            {searchQuery.trim().length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-surface border border-outline-variant/40 rounded-lg shadow-2xl overflow-hidden z-50">
+                {searchResults.length === 0 ? (
+                  <div className="px-3 py-2.5 text-xs font-mono text-on-surface-variant">
+                    No results found
+                  </div>
+                ) : (
+                  <div className="max-h-72 overflow-y-auto">
+                    {searchResults.map((result) => (
+                      <button
+                        key={result.id}
+                        type="button"
+                        onClick={() => onSelectSearchResult(result)}
+                        className="w-full text-left px-3 py-2.5 border-b last:border-b-0 border-outline-variant/20 hover:bg-surface-container-low transition-colors"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-mono font-bold text-on-surface truncate">
+                            {result.label}
+                          </span>
+                          <span className="text-[10px] font-mono uppercase tracking-wide text-primary shrink-0">
+                            {result.kind}
+                          </span>
+                        </div>
+                        {result.subtitle && (
+                          <div className="text-[10px] font-mono text-on-surface-variant mt-0.5 truncate">
+                            {result.subtitle}
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -163,11 +230,15 @@ export const Navigation: React.FC<NavigationProps> = ({
               key={item.id}
               onClick={() => onSelectTab(item.id)}
               className={`flex flex-col items-center gap-1 py-1 px-2 transition-colors ${
-                isActive ? 'text-primary font-semibold' : 'text-on-surface-variant hover:text-on-surface'
+                isActive
+                  ? "text-primary font-semibold"
+                  : "text-on-surface-variant hover:text-on-surface"
               }`}
             >
               {item.icon}
-              <span className="text-[9px] font-mono tracking-tighter">{item.label}</span>
+              <span className="text-[9px] font-mono tracking-tighter">
+                {item.label}
+              </span>
             </button>
           );
         })}

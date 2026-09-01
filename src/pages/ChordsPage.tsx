@@ -13,7 +13,15 @@ import { ChordSheetMusic } from "../components/ChordSheetMusic";
 import { Search, Play, AlertCircle, X, ExternalLink } from "lucide-react";
 import { audioEngine } from "../lib/audio";
 
-export const ChordsPage: React.FC = () => {
+interface ChordsPageProps {
+  initialChordTarget?: { chordType: string; root: NoteName } | null;
+  onInitialChordHandled?: () => void;
+}
+
+export const ChordsPage: React.FC<ChordsPageProps> = ({
+  initialChordTarget,
+  onInitialChordHandled,
+}) => {
   const [selectedRoot, setSelectedRoot] = useState<NoteName>("E");
   const [selectedType, setSelectedType] = useState<string>("min7");
   const [showStaffNotation, setShowStaffNotation] = useState(false);
@@ -140,6 +148,19 @@ export const ChordsPage: React.FC = () => {
       }
     }
   }, [searchQuery]);
+
+  useEffect(() => {
+    if (!initialChordTarget) return;
+    const found = CHORD_TYPES_CATALOG.find(
+      (c) => c.type === initialChordTarget.chordType,
+    );
+    if (found) {
+      setSelectedRoot(initialChordTarget.root);
+      setSelectedType(found.type);
+      setSearchQuery("");
+    }
+    onInitialChordHandled?.();
+  }, [initialChordTarget, onInitialChordHandled]);
 
   const chordDef = getChordDefinition(selectedRoot, selectedType);
 
