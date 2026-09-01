@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Play, Square, Plus, Minus, Volume2 } from "lucide-react";
+import {
+  Play,
+  Square,
+  Plus,
+  Minus,
+  Volume2,
+  VolumeX,
+  Repeat2,
+} from "lucide-react";
 import {
   MetronomeSound,
   MetronomeSubdivision,
@@ -13,6 +21,11 @@ interface MetronomeProps {
   onBpmChange: (newBpm: number) => void;
   onLogBpmToSession?: (bpm: number) => void;
   settings: AppSettings;
+  showTempoPresets?: boolean;
+  isPlaying?: boolean;
+  onIsPlayingChange?: (playing: boolean) => void;
+  barCycleMode?: boolean;
+  onBarCycleModeChange?: (enabled: boolean) => void;
 }
 
 export const Metronome: React.FC<MetronomeProps> = ({
@@ -20,12 +33,19 @@ export const Metronome: React.FC<MetronomeProps> = ({
   onBpmChange,
   onLogBpmToSession,
   settings,
+  showTempoPresets = true,
+  isPlaying: controlledIsPlaying,
+  onIsPlayingChange,
+  barCycleMode: controlledBarCycleMode,
+  onBarCycleModeChange,
 }) => {
   const [isHydratedFromEngine, setIsHydratedFromEngine] =
     useState<boolean>(false);
-  const [isPlaying, setIsPlaying] = useState<boolean>(() =>
+  const [localIsPlaying, setLocalIsPlaying] = useState<boolean>(() =>
     audioEngine.isRunning(),
   );
+  const isPlaying =
+    controlledIsPlaying !== undefined ? controlledIsPlaying : localIsPlaying;
   const [timeSignature, setTimeSignature] = useState<TimeSignature>("4/4");
   const [subdivision, setSubdivision] =
     useState<MetronomeSubdivision>("quarter");
@@ -34,12 +54,56 @@ export const Metronome: React.FC<MetronomeProps> = ({
   );
   const [currentBeat, setCurrentBeat] = useState<number>(0);
   const [isAccentBeat, setIsAccentBeat] = useState<boolean>(false);
+  const [localBarCycleMode, setLocalBarCycleMode] = useState<boolean>(false);
+
+  const tempoPresets = [60, 72, 80, 88, 96, 108, 120, 132, 144, 160];
+  const barCycleMode =
+    controlledBarCycleMode !== undefined
+      ? controlledBarCycleMode
+      : localBarCycleMode;
+
+  const setBarCycleMode = useCallback(
+    (nextValue: boolean | ((prev: boolean) => boolean)) => {
+      const resolvedValue =
+        typeof nextValue === "function" ? nextValue(barCycleMode) : nextValue;
+
+      if (onBarCycleModeChange) {
+        onBarCycleModeChange(resolvedValue);
+        return;
+      }
+
+      setLocalBarCycleMode(resolvedValue);
+    },
+    [barCycleMode, onBarCycleModeChange],
+  );
+
+  const setIsPlayingState = useCallback(
+    (playing: boolean) => {
+      if (onIsPlayingChange) {
+        onIsPlayingChange(playing);
+        return;
+      }
+
+      setLocalIsPlaying(playing);
+    },
+    [onIsPlayingChange],
+  );
 
   // Tap tempo state
   const tapTimesRef = useRef<number[]>([]);
+  const barCycleTimeoutRef = useRef<number | null>(null);
+  const isPlayingRef = useRef<boolean>(false);
+  const barCycleShouldSoundRef = useRef<boolean>(true);
 
   // Metronome run duration tracker for auto-saving (>30s)
   const startTimeRef = useRef<number | null>(null);
+
+  const clearBarCycle = useCallback(() => {
+    if (barCycleTimeoutRef.current !== null) {
+      window.clearTimeout(barCycleTimeoutRef.current);
+      barCycleTimeoutRef.current = null;
+    }
+  }, []);
 
   const handleBeatCallback = useCallback(
     (beat: number, isAccent: boolean, _isSub: boolean) => {
@@ -49,6 +113,26 @@ export const Metronome: React.FC<MetronomeProps> = ({
     [],
   );
 
+  const scheduleBarCycle = useCallback(() => {
+    if (!barCycleMode || !isPlayingRef.current) return;
+
+    const beatsPerBar = parseInt(timeSignature.split("/")[0], 10) || 4;
+    const barDurationMs = (beatsPerBar * 60 * 1000) / bpm;
+
+    clearBarCycle();
+
+    const shouldSoundThisBar = barCycleShouldSoundRef.current;
+    audioEngine.resetMetronomePosition();
+    audioEngine.setMuted(!shouldSoundThisBar);
+
+    barCycleShouldSoundRef.current = !shouldSoundThisBar;
+
+    barCycleTimeoutRef.current = window.setTimeout(() => {
+      if (!barCycleMode || !isPlayingRef.current) return;
+      scheduleBarCycle();
+    }, barDurationMs);
+  }, [barCycleMode, bpm, clearBarCycle, timeSignature]);
+
   // Sync sound type from settings when it changes
   useEffect(() => {
     if (!audioEngine.isRunning()) {
@@ -56,11 +140,36 @@ export const Metronome: React.FC<MetronomeProps> = ({
     }
   }, [settings.metronomeSound]);
 
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+
+    if (!isPlaying) {
+      clearBarCycle();
+      barCycleShouldSoundRef.current = true;
+      audioEngine.setMuted(false);
+      audioEngine.resetMetronomePosition();
+      return;
+    }
+
+    if (barCycleMode) {
+      barCycleShouldSoundRef.current = true;
+      audioEngine.setMuted(false);
+      audioEngine.resetMetronomePosition();
+      scheduleBarCycle();
+      return;
+    }
+
+    clearBarCycle();
+    barCycleShouldSoundRef.current = true;
+    audioEngine.setMuted(false);
+    audioEngine.resetMetronomePosition();
+  }, [barCycleMode, clearBarCycle, isPlaying, scheduleBarCycle]);
+
   // Hydrate from current engine state and keep UI playback status synced across page switches
   useEffect(() => {
     const engineState = audioEngine.getMetronomeState();
 
-    setIsPlaying(engineState.isPlaying);
+    setIsPlayingState(engineState.isPlaying);
     setTimeSignature(engineState.timeSignature as TimeSignature);
     setSubdivision(engineState.subdivision);
     setSoundType(engineState.soundType);
@@ -73,7 +182,7 @@ export const Metronome: React.FC<MetronomeProps> = ({
     audioEngine.setMetronomeBeatCallback(handleBeatCallback);
 
     const unsubscribe = audioEngine.onMetronomeStateChange((playing) => {
-      setIsPlaying(playing);
+      setIsPlayingState(playing);
       if (!playing) {
         startTimeRef.current = null;
       }
@@ -85,16 +194,19 @@ export const Metronome: React.FC<MetronomeProps> = ({
       audioEngine.setMetronomeBeatCallback(null);
       unsubscribe();
     };
-  }, [onBpmChange, handleBeatCallback]);
+  }, [onBpmChange, handleBeatCallback, setIsPlayingState]);
 
   // Time signature beats
   const beatsInBar = parseInt(timeSignature.split("/")[0], 10) || 4;
 
   const togglePlay = useCallback(() => {
     if (isPlaying) {
-      // Stopping
+      clearBarCycle();
+      barCycleShouldSoundRef.current = true;
+      audioEngine.setMuted(false);
+      audioEngine.resetMetronomePosition();
       audioEngine.stopMetronome();
-      setIsPlaying(false);
+      setIsPlayingState(false);
 
       if (startTimeRef.current) {
         const elapsed = (Date.now() - startTimeRef.current) / 1000;
@@ -104,8 +216,12 @@ export const Metronome: React.FC<MetronomeProps> = ({
       }
       startTimeRef.current = null;
     } else {
-      // Starting
       startTimeRef.current = Date.now();
+      if (barCycleMode) {
+        barCycleShouldSoundRef.current = true;
+        audioEngine.setMuted(false);
+        audioEngine.resetMetronomePosition();
+      }
       audioEngine.startMetronome(
         bpm,
         timeSignature,
@@ -113,7 +229,10 @@ export const Metronome: React.FC<MetronomeProps> = ({
         soundType,
         handleBeatCallback,
       );
-      setIsPlaying(true);
+      setIsPlayingState(true);
+      if (barCycleMode) {
+        scheduleBarCycle();
+      }
     }
   }, [
     isPlaying,
@@ -123,6 +242,9 @@ export const Metronome: React.FC<MetronomeProps> = ({
     soundType,
     handleBeatCallback,
     onLogBpmToSession,
+    barCycleMode,
+    clearBarCycle,
+    scheduleBarCycle,
   ]);
 
   // Update metronome if playing and params change
@@ -182,19 +304,23 @@ export const Metronome: React.FC<MetronomeProps> = ({
           )}
         </div>
 
-        {/* Time Signature & Sound Type Selectors */}
         <div className="flex items-center gap-2">
           <select
             value={timeSignature}
             onChange={(e) => setTimeSignature(e.target.value as TimeSignature)}
             className="bg-surface-container-low border border-outline-variant/30 rounded px-2 py-1 text-[11px] font-mono text-on-surface focus:outline-none focus:border-primary/50 cursor-pointer"
           >
+            <option value="2/2">2/2</option>
             <option value="2/4">2/4</option>
             <option value="3/4">3/4</option>
+            <option value="3/8">3/8</option>
             <option value="4/4">4/4</option>
             <option value="5/4">5/4</option>
+            <option value="6/4">6/4</option>
             <option value="6/8">6/8</option>
             <option value="7/8">7/8</option>
+            <option value="9/8">9/8</option>
+            <option value="12/8">12/8</option>
           </select>
 
           <select
@@ -240,6 +366,24 @@ export const Metronome: React.FC<MetronomeProps> = ({
           BPM
         </span>
       </div>
+
+      {showTempoPresets && (
+        <div className="flex flex-wrap justify-center gap-1.5 mb-3">
+          {tempoPresets.map((preset) => (
+            <button
+              key={preset}
+              onClick={() => onBpmChange(preset)}
+              className={`px-2.5 py-1 rounded-full text-[10px] font-mono tracking-widest transition-all ${
+                bpm === preset
+                  ? "bg-primary/20 text-primary border border-primary/50"
+                  : "bg-surface-container-low text-on-surface-variant border border-outline-variant/30 hover:text-on-surface"
+              }`}
+            >
+              {preset}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Subdivision Selector Buttons */}
       <div className="flex justify-center gap-1.5 my-2.5">
@@ -289,14 +433,43 @@ export const Metronome: React.FC<MetronomeProps> = ({
         </button>
       </div>
 
-      {/* Bottom Controls: Tap Tempo & Big Play Button */}
-      <div className="flex justify-between items-center mt-3 pt-2 border-t border-outline-variant/10">
-        <button
-          onClick={handleTapTempo}
-          className="text-[10px] font-mono tracking-widest text-on-surface-variant border border-outline-variant/30 px-3.5 py-1.5 rounded hover:text-on-surface hover:border-primary/40 hover:bg-primary/5 active:scale-95 transition-all"
-        >
-          TAP TEMPO
-        </button>
+      {/* Bottom Controls: Tap Tempo, Bar Cycle Toggle & Big Play Button */}
+      <div className="flex justify-between items-center mt-3 pt-2 border-t border-outline-variant/10 gap-2">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleTapTempo}
+            className="text-[10px] font-mono tracking-widest text-on-surface-variant border border-outline-variant/30 px-3.5 py-1.5 rounded hover:text-on-surface hover:border-primary/40 hover:bg-primary/5 active:scale-95 transition-all"
+          >
+            TAP TEMPO
+          </button>
+
+          <button
+            onClick={() => {
+              const next = !barCycleMode;
+
+              if (!next) {
+                clearBarCycle();
+                barCycleShouldSoundRef.current = true;
+                audioEngine.setMuted(false);
+                audioEngine.resetMetronomePosition();
+              } else {
+                barCycleShouldSoundRef.current = true;
+                audioEngine.setMuted(false);
+                audioEngine.resetMetronomePosition();
+              }
+
+              setBarCycleMode(next);
+            }}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded text-[10px] font-mono tracking-widest transition-all ${
+              barCycleMode
+                ? "bg-primary/15 text-primary border border-primary/50"
+                : "border border-outline-variant/30 text-on-surface-variant hover:text-on-surface hover:border-primary/30"
+            }`}
+          >
+            {barCycleMode ? <VolumeX size={12} /> : <Repeat2 size={12} />}
+            MUTE 1 BAR
+          </button>
+        </div>
 
         <button
           onClick={togglePlay}

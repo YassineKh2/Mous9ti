@@ -1,16 +1,48 @@
-export type NoteName = 'C' | 'C#' | 'Db' | 'D' | 'D#' | 'Eb' | 'E' | 'F' | 'F#' | 'Gb' | 'G' | 'G#' | 'Ab' | 'A' | 'A#' | 'Bb' | 'B';
+export type NoteName =
+  | "C"
+  | "C#"
+  | "Db"
+  | "D"
+  | "D#"
+  | "Eb"
+  | "E"
+  | "F"
+  | "F#"
+  | "Gb"
+  | "G"
+  | "G#"
+  | "Ab"
+  | "A"
+  | "A#"
+  | "Bb"
+  | "B";
 
-export type NoteDisplayMode = 'name' | 'degree' | 'interval';
+export type NoteDisplayMode = "name" | "degree" | "interval";
 
-export type AccidentalPreference = 'sharp' | 'flat' | 'both';
+export type AccidentalPreference = "sharp" | "flat" | "both";
 
-export type InstrumentView = 'fretboard' | 'piano';
+export type InstrumentView = "fretboard" | "piano";
 
-export type MetronomeSound = 'click' | 'woodblock' | 'tick' | 'beep';
+export type MetronomeSound = "click" | "woodblock" | "tick" | "beep";
 
-export type MetronomeSubdivision = 'quarter' | 'eighth' | 'sixteenth' | 'triplet';
+export type MetronomeSubdivision =
+  | "quarter"
+  | "eighth"
+  | "sixteenth"
+  | "triplet";
 
-export type TimeSignature = '2/4' | '3/4' | '4/4' | '5/4' | '6/8' | '7/8';
+export type TimeSignature =
+  | "2/2"
+  | "2/4"
+  | "3/4"
+  | "3/8"
+  | "4/4"
+  | "5/4"
+  | "6/4"
+  | "6/8"
+  | "7/8"
+  | "9/8"
+  | "12/8";
 
 export interface Tuning {
   name: string;
@@ -21,7 +53,11 @@ export interface Tuning {
 export interface ScaleDefinition {
   id: string;
   name: string;
-  category: 'Major & Minor' | 'Modes' | 'Pentatonic & Blues' | 'Symmetrical & Exotic';
+  category:
+    | "Major & Minor"
+    | "Modes"
+    | "Pentatonic & Blues"
+    | "Symmetrical & Exotic";
   intervals: number[]; // semitones from root e.g. [0, 2, 4, 5, 7, 9, 11]
   formula: string; // e.g. "W W H W W W H"
   degrees: string[]; // e.g. ["1", "2", "3", "4", "5", "6", "7"]
@@ -38,7 +74,12 @@ export interface GuitarVoicing {
   frets: (number | null)[]; // 6 strings from 6th to 1st (null = muted, 0 = open)
   fingers: (number | null)[]; // finger 1 to 4, or null
   baseFret: number; // starting fret to display (1 if open)
-  barre?: { fret: number; fromString: number; toString: number; finger: number };
+  barre?: {
+    fret: number;
+    fromString: number;
+    toString: number;
+    finger: number;
+  };
 }
 
 export interface ChordDefinition {
@@ -57,8 +98,8 @@ export interface ChordDefinition {
 export interface Exercise {
   id: string;
   title: string;
-  category: 'Technique' | 'Theory' | 'Rhythm' | 'Speed Building';
-  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+  category: "Technique" | "Theory" | "Rhythm" | "Speed Building";
+  difficulty: "Beginner" | "Intermediate" | "Advanced";
   suggestedBpm: number;
   description: string;
   tablature: string;
@@ -88,12 +129,12 @@ export interface StreakData {
 }
 
 export interface AppSettings {
-  theme: 'dark' | 'light';
+  theme: "dark" | "light";
   accentColor: string; // hex
   defaultTuning: string;
   fretCount: number; // 12, 15, 21, 22, 24
   soundVolume: number; // 0-1
   metronomeSound: MetronomeSound;
-  fretboardWood: 'ebony' | 'rosewood' | 'maple';
+  fretboardWood: "ebony" | "rosewood" | "maple";
   autoSaveSession: boolean;
 }

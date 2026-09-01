@@ -29,6 +29,10 @@ interface DashboardPageProps {
   onEndSession: () => void;
   onLogBpm: (bpm: number) => void;
   settings: AppSettings;
+  metronomeIsPlaying?: boolean;
+  onMetronomePlayingChange?: (playing: boolean) => void;
+  metronomeBarCycleMode?: boolean;
+  onBarCycleModeChange?: (enabled: boolean) => void;
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
@@ -41,6 +45,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onEndSession,
   onLogBpm,
   settings,
+  metronomeIsPlaying,
+  onMetronomePlayingChange,
+  metronomeBarCycleMode,
+  onBarCycleModeChange,
 }) => {
   // Get tuning from settings
   const defaultTuning = useMemo(() => {
@@ -93,6 +101,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           onBpmChange={onBpmChange}
           onLogBpmToSession={onLogBpm}
           settings={settings}
+          showTempoPresets={false}
+          isPlaying={metronomeIsPlaying}
+          onIsPlayingChange={onMetronomePlayingChange}
+          barCycleMode={metronomeBarCycleMode}
+          onBarCycleModeChange={onBarCycleModeChange}
         />
 
         {/* Random Note Drill */}

@@ -1,9 +1,9 @@
 import { AppSettings, Session, StreakData } from "../types";
 
 const STORAGE_KEYS = {
-  SESSIONS: "fretmaster_sessions_v1",
-  STREAK: "fretmaster_streak_v1",
-  SETTINGS: "fretmaster_settings_v1",
+  SESSIONS: "Mousi9ti_sessions_v1",
+  STREAK: "Mousi9ti_streak_v1",
+  SETTINGS: "Mousi9ti_settings_v1",
 };
 
 const DEFAULT_SETTINGS: AppSettings = {

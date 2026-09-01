@@ -77,10 +77,10 @@ export const Navigation: React.FC<NavigationProps> = ({
           </div>
           <div className="flex flex-col">
             <span className="font-mono text-sm font-bold tracking-[0.25em] uppercase text-on-surface">
-              Fret-Master
+              Mousi9ti
             </span>
             <span className="text-[9px] font-mono text-on-surface-variant tracking-wider">
-              PRECISION AUDIO SUITE
+              Practice Better
             </span>
           </div>
         </div>
@@ -206,11 +206,6 @@ export const Navigation: React.FC<NavigationProps> = ({
 
         {/* Quick Tools & Profile */}
         <div className="flex items-center gap-3.5">
-          <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 bg-primary/10 border border-primary/20 rounded font-mono text-[10px] text-primary tracking-wider">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
-            AUDIO: READY
-          </div>
-
           <button
             onClick={onOpenSettings}
             className="w-8 h-8 rounded bg-surface-container-low border border-outline-variant/30 flex items-center justify-center text-on-surface-variant hover:text-primary hover:border-primary/30 transition-all"

@@ -1,22 +1,26 @@
-import React, { useState } from 'react';
-import { Volume2, Music, Sparkles } from 'lucide-react';
-import { NoteName } from '../types';
-import { 
-  CIRCLE_OF_FIFTHS_DATA, 
-  CircleKeyData, 
-  DiatonicChord, 
-  getDiatonicChords, 
-  NOTE_SEMITONES, 
-  CHROMATIC_SHARPS 
-} from '../data/musicTheory';
-import { audioEngine } from '../lib/audio';
+import React, { useState } from "react";
+import { Volume2, Music, Sparkles } from "lucide-react";
+import { NoteName } from "../types";
+import {
+  CIRCLE_OF_FIFTHS_DATA,
+  CircleKeyData,
+  DiatonicChord,
+  getDiatonicChords,
+  NOTE_SEMITONES,
+  CHROMATIC_SHARPS,
+} from "../data/musicTheory";
+import { audioEngine } from "../lib/audio";
 
 interface CircleOfFifthsProps {
   onSelectKey?: (key: NoteName) => void;
 }
 
-export const CircleOfFifths: React.FC<CircleOfFifthsProps> = ({ onSelectKey }) => {
-  const [selectedKey, setSelectedKey] = useState<CircleKeyData>(CIRCLE_OF_FIFTHS_DATA[0]); // C Major default
+export const CircleOfFifths: React.FC<CircleOfFifthsProps> = ({
+  onSelectKey,
+}) => {
+  const [selectedKey, setSelectedKey] = useState<CircleKeyData>(
+    CIRCLE_OF_FIFTHS_DATA[0],
+  ); // C Major default
   const diatonicChords = getDiatonicChords(selectedKey.major);
 
   const size = 480;
@@ -26,24 +30,24 @@ export const CircleOfFifths: React.FC<CircleOfFifthsProps> = ({ onSelectKey }) =
   const innerRadius = 80;
 
   const getDisplayMajor = (major: string) => {
-    if (major === 'B') return 'B/Cb';
-    if (major === 'F#') return 'F#/Gb';
-    if (major === 'Db') return 'Db/C#';
+    if (major === "B") return "B/Cb";
+    if (major === "F#") return "F#/Gb";
+    if (major === "Db") return "Db/C#";
     return major;
   };
 
   const getDisplayMinor = (minor: string) => {
-    if (minor === 'G#m') return 'G#m/Abm';
-    if (minor === 'D#m') return 'D#m/Ebm';
-    if (minor === 'Bbm') return 'Bbm/A#m';
+    if (minor === "G#m") return "G#m/Abm";
+    if (minor === "D#m") return "D#m/Ebm";
+    if (minor === "Bbm") return "Bbm/A#m";
     return minor;
   };
 
   const getDisplaySignature = (major: string, count: number, type: string) => {
-    if (major === 'B') return '5# / 7b';
-    if (major === 'F#') return '6# / 6b';
-    if (major === 'Db') return '5b / 7#';
-    if (count === 0) return '';
+    if (major === "B") return "5# / 7b";
+    if (major === "F#") return "6# / 6b";
+    if (major === "Db") return "5b / 7#";
+    if (count === 0) return "";
     return `${count}${type}`;
   };
 
@@ -56,7 +60,7 @@ export const CircleOfFifths: React.FC<CircleOfFifthsProps> = ({ onSelectKey }) =
 
   const playDiatonicChord = (chord: DiatonicChord) => {
     const notesToPlay = chord.notes.map((n) => ({ note: n, octave: 3 }));
-    audioEngine.playChordArpeggio(notesToPlay, 'guitar', 0.05);
+    audioEngine.playChordArpeggio(notesToPlay, "guitar", 0.05);
   };
 
   // Play full 4-chord progression
@@ -66,14 +70,14 @@ export const CircleOfFifths: React.FC<CircleOfFifthsProps> = ({ onSelectKey }) =
       if (!chord) return;
       const notesToPlay = chord.notes.map((n) => ({ note: n, octave: 3 }));
       setTimeout(() => {
-        audioEngine.playChordArpeggio(notesToPlay, 'guitar', 0.04);
+        audioEngine.playChordArpeggio(notesToPlay, "guitar", 0.04);
       }, i * 750);
     });
   };
 
   return (
-    <div className="w-full bg-[#131313] border border-white/10 rounded-lg p-6 flex flex-col gap-6 shadow-xl">
-      <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-white/5">
+    <div className="w-full bg-surface-container border border-outline-variant/30 rounded-lg p-6 flex flex-col gap-6 shadow-xl">
+      <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-outline-variant/10">
         <div>
           <h2 className="font-mono text-sm font-bold tracking-[0.2em] text-white uppercase flex items-center gap-2">
             <Sparkles size={16} className="text-blue-400" />
@@ -86,7 +90,14 @@ export const CircleOfFifths: React.FC<CircleOfFifthsProps> = ({ onSelectKey }) =
 
         <div className="flex items-center gap-2 bg-blue-500/10 border border-blue-500/30 px-3 py-1.5 rounded">
           <span className="text-xs font-mono text-blue-300">
-            Selected: <strong className="text-white">{getDisplayMajor(selectedKey.major)} Major</strong> / <span className="text-zinc-300">{getDisplayMinor(selectedKey.minor)}</span>
+            Selected:{" "}
+            <strong className="text-white">
+              {getDisplayMajor(selectedKey.major)} Major
+            </strong>{" "}
+            /{" "}
+            <span className="text-zinc-300">
+              {getDisplayMinor(selectedKey.minor)}
+            </span>
           </span>
         </div>
       </div>
@@ -95,7 +106,10 @@ export const CircleOfFifths: React.FC<CircleOfFifthsProps> = ({ onSelectKey }) =
         {/* SVG Interactive Wheel */}
         <div className="lg:col-span-6 flex justify-center">
           <div className="relative w-full max-w-[480px]">
-            <svg viewBox={`0 0 ${size} ${size}`} className="select-none w-full h-auto">
+            <svg
+              viewBox={`0 0 ${size} ${size}`}
+              className="select-none w-full h-auto"
+            >
               {/* Center decorative circle */}
               <circle
                 cx={center}
@@ -135,7 +149,11 @@ export const CircleOfFifths: React.FC<CircleOfFifthsProps> = ({ onSelectKey }) =
                   fontFamily="monospace"
                   textAnchor="middle"
                 >
-                  {getDisplaySignature(selectedKey.major, selectedKey.signatureCount, selectedKey.signatureType)}
+                  {getDisplaySignature(
+                    selectedKey.major,
+                    selectedKey.signatureCount,
+                    selectedKey.signatureType,
+                  )}
                 </text>
               )}
 
@@ -181,11 +199,15 @@ export const CircleOfFifths: React.FC<CircleOfFifthsProps> = ({ onSelectKey }) =
                 const mty = center + minorTextRadius * Math.sin(textAngle);
 
                 return (
-                  <g key={item.major} onClick={() => handleKeyClick(item)} className="cursor-pointer group">
+                  <g
+                    key={item.major}
+                    onClick={() => handleKeyClick(item)}
+                    className="cursor-pointer group"
+                  >
                     {/* Major Key Wedge */}
                     <path
                       d={outerPath}
-                      fill={isSelected ? '#2563eb' : '#27272a'}
+                      fill={isSelected ? "#2563eb" : "#27272a"}
                       stroke="#18181b"
                       strokeWidth="2"
                       className="transition-colors hover:fill-blue-500/70"
@@ -193,8 +215,10 @@ export const CircleOfFifths: React.FC<CircleOfFifthsProps> = ({ onSelectKey }) =
                     <text
                       x={tx}
                       y={ty + 1}
-                      fill={isSelected ? '#ffffff' : '#e4e4e7'}
-                      fontSize={getDisplayMajor(item.major).includes('/') ? "12" : "14"}
+                      fill={isSelected ? "#ffffff" : "#e4e4e7"}
+                      fontSize={
+                        getDisplayMajor(item.major).includes("/") ? "12" : "14"
+                      }
                       fontWeight="bold"
                       fontFamily="monospace"
                       textAnchor="middle"
@@ -205,19 +229,31 @@ export const CircleOfFifths: React.FC<CircleOfFifthsProps> = ({ onSelectKey }) =
                       <text
                         x={tx}
                         y={ty + 15}
-                        fill={isSelected ? '#bfdbfe' : '#71717a'}
-                        fontSize={getDisplaySignature(item.major, item.signatureCount, item.signatureType).includes('/') ? "7" : "9"}
+                        fill={isSelected ? "#bfdbfe" : "#71717a"}
+                        fontSize={
+                          getDisplaySignature(
+                            item.major,
+                            item.signatureCount,
+                            item.signatureType,
+                          ).includes("/")
+                            ? "7"
+                            : "9"
+                        }
                         fontFamily="monospace"
                         textAnchor="middle"
                       >
-                        {getDisplaySignature(item.major, item.signatureCount, item.signatureType)}
+                        {getDisplaySignature(
+                          item.major,
+                          item.signatureCount,
+                          item.signatureType,
+                        )}
                       </text>
                     )}
 
                     {/* Relative Minor Wedge */}
                     <path
                       d={innerPath}
-                      fill={isSelected ? '#1d4ed8' : '#1f1f23'}
+                      fill={isSelected ? "#1d4ed8" : "#1f1f23"}
                       stroke="#18181b"
                       strokeWidth="2"
                       className="transition-colors hover:fill-blue-600/70"
@@ -225,8 +261,10 @@ export const CircleOfFifths: React.FC<CircleOfFifthsProps> = ({ onSelectKey }) =
                     <text
                       x={mtx}
                       y={mty + 3}
-                      fill={isSelected ? '#93c5fd' : '#a1a1aa'}
-                      fontSize={getDisplayMinor(item.minor).includes('/') ? "8" : "9"}
+                      fill={isSelected ? "#93c5fd" : "#a1a1aa"}
+                      fontSize={
+                        getDisplayMinor(item.minor).includes("/") ? "8" : "9"
+                      }
                       fontFamily="monospace"
                       textAnchor="middle"
                     >
@@ -241,7 +279,7 @@ export const CircleOfFifths: React.FC<CircleOfFifthsProps> = ({ onSelectKey }) =
 
         {/* Diatonic Chords & Progression Analysis */}
         <div className="lg:col-span-6 flex flex-col gap-4">
-          <div className="bg-[#18181b] border border-white/5 rounded-lg p-4">
+          <div className="bg-surface-container-low border border-outline-variant/30 rounded-lg p-4">
             <h3 className="font-mono text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-3">
               Diatonic Harmony ({getDisplayMajor(selectedKey.major)} Major)
             </h3>
@@ -252,7 +290,7 @@ export const CircleOfFifths: React.FC<CircleOfFifthsProps> = ({ onSelectKey }) =
                 <div
                   key={chord.numeral}
                   onClick={() => playDiatonicChord(chord)}
-                  className="bg-[#201f1f] border border-white/10 hover:border-blue-500/40 rounded p-2 flex flex-col items-center cursor-pointer group transition-all"
+                  className="bg-surface-container border border-outline-variant/30 hover:border-blue-500/40 rounded p-2 flex flex-col items-center cursor-pointer group transition-all"
                 >
                   <span className="text-[10px] font-mono text-zinc-500 group-hover:text-blue-400">
                     {chord.numeral}
@@ -269,25 +307,33 @@ export const CircleOfFifths: React.FC<CircleOfFifthsProps> = ({ onSelectKey }) =
           </div>
 
           {/* Popular Chord Progressions */}
-          <div className="bg-[#18181b] border border-white/5 rounded-lg p-4">
+          <div className="bg-surface-container-low border border-outline-variant/30 rounded-lg p-4">
             <h3 className="font-mono text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-3">
               Common Progressions (Click to Audition)
             </h3>
 
             <div className="space-y-2">
               {[
-                { name: 'Pop Anthem (I - V - vi - IV)', indices: [0, 4, 5, 3] },
-                { name: 'Jazz Turnaround (ii - V - I)', indices: [1, 4, 0] },
-                { name: '50s Doo-Wop (I - vi - IV - V)', indices: [0, 5, 3, 4] },
-                { name: 'Andalusian Minor (i - VII - VI - V)', indices: [5, 4, 3, 2] },
+                { name: "Pop Anthem (I - V - vi - IV)", indices: [0, 4, 5, 3] },
+                { name: "Jazz Turnaround (ii - V - I)", indices: [1, 4, 0] },
+                {
+                  name: "50s Doo-Wop (I - vi - IV - V)",
+                  indices: [0, 5, 3, 4],
+                },
+                {
+                  name: "Andalusian Minor (i - VII - VI - V)",
+                  indices: [5, 4, 3, 2],
+                },
               ].map((prog) => {
-                const chordNames = prog.indices.map((idx) => diatonicChords[idx]?.name || '').join(' → ');
+                const chordNames = prog.indices
+                  .map((idx) => diatonicChords[idx]?.name || "")
+                  .join(" → ");
 
                 return (
                   <div
                     key={prog.name}
                     onClick={() => playProgression(prog.indices)}
-                    className="flex items-center justify-between bg-[#201f1f] hover:bg-[#27272a] border border-white/5 hover:border-blue-500/30 p-2.5 rounded cursor-pointer transition-colors"
+                    className="flex items-center justify-between bg-surface-container hover:bg-surface-container-high border border-outline-variant/20 hover:border-blue-500/30 p-2.5 rounded cursor-pointer transition-colors"
                   >
                     <div className="flex flex-col">
                       <span className="font-mono text-xs font-semibold text-zinc-200">

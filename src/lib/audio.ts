@@ -510,6 +510,13 @@ class AudioEngine {
     this.beatUnit = parseInt(parts[1], 10) || 4;
   }
 
+  public resetMetronomePosition() {
+    const ctx = this.getContext();
+    this.currentBeat = 0;
+    this.currentSubdivisionIndex = 0;
+    this.nextNoteTime = ctx.currentTime + 0.05;
+  }
+
   public stopMetronome() {
     this.isMetronomePlaying = false;
     if (this.metronomeTimerId !== null) {

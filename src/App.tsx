@@ -53,6 +53,18 @@ export function App() {
 
   // Metronome State
   const [metronomeBpm, setMetronomeBpm] = useState<number>(120);
+  const [metronomeIsPlaying, setMetronomeIsPlaying] = useState<boolean>(false);
+  const [metronomeBarCycleMode, setMetronomeBarCycleMode] =
+    useState<boolean>(false);
+
+  useEffect(() => {
+    const unsubscribe = audioEngine.onMetronomeStateChange((playing) => {
+      setMetronomeIsPlaying(playing);
+    });
+
+    setMetronomeIsPlaying(audioEngine.isRunning());
+    return () => unsubscribe();
+  }, []);
 
   // Sync Master Volume & Theme to engine and HTML element
   useEffect(() => {
@@ -164,7 +176,7 @@ export function App() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `fretmaster-practice-export-${getTodayDateString()}.json`;
+    a.download = `Mousi9ti-practice-export-${getTodayDateString()}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -335,7 +347,7 @@ export function App() {
       {
         id: "tab-tools",
         label: "Tools",
-        subtitle: "Circle, tuner, ear trainer",
+        subtitle: "Metronome, circle, tuner, ear trainer",
         tab: "tools",
         kind: "tab",
       },
@@ -472,6 +484,10 @@ export function App() {
             onEndSession={handleEndSession}
             onLogBpm={handleLogBpm}
             settings={settings}
+            metronomeIsPlaying={metronomeIsPlaying}
+            onMetronomePlayingChange={setMetronomeIsPlaying}
+            metronomeBarCycleMode={metronomeBarCycleMode}
+            onBarCycleModeChange={setMetronomeBarCycleMode}
           />
         )}
 
@@ -498,7 +514,18 @@ export function App() {
           />
         )}
 
-        {activeTab === "tools" && <ToolsPage />}
+        {activeTab === "tools" && (
+          <ToolsPage
+            metronomeBpm={metronomeBpm}
+            onBpmChange={setMetronomeBpm}
+            onLogBpm={handleLogBpm}
+            settings={settings}
+            metronomeIsPlaying={metronomeIsPlaying}
+            onMetronomePlayingChange={setMetronomeIsPlaying}
+            metronomeBarCycleMode={metronomeBarCycleMode}
+            onBarCycleModeChange={setMetronomeBarCycleMode}
+          />
+        )}
 
         {activeTab === "stats" && (
           <StatsPage sessions={sessions} streak={streak} />
