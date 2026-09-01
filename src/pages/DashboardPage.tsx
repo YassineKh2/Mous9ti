@@ -75,6 +75,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           currentNote={activeRandomNote}
           onNextNote={setActiveRandomNote}
           metronomeBpm={metronomeBpm}
+          instrumentView={instrumentView}
           showHighlight={showTargetNote}
           onToggleHighlight={() => setShowTargetNote(!showTargetNote)}
         />

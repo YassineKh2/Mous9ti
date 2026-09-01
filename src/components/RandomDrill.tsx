@@ -1,28 +1,32 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Pause, ArrowRight, Shuffle, Volume2 } from 'lucide-react';
-import { CHROMATIC_FLATS, CHROMATIC_SHARPS } from '../data/musicTheory';
-import { audioEngine } from '../lib/audio';
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Play, Pause, ArrowRight, Shuffle, Volume2 } from "lucide-react";
+import { CHROMATIC_FLATS, CHROMATIC_SHARPS } from "../data/musicTheory";
+import { audioEngine } from "../lib/audio";
 
 interface RandomDrillProps {
   currentNote: string;
   onNextNote: (note: string) => void;
   metronomeBpm: number;
+  instrumentView?: "guitar" | "piano" | "both";
   showHighlight?: boolean;
   onToggleHighlight?: () => void;
 }
 
-type AccidentalMode = 'both' | 'sharps' | 'flats' | 'naturals';
+type AccidentalMode = "both" | "sharps" | "flats" | "naturals";
 
 export const RandomDrill: React.FC<RandomDrillProps> = ({
   currentNote,
   onNextNote,
   metronomeBpm,
+  instrumentView = "guitar",
   showHighlight = true,
-  onToggleHighlight
+  onToggleHighlight,
 }) => {
-  const [accidentalMode, setAccidentalMode] = useState<AccidentalMode>('both');
+  const [accidentalMode, setAccidentalMode] = useState<AccidentalMode>("both");
   const [autoAdvance, setAutoAdvance] = useState<boolean>(false);
-  const [intervalType, setIntervalType] = useState<'1bar' | '2bars' | '4bars' | '5s'>('2bars');
+  const [intervalType, setIntervalType] = useState<
+    "1s" | "2s" | "5s" | "10s" | "15s"
+  >("5s");
   const [progress, setProgress] = useState<number>(0);
 
   const timerRef = useRef<number | null>(null);
@@ -31,11 +35,11 @@ export const RandomDrill: React.FC<RandomDrillProps> = ({
 
   const pickNextRandomNote = useCallback(() => {
     let pool: string[] = [];
-    if (accidentalMode === 'naturals') {
-      pool = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
-    } else if (accidentalMode === 'sharps') {
+    if (accidentalMode === "naturals") {
+      pool = ["C", "D", "E", "F", "G", "A", "B"];
+    } else if (accidentalMode === "sharps") {
       pool = CHROMATIC_SHARPS;
-    } else if (accidentalMode === 'flats') {
+    } else if (accidentalMode === "flats") {
       pool = CHROMATIC_FLATS;
     } else {
       pool = Array.from(new Set([...CHROMATIC_SHARPS, ...CHROMATIC_FLATS]));
@@ -43,20 +47,21 @@ export const RandomDrill: React.FC<RandomDrillProps> = ({
 
     // Pick a note different from current
     const filtered = pool.filter((n) => n !== currentNote);
-    const chosen = filtered[Math.floor(Math.random() * filtered.length)] || pool[0];
+    const chosen =
+      filtered[Math.floor(Math.random() * filtered.length)] || pool[0];
     onNextNote(chosen);
 
     // Audio cue
     audioEngine.playGuitarPluck(chosen, 3, 1.2);
   }, [accidentalMode, currentNote, onNextNote]);
 
-  // Calculate interval duration in milliseconds
+  // Calculate interval duration in milliseconds based on seconds, not bars
   useEffect(() => {
-    const secondsPerBeat = 60 / metronomeBpm;
-    if (intervalType === '1bar') durationRef.current = secondsPerBeat * 4 * 1000;
-    else if (intervalType === '2bars') durationRef.current = secondsPerBeat * 8 * 1000;
-    else if (intervalType === '4bars') durationRef.current = secondsPerBeat * 16 * 1000;
-    else durationRef.current = 5000;
+    if (intervalType === "1s") durationRef.current = 1000;
+    else if (intervalType === "2s") durationRef.current = 2000;
+    else if (intervalType === "5s") durationRef.current = 5000;
+    else if (intervalType === "10s") durationRef.current = 10000;
+    else durationRef.current = 15000;
   }, [intervalType, metronomeBpm]);
 
   // Auto-advance loop
@@ -110,8 +115,8 @@ export const RandomDrill: React.FC<RandomDrillProps> = ({
 
       {/* Center Note Display (Background-free, pure typography) */}
       <div className="flex flex-col items-center justify-center my-3 relative select-none">
-        <div 
-          className="group cursor-pointer flex flex-col items-center justify-center transition-transform hover:scale-105" 
+        <div
+          className="group cursor-pointer flex flex-col items-center justify-center transition-transform hover:scale-105"
           onClick={pickNextRandomNote}
         >
           <span className="font-sans text-6xl font-light tracking-tighter text-on-surface drop-shadow-sm">
@@ -124,18 +129,20 @@ export const RandomDrill: React.FC<RandomDrillProps> = ({
 
         <div className="flex items-center gap-2 mt-2">
           <span className="text-[10px] font-mono text-on-surface-variant tracking-wider">
-            LOCATE ON FRETBOARD
+            {instrumentView === "piano"
+              ? "LOCATE ON KEYBOARD"
+              : "LOCATE ON FRETBOARD"}
           </span>
           {onToggleHighlight && (
             <button
               onClick={onToggleHighlight}
               className={`text-[9px] font-mono px-2 py-0.5 rounded border transition-colors ${
-                showHighlight 
-                  ? 'bg-primary/20 text-primary border-primary/40' 
-                  : 'bg-surface-container-high text-on-surface-variant border-outline-variant/30 hover:text-on-surface'
+                showHighlight
+                  ? "bg-primary/20 text-primary border-primary/40"
+                  : "bg-surface-container-high text-on-surface-variant border-outline-variant/30 hover:text-on-surface"
               }`}
             >
-              {showHighlight ? 'HIDE HINT' : 'SHOW HINT'}
+              {showHighlight ? "HIDE HINT" : "SHOW HINT"}
             </button>
           )}
         </div>
@@ -158,23 +165,28 @@ export const RandomDrill: React.FC<RandomDrillProps> = ({
               onClick={() => setAutoAdvance(!autoAdvance)}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded font-mono text-[10px] tracking-wider border transition-all ${
                 autoAdvance
-                  ? 'bg-primary/20 text-primary border-primary/50'
-                  : 'bg-transparent text-on-surface-variant border-outline-variant/30 hover:text-on-surface'
+                  ? "bg-primary/20 text-primary border-primary/50"
+                  : "bg-transparent text-on-surface-variant border-outline-variant/30 hover:text-on-surface"
               }`}
             >
               {autoAdvance ? <Pause size={12} /> : <Play size={12} />}
-              <span>{autoAdvance ? 'AUTO: ON' : 'AUTO: OFF'}</span>
+              <span>{autoAdvance ? "AUTO: ON" : "AUTO: OFF"}</span>
             </button>
 
             <select
               value={intervalType}
-              onChange={(e) => setIntervalType(e.target.value as '1bar' | '2bars' | '4bars' | '5s')}
+              onChange={(e) =>
+                setIntervalType(
+                  e.target.value as "1s" | "2s" | "5s" | "10s" | "15s",
+                )
+              }
               className="bg-surface-container-low border border-outline-variant/30 rounded px-2 py-1.5 text-[10px] font-mono text-on-surface focus:outline-none cursor-pointer"
             >
-              <option value="1bar">1 Bar</option>
-              <option value="2bars">2 Bars</option>
-              <option value="4bars">4 Bars</option>
+              <option value="1s">1 Sec</option>
+              <option value="2s">2 Sec</option>
               <option value="5s">5 Sec</option>
+              <option value="10s">10 Sec</option>
+              <option value="15s">15 Sec</option>
             </select>
           </div>
 
