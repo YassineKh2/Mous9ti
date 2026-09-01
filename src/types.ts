@@ -1,0 +1,99 @@
+export type NoteName = 'C' | 'C#' | 'Db' | 'D' | 'D#' | 'Eb' | 'E' | 'F' | 'F#' | 'Gb' | 'G' | 'G#' | 'Ab' | 'A' | 'A#' | 'Bb' | 'B';
+
+export type NoteDisplayMode = 'name' | 'degree' | 'interval';
+
+export type AccidentalPreference = 'sharp' | 'flat' | 'both';
+
+export type InstrumentView = 'fretboard' | 'piano';
+
+export type MetronomeSound = 'click' | 'woodblock' | 'tick' | 'beep';
+
+export type MetronomeSubdivision = 'quarter' | 'eighth' | 'sixteenth' | 'triplet';
+
+export type TimeSignature = '2/4' | '3/4' | '4/4' | '5/4' | '6/8' | '7/8';
+
+export interface Tuning {
+  name: string;
+  strings: NoteName[]; // 6 strings from 6th (lowest) to 1st (highest) e.g., ['E', 'A', 'D', 'G', 'B', 'E']
+  octaves: number[]; // e.g. [2, 2, 3, 3, 3, 4]
+}
+
+export interface ScaleDefinition {
+  id: string;
+  name: string;
+  category: 'Major & Minor' | 'Modes' | 'Pentatonic & Blues' | 'Symmetrical & Exotic';
+  intervals: number[]; // semitones from root e.g. [0, 2, 4, 5, 7, 9, 11]
+  formula: string; // e.g. "W W H W W W H"
+  degrees: string[]; // e.g. ["1", "2", "3", "4", "5", "6", "7"]
+  intervalsNamed: string[]; // e.g. ["R", "M2", "M3", "P4", "P5", "M6", "M7"]
+  cagedBoxes?: {
+    [box: string]: { startFretOffset: number; endFretOffset: number };
+  };
+}
+
+export interface GuitarVoicing {
+  name: string;
+  positionLabel: string;
+  rootString: string;
+  frets: (number | null)[]; // 6 strings from 6th to 1st (null = muted, 0 = open)
+  fingers: (number | null)[]; // finger 1 to 4, or null
+  baseFret: number; // starting fret to display (1 if open)
+  barre?: { fret: number; fromString: number; toString: number; finger: number };
+}
+
+export interface ChordDefinition {
+  id: string;
+  name: string;
+  root: NoteName;
+  type: string;
+  symbol: string;
+  fullName: string;
+  intervals: number[];
+  formula: string;
+  notes?: NoteName[];
+  voicings: GuitarVoicing[];
+}
+
+export interface Exercise {
+  id: string;
+  title: string;
+  category: 'Technique' | 'Theory' | 'Rhythm' | 'Speed Building';
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+  suggestedBpm: number;
+  description: string;
+  tablature: string;
+  focusGoal: string;
+}
+
+export interface Session {
+  id: string;
+  date: string; // ISO date string "2026-08-31"
+  startTime: number; // Unix timestamp ms
+  endTime: number; // Unix timestamp ms
+  durationSeconds: number;
+  bpmsUsed: number[];
+  highestBpm: number;
+  scalesPracticed: string[]; // e.g. ["A Minor Pentatonic", "C Major"]
+  exercisesOpened: string[];
+  focus: string;
+  completed: boolean;
+}
+
+export interface StreakData {
+  currentStreak: number;
+  longestStreak: number;
+  lastVisitDate: string; // ISO date string "YYYY-MM-DD"
+  graceDaysUsed: number; // 0, 1, or 2
+  history: { date: string; practiced: boolean; durationMin?: number }[];
+}
+
+export interface AppSettings {
+  theme: 'dark' | 'light';
+  accentColor: string; // hex
+  defaultTuning: string;
+  fretCount: number; // 12, 15, 21, 22, 24
+  soundVolume: number; // 0-1
+  metronomeSound: MetronomeSound;
+  fretboardWood: 'ebony' | 'rosewood' | 'maple';
+  autoSaveSession: boolean;
+}
