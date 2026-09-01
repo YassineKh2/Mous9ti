@@ -197,7 +197,7 @@ export const ChordsPage: React.FC = () => {
             placeholder="Search chord (e.g., Am7)"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-transparent pl-10 pr-4 py-2 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none"
+            className="w-full bg-transparent pl-10 pr-4 py-2 text-sm font-mono text-on-surface placeholder:text-on-surface-variant focus:outline-none"
           />
         </div>
         <div className="flex bg-surface-container rounded border border-outline-variant/30 overflow-hidden text-xs font-mono font-bold">
