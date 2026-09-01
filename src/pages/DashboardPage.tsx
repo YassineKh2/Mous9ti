@@ -1,12 +1,22 @@
-import React, { useState } from 'react';
-import { NoteDisplayMode, NoteName, ScaleDefinition, StreakData, Tuning } from '../types';
-import { Metronome } from '../components/Metronome';
-import { RandomDrill } from '../components/RandomDrill';
-import { SessionWidget } from '../components/SessionWidget';
-import { Fretboard } from '../components/Fretboard';
-import { PianoKeyboard } from '../components/PianoKeyboard';
-import { SCALES_DATABASE, ALL_ROOT_NOTES, GUITAR_TUNINGS } from '../data/musicTheory';
-import { Guitar, Piano, Layers, Sparkles } from 'lucide-react';
+import React, { useState } from "react";
+import {
+  NoteDisplayMode,
+  NoteName,
+  ScaleDefinition,
+  StreakData,
+  Tuning,
+} from "../types";
+import { Metronome } from "../components/Metronome";
+import { RandomDrill } from "../components/RandomDrill";
+import { SessionWidget } from "../components/SessionWidget";
+import { Fretboard } from "../components/Fretboard";
+import { PianoKeyboard } from "../components/PianoKeyboard";
+import {
+  SCALES_DATABASE,
+  ALL_ROOT_NOTES,
+  GUITAR_TUNINGS,
+} from "../data/musicTheory";
+import { Guitar, Piano, Layers, Sparkles } from "lucide-react";
 
 interface DashboardPageProps {
   metronomeBpm: number;
@@ -27,21 +37,27 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   isSessionActive,
   onToggleSession,
   onEndSession,
-  onLogBpm
+  onLogBpm,
 }) => {
   // Instrument view toggle: guitar vs piano vs both
-  const [instrumentView, setInstrumentView] = useState<'guitar' | 'piano' | 'both'>('guitar');
+  const [instrumentView, setInstrumentView] = useState<
+    "guitar" | "piano" | "both"
+  >("guitar");
 
   // Scale overlay state
-  const [selectedRoot, setSelectedRoot] = useState<NoteName>('E');
-  const [selectedScale, setSelectedScale] = useState<ScaleDefinition | null>(SCALES_DATABASE[1]); // E Natural Minor
-  const [displayMode, setDisplayMode] = useState<NoteDisplayMode>('name');
+  const [selectedRoot, setSelectedRoot] = useState<NoteName>("A");
+  const [selectedScale, setSelectedScale] = useState<ScaleDefinition | null>(
+    SCALES_DATABASE.find((scale) => scale.id === "natural_minor") ??
+      SCALES_DATABASE[1] ??
+      null,
+  );
+  const [displayMode, setDisplayMode] = useState<NoteDisplayMode>("name");
   const [currentTuning, setCurrentTuning] = useState<Tuning>(GUITAR_TUNINGS[0]);
   const [fretCount, setFretCount] = useState<number>(22);
 
   // Active Random Note state
-  const [activeRandomNote, setActiveRandomNote] = useState<string>('F#');
-  const [showTargetNote, setShowTargetNote] = useState<boolean>(true);
+  const [activeRandomNote, setActiveRandomNote] = useState<string>("F#");
+  const [showTargetNote, setShowTargetNote] = useState<boolean>(false);
 
   return (
     <div className="space-y-6 pb-12">
@@ -70,7 +86,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           isSessionActive={isSessionActive}
           onToggleSession={onToggleSession}
           onEndSession={onEndSession}
-          currentScaleName={`${selectedRoot} ${selectedScale?.name || 'Chromatic'}`}
+          currentScaleName={`${selectedRoot} ${selectedScale?.name || "Chromatic"}`}
           highestBpmSession={metronomeBpm}
         />
       </div>
@@ -102,11 +118,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
             {/* Scale Picker */}
             <select
-              value={selectedScale?.id || 'none'}
+              value={selectedScale?.id || "none"}
               onChange={(e) => {
-                if (e.target.value === 'none') setSelectedScale(null);
+                if (e.target.value === "none") setSelectedScale(null);
                 else {
-                  const s = SCALES_DATABASE.find((sc) => sc.id === e.target.value);
+                  const s = SCALES_DATABASE.find(
+                    (sc) => sc.id === e.target.value,
+                  );
                   if (s) setSelectedScale(s);
                 }
               }}
@@ -124,11 +142,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           {/* Instrument Toggle (Guitar / Piano / Both) */}
           <div className="flex items-center gap-1 bg-surface-container-low p-1 rounded border border-outline-variant/30">
             <button
-              onClick={() => setInstrumentView('guitar')}
+              onClick={() => setInstrumentView("guitar")}
               className={`flex items-center gap-1.5 px-3 py-1 text-xs font-mono rounded transition-all ${
-                instrumentView === 'guitar'
-                  ? 'bg-primary text-on-primary font-bold shadow'
-                  : 'text-on-surface-variant hover:text-on-surface'
+                instrumentView === "guitar"
+                  ? "bg-primary text-on-primary font-bold shadow"
+                  : "text-on-surface-variant hover:text-on-surface"
               }`}
             >
               <Guitar size={14} />
@@ -136,11 +154,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             </button>
 
             <button
-              onClick={() => setInstrumentView('piano')}
+              onClick={() => setInstrumentView("piano")}
               className={`flex items-center gap-1.5 px-3 py-1 text-xs font-mono rounded transition-all ${
-                instrumentView === 'piano'
-                  ? 'bg-primary text-on-primary font-bold shadow'
-                  : 'text-on-surface-variant hover:text-on-surface'
+                instrumentView === "piano"
+                  ? "bg-primary text-on-primary font-bold shadow"
+                  : "text-on-surface-variant hover:text-on-surface"
               }`}
             >
               <Piano size={14} />
@@ -148,11 +166,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             </button>
 
             <button
-              onClick={() => setInstrumentView('both')}
+              onClick={() => setInstrumentView("both")}
               className={`flex items-center gap-1.5 px-3 py-1 text-xs font-mono rounded transition-all ${
-                instrumentView === 'both'
-                  ? 'bg-primary text-on-primary font-bold shadow'
-                  : 'text-on-surface-variant hover:text-on-surface'
+                instrumentView === "both"
+                  ? "bg-primary text-on-primary font-bold shadow"
+                  : "text-on-surface-variant hover:text-on-surface"
               }`}
             >
               <Layers size={14} />
@@ -162,7 +180,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         </div>
 
         {/* Fretboard View */}
-        {(instrumentView === 'guitar' || instrumentView === 'both') && (
+        {(instrumentView === "guitar" || instrumentView === "both") && (
           <Fretboard
             tuning={currentTuning}
             onTuningChange={setCurrentTuning}
@@ -177,7 +195,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         )}
 
         {/* Piano View */}
-        {(instrumentView === 'piano' || instrumentView === 'both') && (
+        {(instrumentView === "piano" || instrumentView === "both") && (
           <PianoKeyboard
             octaves={3}
             startOctave={3}

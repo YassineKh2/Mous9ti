@@ -228,12 +228,13 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
                       (activePlayingOctave === null ||
                         activePlayingOctave === currentOctave);
                     const isRoot =
+                      !!selectedScale &&
                       noteSemitone === NOTE_SEMITONES[selectedRoot] &&
                       (!exactVoicing || inChord);
 
                     const degreeInfo = scaleMap.get(noteSemitone);
 
-                    let label = spelledNote;
+                    let label: string = spelledNote;
                     if (selectedScale && scaleMap.has(noteSemitone)) {
                       label =
                         displayMode === "name"
@@ -325,10 +326,11 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
                                 (activePlayingOctave === null ||
                                   activePlayingOctave === currentOctave);
                               const bIsRoot =
+                                !!selectedScale &&
                                 bSemitone === NOTE_SEMITONES[selectedRoot] &&
                                 (!exactVoicing || bInChord);
                               const bDegreeInfo = scaleMap.get(bSemitone);
-                              let bLabel = bSpelledNote;
+                              let bLabel: string = bSpelledNote;
                               if (selectedScale && scaleMap.has(bSemitone)) {
                                 bLabel =
                                   displayMode === "name"
@@ -402,10 +404,11 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
                 (activePlayingOctave === null ||
                   activePlayingOctave === finalOctave);
               const isRoot =
+                !!selectedScale &&
                 noteSemitone === NOTE_SEMITONES[selectedRoot] &&
                 (!exactVoicing || inChord);
               const degreeInfo = scaleMap.get(noteSemitone);
-              let label = noteName;
+              let label: string = noteName;
               if (selectedScale && scaleMap.has(noteSemitone)) {
                 label =
                   displayMode === "name"

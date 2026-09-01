@@ -1,15 +1,15 @@
-import React, { useMemo, useCallback, useState, useEffect } from 'react';
-import { NoteDisplayMode, NoteName, ScaleDefinition, Tuning } from '../types';
-import { 
-  CHROMATIC_SHARPS, 
-  GUITAR_TUNINGS, 
-  INTERVAL_NAMES_MAP, 
+import React, { useMemo, useCallback, useState, useEffect } from "react";
+import { NoteDisplayMode, NoteName, ScaleDefinition, Tuning } from "../types";
+import {
+  CHROMATIC_SHARPS,
+  GUITAR_TUNINGS,
+  INTERVAL_NAMES_MAP,
   NOTE_SEMITONES,
   getScaleNotes,
-  getSpelledNote
-} from '../data/musicTheory';
-import { audioEngine } from '../lib/audio';
-import { Volume2 } from 'lucide-react';
+  getSpelledNote,
+} from "../data/musicTheory";
+import { audioEngine } from "../lib/audio";
+import { Volume2 } from "lucide-react";
 
 interface FretboardProps {
   tuning?: Tuning;
@@ -33,7 +33,7 @@ export const Fretboard: React.FC<FretboardProps> = ({
   onTuningChange,
   fretCount: controlledFretCount,
   onFretCountChange,
-  selectedRoot = 'C',
+  selectedRoot = "C",
   selectedScale = null,
   activeRandomNote = null,
   activePlayingNote = null,
@@ -42,19 +42,25 @@ export const Fretboard: React.FC<FretboardProps> = ({
   displayMode: controlledDisplayMode,
   onDisplayModeChange,
   activeCagedBox = null,
-  highlightedFrets = []
+  highlightedFrets = [],
 }) => {
   // Local state fallbacks for standalone/uncontrolled usage
-  const [internalTuning, setInternalTuning] = useState<Tuning>(controlledTuning || GUITAR_TUNINGS[0]);
-  const [internalFretCount, setInternalFretCount] = useState<number>(controlledFretCount || 22);
-  const [internalDisplayMode, setInternalDisplayMode] = useState<NoteDisplayMode>(controlledDisplayMode || 'name');
+  const [internalTuning, setInternalTuning] = useState<Tuning>(
+    controlledTuning || GUITAR_TUNINGS[0],
+  );
+  const [internalFretCount, setInternalFretCount] = useState<number>(
+    controlledFretCount || 22,
+  );
+  const [internalDisplayMode, setInternalDisplayMode] =
+    useState<NoteDisplayMode>(controlledDisplayMode || "name");
 
   useEffect(() => {
     if (controlledTuning) setInternalTuning(controlledTuning);
   }, [controlledTuning]);
 
   useEffect(() => {
-    if (controlledFretCount !== undefined) setInternalFretCount(controlledFretCount);
+    if (controlledFretCount !== undefined)
+      setInternalFretCount(controlledFretCount);
   }, [controlledFretCount]);
 
   useEffect(() => {
@@ -62,7 +68,8 @@ export const Fretboard: React.FC<FretboardProps> = ({
   }, [controlledDisplayMode]);
 
   const tuning = controlledTuning || internalTuning;
-  const fretCount = controlledFretCount !== undefined ? controlledFretCount : internalFretCount;
+  const fretCount =
+    controlledFretCount !== undefined ? controlledFretCount : internalFretCount;
   const displayMode = controlledDisplayMode || internalDisplayMode;
 
   const handleTuningSelect = (newTuning: Tuning) => {
@@ -81,16 +88,23 @@ export const Fretboard: React.FC<FretboardProps> = ({
   };
   // Compute scale notes and their degrees from root
   const scaleMap = useMemo(() => {
-    if (!selectedScale) return new Map<number, { noteName: NoteName; degree: string; interval: string }>();
+    if (!selectedScale)
+      return new Map<
+        number,
+        { noteName: NoteName; degree: string; interval: string }
+      >();
     const notes = getScaleNotes(selectedRoot, selectedScale);
-    const map = new Map<number, { noteName: NoteName; degree: string; interval: string }>();
+    const map = new Map<
+      number,
+      { noteName: NoteName; degree: string; interval: string }
+    >();
 
     notes.forEach((item) => {
       const noteSemitone = NOTE_SEMITONES[item.note];
       map.set(noteSemitone, {
         noteName: item.note,
         degree: item.degree,
-        interval: item.interval
+        interval: item.interval,
       });
     });
 
@@ -118,26 +132,36 @@ export const Fretboard: React.FC<FretboardProps> = ({
   }, [activePlayingNote]);
 
   // Determine if a given fret falls into the active CAGED box
-  const isInCagedBox = useCallback((fretNum: number) => {
-    if (!activeCagedBox || !selectedScale || !selectedScale.cagedBoxes || !selectedScale.cagedBoxes[activeCagedBox]) return true;
-    
-    const box = selectedScale.cagedBoxes[activeCagedBox];
-    const rootSemitone = NOTE_SEMITONES[selectedRoot];
-    const lowestStringNote = tuning.strings[0];
-    const lowestStringSemitone = NOTE_SEMITONES[lowestStringNote];
-    
-    const rootFretOnLowestString = (rootSemitone - lowestStringSemitone + 12) % 12;
-    
-    const startFret = rootFretOnLowestString + box.startFretOffset;
-    const endFret = rootFretOnLowestString + box.endFretOffset;
-    
-    for (let k = -2; k <= 3; k++) {
-      if (fretNum >= startFret + 12 * k && fretNum <= endFret + 12 * k) {
+  const isInCagedBox = useCallback(
+    (fretNum: number) => {
+      if (
+        !activeCagedBox ||
+        !selectedScale ||
+        !selectedScale.cagedBoxes ||
+        !selectedScale.cagedBoxes[activeCagedBox]
+      )
         return true;
+
+      const box = selectedScale.cagedBoxes[activeCagedBox];
+      const rootSemitone = NOTE_SEMITONES[selectedRoot];
+      const lowestStringNote = tuning.strings[0];
+      const lowestStringSemitone = NOTE_SEMITONES[lowestStringNote];
+
+      const rootFretOnLowestString =
+        (rootSemitone - lowestStringSemitone + 12) % 12;
+
+      const startFret = rootFretOnLowestString + box.startFretOffset;
+      const endFret = rootFretOnLowestString + box.endFretOffset;
+
+      for (let k = -2; k <= 3; k++) {
+        if (fretNum >= startFret + 12 * k && fretNum <= endFret + 12 * k) {
+          return true;
+        }
       }
-    }
-    return false;
-  }, [activeCagedBox, selectedScale, selectedRoot, tuning]);
+      return false;
+    },
+    [activeCagedBox, selectedScale, selectedRoot, tuning],
+  );
 
   // Play guitar note on click
   const handleNoteClick = (stringIdx: number, fret: number) => {
@@ -150,11 +174,14 @@ export const Fretboard: React.FC<FretboardProps> = ({
       root: selectedRoot,
       scale: selectedScale,
       scaleMap,
-      activeRandomNote
+      activeRandomNote,
     });
 
     const totalSemitonesFromOpen = openSemitone + fret;
-    const octave = baseOctave + Math.floor(totalSemitonesFromOpen / 12) - Math.floor(openSemitone / 12);
+    const octave =
+      baseOctave +
+      Math.floor(totalSemitonesFromOpen / 12) -
+      Math.floor(openSemitone / 12);
 
     audioEngine.playGuitarPluck(noteName, octave);
   };
@@ -176,14 +203,16 @@ export const Fretboard: React.FC<FretboardProps> = ({
             <select
               value={tuning.name}
               onChange={(e) => {
-                const found = GUITAR_TUNINGS.find((t) => t.name === e.target.value);
+                const found = GUITAR_TUNINGS.find(
+                  (t) => t.name === e.target.value,
+                );
                 if (found) handleTuningSelect(found);
               }}
               className="bg-surface-container-low border border-outline-variant/30 rounded px-2.5 py-1 text-xs font-mono text-on-surface focus:outline-none focus:border-primary/50 cursor-pointer"
             >
               {GUITAR_TUNINGS.map((t) => (
                 <option key={t.name} value={t.name}>
-                  {t.name} ({t.strings.join(' ')})
+                  {t.name} ({t.strings.join(" ")})
                 </option>
               ))}
             </select>
@@ -210,17 +239,21 @@ export const Fretboard: React.FC<FretboardProps> = ({
 
         {/* Display Mode Selector */}
         <div className="flex items-center gap-1.5 bg-surface-container-low p-1 rounded border border-outline-variant/30">
-          {(['name', 'degree', 'interval'] as NoteDisplayMode[]).map((mode) => (
+          {(["name", "degree", "interval"] as NoteDisplayMode[]).map((mode) => (
             <button
               key={mode}
               onClick={() => handleDisplayModeSelect(mode)}
               className={`px-2.5 py-1 text-[10px] font-mono tracking-wider rounded transition-colors uppercase ${
                 displayMode === mode
-                  ? 'bg-primary text-on-primary font-semibold shadow-sm'
-                  : 'text-on-surface-variant hover:text-on-surface hover:bg-outline-variant/10'
+                  ? "bg-primary text-on-primary font-semibold shadow-sm"
+                  : "text-on-surface-variant hover:text-on-surface hover:bg-outline-variant/10"
               }`}
             >
-              {mode === 'name' ? 'Note Name' : mode === 'degree' ? 'Degrees (1 3 5)' : 'Intervals (R M3)'}
+              {mode === "name"
+                ? "Note Name"
+                : mode === "degree"
+                  ? "Degrees (1 3 5)"
+                  : "Intervals (R M3)"}
             </button>
           ))}
         </div>
@@ -231,13 +264,15 @@ export const Fretboard: React.FC<FretboardProps> = ({
         <div className="min-w-[900px] relative bg-surface-container-low border border-outline-variant/30 rounded p-2.5">
           {/* Fret Numbers Header */}
           <div className="flex items-center mb-2 text-[10px] font-mono text-on-surface-variant">
-            <div className="w-10 shrink-0 text-center font-bold text-on-surface-variant">OPEN</div>
+            <div className="w-10 shrink-0 text-center font-bold text-on-surface-variant">
+              OPEN
+            </div>
             <div className="flex-1 flex items-center">
               {Array.from({ length: fretCount }).map((_, i) => (
                 <div
                   key={i}
                   className="flex-1 text-center font-bold text-on-surface-variant"
-                  style={{ minWidth: i > 12 ? '30px' : '38px' }}
+                  style={{ minWidth: i > 12 ? "30px" : "38px" }}
                 >
                   {i + 1}
                 </div>
@@ -260,7 +295,7 @@ export const Fretboard: React.FC<FretboardProps> = ({
                     <div
                       key={fretNum}
                       className="flex-1 h-full relative flex items-center justify-center"
-                      style={{ minWidth: fretNum > 12 ? '30px' : '38px' }}
+                      style={{ minWidth: fretNum > 12 ? "30px" : "38px" }}
                     >
                       {isSingle && (
                         <div className="w-2.5 h-2.5 rounded-full bg-outline-variant/60 shadow-inner"></div>
@@ -286,7 +321,10 @@ export const Fretboard: React.FC<FretboardProps> = ({
               const stringThickness = `${Math.max(1, reversedIdx * 0.5 + 1)}px`;
 
               return (
-                <div key={stringIdx} className="relative h-9 flex items-center group">
+                <div
+                  key={stringIdx}
+                  className="relative h-9 flex items-center group"
+                >
                   {/* String Physical Line */}
                   <div
                     className="absolute left-10 right-0 bg-outline-variant pointer-events-none z-10"
@@ -301,20 +339,34 @@ export const Fretboard: React.FC<FretboardProps> = ({
                         root: selectedRoot,
                         scale: selectedScale,
                         scaleMap,
-                        activeRandomNote
+                        activeRandomNote,
                       });
-                      const inScale = (selectedScale ? scaleMap.has(noteSemitone) : true) && isInCagedBox(0);
-                      const isRandomActive = normalizedRandomNoteSemitone === noteSemitone;
+                      const inScale =
+                        (selectedScale ? scaleMap.has(noteSemitone) : true) &&
+                        isInCagedBox(0);
+                      const isRandomActive =
+                        normalizedRandomNoteSemitone === noteSemitone;
                       const isPlayingActive =
-                        activePlayingString !== null && activePlayingString !== undefined && activePlayingFret !== null && activePlayingFret !== undefined
-                          ? activePlayingString === reversedIdx && activePlayingFret === 0
+                        activePlayingString !== null &&
+                        activePlayingString !== undefined &&
+                        activePlayingFret !== null &&
+                        activePlayingFret !== undefined
+                          ? activePlayingString === reversedIdx &&
+                            activePlayingFret === 0
                           : normalizedPlayingNoteSemitone === noteSemitone;
-                      const isRoot = noteSemitone === NOTE_SEMITONES[selectedRoot];
+                      const isRoot =
+                        !!selectedScale &&
+                        noteSemitone === NOTE_SEMITONES[selectedRoot];
 
-                      let displayText = noteName;
+                      let displayText: string = noteName;
                       if (selectedScale && scaleMap.has(noteSemitone)) {
                         const info = scaleMap.get(noteSemitone)!;
-                        displayText = displayMode === 'name' ? noteName : displayMode === 'degree' ? info.degree : info.interval;
+                        displayText =
+                          displayMode === "name"
+                            ? noteName
+                            : displayMode === "degree"
+                              ? info.degree
+                              : info.interval;
                       }
 
                       if (!inScale && !isRandomActive && !isPlayingActive) {
@@ -333,12 +385,12 @@ export const Fretboard: React.FC<FretboardProps> = ({
                           onClick={() => handleNoteClick(reversedIdx, 0)}
                           className={`w-6 h-6 rounded flex items-center justify-center font-mono text-[10px] font-bold transition-all shadow-md ${
                             isPlayingActive
-                              ? 'bg-secondary text-on-secondary font-black scale-125 z-40 shadow-2xl animate-pulse'
+                              ? "bg-secondary text-on-secondary font-black scale-125 z-40 shadow-2xl animate-pulse"
                               : isRandomActive
-                              ? 'bg-secondary text-on-secondary shadow-lg'
-                              : isRoot
-                              ? 'bg-primary text-on-primary font-black shadow-sm'
-                              : 'bg-inverse-surface text-inverse-on-surface border border-outline-variant/40 hover:opacity-90'
+                                ? "bg-secondary text-on-secondary shadow-lg"
+                                : isRoot
+                                  ? "bg-primary text-on-primary font-black shadow-sm"
+                                  : "bg-inverse-surface text-inverse-on-surface border border-outline-variant/40 hover:opacity-90"
                           }`}
                         >
                           {displayText}
@@ -356,53 +408,77 @@ export const Fretboard: React.FC<FretboardProps> = ({
                         root: selectedRoot,
                         scale: selectedScale,
                         scaleMap,
-                        activeRandomNote
+                        activeRandomNote,
                       });
-                      const inScale = (selectedScale ? scaleMap.has(noteSemitone) : true) && isInCagedBox(fretNum);
-                      const isRandomActive = normalizedRandomNoteSemitone === noteSemitone;
+                      const inScale =
+                        (selectedScale ? scaleMap.has(noteSemitone) : true) &&
+                        isInCagedBox(fretNum);
+                      const isRandomActive =
+                        normalizedRandomNoteSemitone === noteSemitone;
                       const isPlayingActive =
-                        activePlayingString !== null && activePlayingString !== undefined && activePlayingFret !== null && activePlayingFret !== undefined
-                          ? activePlayingString === reversedIdx && activePlayingFret === fretNum
+                        activePlayingString !== null &&
+                        activePlayingString !== undefined &&
+                        activePlayingFret !== null &&
+                        activePlayingFret !== undefined
+                          ? activePlayingString === reversedIdx &&
+                            activePlayingFret === fretNum
                           : normalizedPlayingNoteSemitone === noteSemitone;
-                      const isRoot = noteSemitone === NOTE_SEMITONES[selectedRoot];
+                      const isRoot =
+                        !!selectedScale &&
+                        noteSemitone === NOTE_SEMITONES[selectedRoot];
 
                       const isHighlightedFret = highlightedFrets.some(
-                        (hf) => hf.stringIdx === reversedIdx && hf.fret === fretNum
+                        (hf) =>
+                          hf.stringIdx === reversedIdx && hf.fret === fretNum,
                       );
 
-                      let displayText = noteName;
+                      let displayText: string = noteName;
                       if (selectedScale && scaleMap.has(noteSemitone)) {
                         const info = scaleMap.get(noteSemitone)!;
-                        displayText = displayMode === 'name' ? noteName : displayMode === 'degree' ? info.degree : info.interval;
+                        displayText =
+                          displayMode === "name"
+                            ? noteName
+                            : displayMode === "degree"
+                              ? info.degree
+                              : info.interval;
                       }
 
                       return (
                         <div
                           key={fretNum}
                           className="flex-1 h-full border-r border-outline-variant/40 relative flex items-center justify-center z-20"
-                          style={{ minWidth: fretNum > 12 ? '30px' : '38px' }}
+                          style={{ minWidth: fretNum > 12 ? "30px" : "38px" }}
                         >
-                          {inScale || isRandomActive || isPlayingActive || isHighlightedFret ? (
+                          {inScale ||
+                          isRandomActive ||
+                          isPlayingActive ||
+                          isHighlightedFret ? (
                             <button
-                              onClick={() => handleNoteClick(reversedIdx, fretNum)}
+                              onClick={() =>
+                                handleNoteClick(reversedIdx, fretNum)
+                              }
                               className={`w-6 h-6 rounded flex items-center justify-center font-mono text-[9px] font-bold transition-transform hover:scale-125 z-30 shadow-md ${
                                 isPlayingActive
-                                  ? 'bg-secondary text-on-secondary font-black scale-125 z-40 shadow-2xl animate-pulse'
+                                  ? "bg-secondary text-on-secondary font-black scale-125 z-40 shadow-2xl animate-pulse"
                                   : isRandomActive
-                                  ? 'bg-secondary text-on-secondary scale-110 shadow-lg'
-                                  : isRoot
-                                  ? 'bg-primary text-on-primary font-black shadow-sm'
-                                  : 'bg-inverse-surface text-inverse-on-surface border border-outline-variant/40 hover:opacity-90'
+                                    ? "bg-secondary text-on-secondary scale-110 shadow-lg"
+                                    : isRoot
+                                      ? "bg-primary text-on-primary font-black shadow-sm"
+                                      : "bg-inverse-surface text-inverse-on-surface border border-outline-variant/40 hover:opacity-90"
                               }`}
                             >
                               {displayText}
                             </button>
                           ) : (
                             <div
-                              onClick={() => handleNoteClick(reversedIdx, fretNum)}
+                              onClick={() =>
+                                handleNoteClick(reversedIdx, fretNum)
+                              }
                               className="w-full h-full cursor-pointer hover:bg-outline-variant/10 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
                             >
-                              <span className="font-mono text-[9px] text-on-surface-variant/40">{noteName}</span>
+                              <span className="font-mono text-[9px] text-on-surface-variant/40">
+                                {noteName}
+                              </span>
                             </div>
                           )}
                         </div>
@@ -447,7 +523,9 @@ export const Fretboard: React.FC<FretboardProps> = ({
               <span className="w-3.5 h-3.5 rounded bg-secondary text-on-secondary flex items-center justify-center font-bold text-[8px] shadow-sm">
                 {activeRandomNote}
               </span>
-              <span className="text-secondary font-semibold">Target Drill Note</span>
+              <span className="text-secondary font-semibold">
+                Target Drill Note
+              </span>
             </div>
           )}
         </div>
