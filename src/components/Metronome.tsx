@@ -359,7 +359,7 @@ export const Metronome: React.FC<MetronomeProps> = ({
 
       {/* Large Numerical BPM Display */}
       <div className="flex items-baseline justify-center gap-3 my-1">
-        <span className="font-sans text-6xl font-light tracking-tighter text-on-surface select-none">
+        <span className="font-mono text-6xl font-light tracking-tighter text-on-surface select-none">
           {bpm}
         </span>
         <span className="font-mono text-xs text-on-surface-variant tracking-widest uppercase">

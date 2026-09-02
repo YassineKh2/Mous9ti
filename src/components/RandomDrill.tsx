@@ -131,7 +131,7 @@ export const RandomDrill: React.FC<RandomDrillProps> = ({
           className="group cursor-pointer flex flex-col items-center justify-center transition-transform hover:scale-105"
           onClick={pickNextRandomNote}
         >
-          <span className="font-sans text-6xl font-light tracking-tighter text-on-surface drop-shadow-sm">
+          <span className="font-mono text-6xl font-light tracking-tighter text-on-surface drop-shadow-sm">
             {currentNote}
           </span>
           <span className="text-[10px] font-mono text-on-surface-variant group-hover:text-primary transition-colors mt-1">
