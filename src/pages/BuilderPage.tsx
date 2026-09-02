@@ -95,7 +95,7 @@ export const GUITAR_STRUM_PATTERNS: Record<
     getStrokes: () => [{ beat: 0, type: "up" }],
   },
   "fingerpicking-8ths": {
-    label: "Fingerpicking Arpeggio (8th Notes ♫ ♫ ♫ ♫)",
+    label: "Fingerpicking Arpeggio",
     shortLabel: "8th Fingerpicking",
     getStrokes: (beats) => {
       const strokes: StyleStroke[] = [];
@@ -224,11 +224,6 @@ export const GUITAR_STRUM_PATTERNS: Record<
       if (strokes.length === 0) strokes.push({ beat: 0, type: "down" });
       return strokes;
     },
-  },
-  arpeggiated: {
-    label: "Fingerpicking Arpeggio Roll",
-    shortLabel: "Arpeggio Roll",
-    getStrokes: () => [{ beat: 0, type: "arpeggio_up" }],
   },
 };
 
@@ -591,12 +586,14 @@ const SearchableSelect = ({
   value,
   options,
   onChange,
+  onCancel,
   placeholder,
   labelFn,
   className = "",
+  inline = false,
+  autoOpen = false,
 }: any) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [query, setQuery] = useState("");
+  const [isOpen, setIsOpen] = useState(Boolean(autoOpen));
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -612,12 +609,107 @@ const SearchableSelect = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const filtered = options.filter((o: any) =>
-    labelFn(o).toLowerCase().includes(query.toLowerCase()),
-  );
   const currentOption =
     options.find((o: any) => (o.id || o.type || o) === value) || value;
   const currentLabel = labelFn(currentOption);
+  const [query, setQuery] = useState(() => (inline ? currentLabel : ""));
+
+  const filtered = options.filter((o: any) =>
+    labelFn(o).toLowerCase().includes(query.toLowerCase()),
+  );
+
+  useEffect(() => {
+    if (autoOpen) {
+      setIsOpen(true);
+      setQuery(currentLabel);
+    }
+  }, [autoOpen, currentLabel]);
+
+  const resultsPanel = isOpen ? (
+    <div
+      className="absolute z-50 left-0 right-0 top-full mt-1 bg-surface border border-outline-variant/40 rounded-lg shadow-2xl overflow-hidden flex flex-col max-h-56"
+      style={{ minWidth: "180px" }}
+    >
+      {!inline && (
+        <div className="p-2 border-b border-outline-variant/30 flex items-center gap-2 bg-surface-container-low sticky top-0 z-10">
+          <Search size={14} className="text-on-surface-variant shrink-0" />
+          <input
+            type="text"
+            autoFocus
+            className="w-full bg-transparent text-sm focus:outline-none text-on-surface placeholder:text-on-surface-variant/60"
+            placeholder={placeholder}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </div>
+      )}
+      <div className="overflow-y-auto p-1 bg-surface-container-lowest divide-y divide-outline-variant/10 max-h-48">
+        {filtered.length === 0 ? (
+          <div className="px-3 py-4 text-xs text-center text-on-surface-variant">
+            No matches found
+          </div>
+        ) : (
+          filtered.map((o: any, idx: number) => {
+            const oValue = o.id || o.type || o;
+            const isSelected = oValue === value;
+            return (
+              <div
+                key={oValue || idx}
+                className={`px-3 py-2 text-sm cursor-pointer rounded text-on-surface truncate flex justify-between items-center transition-colors ${isSelected ? "bg-primary/15 text-primary font-bold" : "hover:bg-surface-container-highest"}`}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  onChange(oValue, o);
+                  setIsOpen(false);
+                }}
+              >
+                <span className="truncate">{labelFn(o)}</span>
+                {isSelected && (
+                  <Check size={14} className="text-primary shrink-0 ml-1.5" />
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  ) : null;
+
+  if (inline) {
+    return (
+      <div ref={containerRef} className={`relative ${className}`}>
+        <input
+          type="text"
+          autoFocus
+          className="w-full bg-surface border border-outline-variant/30 rounded-lg px-3 py-2 text-sm font-bold text-on-surface focus:outline-none focus:border-primary/50 transition-colors"
+          placeholder={placeholder}
+          value={query}
+          onFocus={(e) => {
+            e.currentTarget.select();
+            setQuery(currentLabel);
+            setIsOpen(true);
+          }}
+          onBlur={(e) => {
+            if (!containerRef.current?.contains(e.relatedTarget as Node)) {
+              setIsOpen(false);
+              onCancel?.();
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              e.preventDefault();
+              setIsOpen(false);
+              onCancel?.();
+            }
+          }}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setIsOpen(true);
+          }}
+        />
+        {resultsPanel}
+      </div>
+    );
+  }
 
   return (
     <div
@@ -637,54 +729,7 @@ const SearchableSelect = ({
           className="text-on-surface-variant flex-shrink-0 ml-2"
         />
       </div>
-      {isOpen && (
-        <div
-          className="absolute z-50 left-0 right-0 top-full mt-1 bg-surface border border-outline-variant/40 rounded-lg shadow-2xl overflow-hidden flex flex-col max-h-56"
-          style={{ minWidth: "180px" }}
-        >
-          <div className="p-2 border-b border-outline-variant/30 flex items-center gap-2 bg-surface-container-low sticky top-0 z-10">
-            <Search size={14} className="text-on-surface-variant shrink-0" />
-            <input
-              type="text"
-              autoFocus
-              className="w-full bg-transparent text-sm focus:outline-none text-on-surface placeholder:text-on-surface-variant/60"
-              placeholder={placeholder}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-          </div>
-          <div className="overflow-y-auto p-1 bg-surface-container-lowest divide-y divide-outline-variant/10 max-h-48">
-            {filtered.length === 0 ? (
-              <div className="px-3 py-4 text-xs text-center text-on-surface-variant">
-                No matches found
-              </div>
-            ) : (
-              filtered.map((o: any, idx: number) => {
-                const oValue = o.id || o.type || o;
-                const isSelected = oValue === value;
-                return (
-                  <div
-                    key={oValue || idx}
-                    className={`px-3 py-2 text-sm cursor-pointer rounded text-on-surface truncate flex justify-between items-center transition-colors ${isSelected ? "bg-primary/15 text-primary font-bold" : "hover:bg-surface-container-highest"}`}
-                    onClick={() => {
-                      onChange(oValue, o);
-                      setIsOpen(false);
-                    }}
-                  >
-                    <span className="truncate">{labelFn(o)}</span>
-                    {isSelected && (
-                      <Check
-                        size={14}
-                        className="text-primary shrink-0 ml-1.5"
-                      />
-                    )}
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-      )}
+      {resultsPanel}
     </div>
   );
 };
@@ -1483,34 +1528,25 @@ export const BuilderPage: React.FC = () => {
                       {/* Chord Info */}
                       <div className="flex-1 flex flex-col justify-center">
                         {editingItemId === item.id ? (
-                          <div className="flex flex-col gap-3 mb-2 bg-surface-container p-3 rounded-lg border border-primary/30">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-bold text-primary uppercase tracking-wider">
-                                Edit Chord
-                              </span>
-                              <button
-                                onClick={() => setEditingItemId(null)}
-                                className="text-xs bg-primary text-on-primary px-3 py-1 rounded shadow-sm hover:scale-105 transition-transform"
-                              >
-                                Done
-                              </button>
-                            </div>
-                            <div className="flex gap-2">
-                              <SearchableSelect
-                                value={`${item.root}-${item.type}`}
-                                options={ALL_CHORDS_OPTIONS}
-                                onChange={(val: string, obj: any) =>
-                                  handleUpdateItem(index, {
-                                    root: obj.root,
-                                    type: obj.type,
-                                    voicingIndex: undefined,
-                                  })
-                                }
-                                labelFn={(v: any) => v.label}
-                                placeholder="Search any chord (e.g. Cmaj7)..."
-                                className="flex-1"
-                              />
-                            </div>
+                          <div className="mb-1 max-w-sm">
+                            <SearchableSelect
+                              value={`${item.root}-${item.type}`}
+                              options={ALL_CHORDS_OPTIONS}
+                              onChange={(val: string, obj: any) => {
+                                handleUpdateItem(index, {
+                                  root: obj.root,
+                                  type: obj.type,
+                                  voicingIndex: undefined,
+                                });
+                                setEditingItemId(null);
+                              }}
+                              onCancel={() => setEditingItemId(null)}
+                              labelFn={(v: any) => v.label}
+                              placeholder="Search any chord (e.g. Cmaj7)..."
+                              className="w-full"
+                              inline={true}
+                              autoOpen={true}
+                            />
                           </div>
                         ) : (
                           <div
