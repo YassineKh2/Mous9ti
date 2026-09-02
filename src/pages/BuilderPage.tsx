@@ -25,7 +25,7 @@ import {
   CHROMATIC_SHARPS,
 } from "../data/musicTheory";
 import { CHORD_TYPES_CATALOG, getChordDefinition } from "../data/chordsData";
-import { NoteName } from "../types";
+import { KeyboardVoicing, NoteName } from "../types";
 import { ChordDiagram } from "../components/ChordDiagram";
 import { KeyboardChordDiagram } from "../components/KeyboardChordDiagram";
 import { audioEngine } from "../lib/audio";
@@ -237,12 +237,12 @@ export const KEYBOARD_PLAYING_STYLES: Record<
   }
 > = {
   sustained: {
-    label: "Sustained Block Chord (Held 𝅝)",
+    label: "Sustained Block Chord",
     shortLabel: "Sustained Chord",
     getStrokes: () => [{ beat: 0, type: "down" }],
   },
   "arpeggio-8ths": {
-    label: "8th-Note Melodic Arpeggio (Continuous Flow ♫)",
+    label: "8th-Note Melodic Arpeggio",
     shortLabel: "8th Arpeggio ♫",
     getStrokes: (beats) => {
       const strokes: StyleStroke[] = [];
@@ -256,7 +256,7 @@ export const KEYBOARD_PLAYING_STYLES: Record<
     },
   },
   "arpeggiator-16ths": {
-    label: "16th-Note Fast Arpeggiator (Synth / Virtuoso Run)",
+    label: "16th-Note Fast Arpeggiator",
     shortLabel: "16th Arpeggiator",
     getStrokes: (beats) => {
       const strokes: StyleStroke[] = [];
@@ -294,7 +294,7 @@ export const KEYBOARD_PLAYING_STYLES: Record<
     },
   },
   "pulse-quarters": {
-    label: "Rhythmic Comping (Quarter Notes ♩ ♩ ♩ ♩)",
+    label: "Rhythmic Comping",
     shortLabel: "Quarter Comping",
     getStrokes: (beats) => {
       const strokes: StyleStroke[] = [];
@@ -810,6 +810,93 @@ const ALL_CHORDS_OPTIONS = ALL_ROOT_NOTES.flatMap((root) =>
     label: `${root}${chord.symbol} - ${root} ${chord.name}`,
   })),
 );
+
+function buildKeyboardVoicing(
+  root: NoteName,
+  type: string,
+  voicingIndex: number,
+): KeyboardVoicing {
+  const chordDefinition = getChordDefinition(root, type);
+  const chordTypeInfo =
+    CHORD_TYPES_CATALOG.find((chord) => chord.type === type) ||
+    CHORD_TYPES_CATALOG[0];
+
+  const noteCount = chordDefinition.notes.length;
+  const rotation = noteCount > 0 ? voicingIndex % noteCount : 0;
+  const octaveLayer = noteCount > 0 ? Math.floor(voicingIndex / noteCount) : 0;
+
+  const getOrdinalSuffix = (num: number) => {
+    const tens = num % 100;
+    if (tens >= 11 && tens <= 13) return "th";
+    switch (num % 10) {
+      case 1:
+        return "st";
+      case 2:
+        return "nd";
+      case 3:
+        return "rd";
+      default:
+        return "th";
+    }
+  };
+
+  const inversionLabel =
+    rotation === 0
+      ? "Root Position"
+      : `${rotation}${getOrdinalSuffix(rotation)} Inversion`;
+  const layerLabel = octaveLayer > 0 ? ` (Octave ${octaveLayer + 1})` : "";
+  const voicingName = `${root}${chordTypeInfo.symbol} ${inversionLabel}${layerLabel}`;
+  const positionLabel = `${inversionLabel}${layerLabel}`;
+
+  const rotatedNotes = [
+    ...chordDefinition.notes.slice(rotation),
+    ...chordDefinition.notes.slice(0, rotation),
+  ];
+  const rotatedDegrees = [
+    ...chordTypeInfo.degrees.slice(rotation),
+    ...chordTypeInfo.degrees.slice(0, rotation),
+  ];
+
+  let currentOctave = 3 + Math.floor(voicingIndex / Math.max(1, noteCount));
+  let previousSemitone = NOTE_SEMITONES[rotatedNotes[0] || root];
+
+  const notes = rotatedNotes.map((note, index) => {
+    const semitone = NOTE_SEMITONES[note];
+    if (index > 0 && semitone < previousSemitone) {
+      currentOctave += 1;
+    }
+    previousSemitone = semitone;
+
+    return {
+      note,
+      octave: currentOctave,
+      degree:
+        rotatedDegrees[index] || chordTypeInfo.degrees[index] || `${index + 1}`,
+      isRoot: note === root,
+      hand:
+        index < Math.ceil(rotatedNotes.length / 2)
+          ? ("LH" as const)
+          : ("RH" as const),
+    };
+  });
+
+  const bassNote = notes[0]?.note || root;
+  const bassOctave = notes[0]?.octave || currentOctave;
+
+  return {
+    id: `${root}_${type}_keyboard_${voicingIndex}`,
+    name: voicingName,
+    shortLabel: positionLabel,
+    category: rotation === 0 ? "root" : "inversion",
+    positionLabel,
+    bassNote,
+    bassOctave,
+    notes,
+    startOctave: notes[0]?.octave || currentOctave,
+    octavesCount: Math.max(2, Math.ceil(notes.length / 2)),
+    description: `${positionLabel} keyboard voicing`,
+  };
+}
 
 export const BuilderPage: React.FC = () => {
   const [queue, setQueue] = useState<QueueItem[]>([]);
@@ -1824,14 +1911,28 @@ export const BuilderPage: React.FC = () => {
                 {getChordDefinition(selectedRoot, selectedType).voicings.map(
                   (voicing, idx) => (
                     <div key={idx} className="relative group/voicing">
-                      <ChordDiagram
-                        chordName={
-                          getChordDefinition(selectedRoot, selectedType).name
-                        }
-                        voicing={voicing}
-                        root={selectedRoot}
-                        instrument={selectedInstrument}
-                      />
+                      {isKeyboardOrSynth ? (
+                        <KeyboardChordDiagram
+                          chordName={
+                            getChordDefinition(selectedRoot, selectedType).name
+                          }
+                          voicing={buildKeyboardVoicing(
+                            selectedRoot,
+                            selectedType,
+                            idx,
+                          )}
+                          root={selectedRoot}
+                          instrument={selectedInstrument}
+                        />
+                      ) : (
+                        <ChordDiagram
+                          chordName={
+                            getChordDefinition(selectedRoot, selectedType).name
+                          }
+                          voicing={voicing}
+                          root={selectedRoot}
+                        />
+                      )}
                       <div className="absolute inset-0 bg-surface-container-highest/60 backdrop-blur-[2px] opacity-0 group-hover/voicing:opacity-100 transition-opacity rounded-xl flex items-center justify-center pointer-events-none">
                         <button
                           onClick={() => handleAddChord(idx)}
