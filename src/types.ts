@@ -82,6 +82,28 @@ export interface GuitarVoicing {
   };
 }
 
+export interface KeyboardVoicingNote {
+  note: NoteName;
+  octave: number;
+  degree: string;
+  isRoot?: boolean;
+  hand?: "LH" | "RH";
+}
+
+export interface KeyboardVoicing {
+  id: string;
+  name: string;
+  shortLabel: string;
+  category: "root" | "inversion" | "open" | "two-handed";
+  positionLabel: string;
+  bassNote: NoteName;
+  bassOctave: number;
+  notes: KeyboardVoicingNote[];
+  startOctave: number;
+  octavesCount: number;
+  description: string;
+}
+
 export interface ChordDefinition {
   id: string;
   name: string;
@@ -91,8 +113,9 @@ export interface ChordDefinition {
   fullName: string;
   intervals: number[];
   formula: string;
-  notes?: NoteName[];
+  notes: NoteName[];
   voicings: GuitarVoicing[];
+  keyboardVoicings?: KeyboardVoicing[];
 }
 
 export interface Exercise {

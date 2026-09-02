@@ -1,59 +1,56 @@
+import { Soundfont, Soundfont2 } from "smplr";
+import { SoundFont2 } from "soundfont2";
+
 // Web Audio API Sound Engine for Metronome, Guitar & Piano Synthesis
+
+type MetronomeSubdivision = "quarter" | "eighth" | "sixteenth" | "triplet";
+type MetronomeSound = "click" | "woodblock" | "tick" | "beep";
+type BeatCallback = (
+  beat: number,
+  isAccent: boolean,
+  isSubdivision: boolean,
+) => void;
 
 class AudioEngine {
   private ctx: AudioContext | null = null;
-  private isMuted: boolean = false;
+  private isMuted = false;
   private masterGain: GainNode | null = null;
+  private metronomeGain: GainNode | null = null;
+  private dryGain: GainNode | null = null;
+  private wetGain: GainNode | null = null;
+  private convolver: ConvolverNode | null = null;
+  private highpassFilter: BiquadFilterNode | null = null;
+  private compressor: DynamicsCompressorNode | null = null;
+
+  // Reverb Parameters
+  private reverbWet = 0.3;
+  private reverbDecaySec = 2.2;
+  private reverbEnabled = true;
+
+  // Soundfont & Instrument instances
+  private currentInstrument = "acoustic_guitar_nylon";
+  private guitarInstrument: any = null;
+  private pianoInstrument: any = null;
+  public isSoundfontLoading = false;
 
   // Metronome Scheduling State
-  private isMetronomePlaying: boolean = false;
+  private isMetronomePlaying = false;
   private metronomeTimerId: number | null = null;
-  private nextNoteTime: number = 0;
-  private currentSubdivisionIndex: number = 0;
-  private currentBeat: number = 0;
-  private bpm: number = 120;
-  private beatsPerBar: number = 4;
-  private beatUnit: number = 4;
-  private subdivision: "quarter" | "eighth" | "sixteenth" | "triplet" =
-    "quarter";
-  private soundType: "click" | "woodblock" | "tick" | "beep" = "click";
-  private volume: number = 1;
-  private onBeatCallback:
-    | ((beat: number, isAccent: boolean, isSubdivision: boolean) => void)
-    | null = null;
+  private nextNoteTime = 0;
+  private currentSubdivisionIndex = 0;
+  private currentBeat = 0;
+  private bpm = 120;
+  private beatsPerBar = 4;
+  private beatUnit = 4;
+  private subdivision: MetronomeSubdivision = "quarter";
+  private soundType: MetronomeSound = "click";
+  private volume = 0.8;
+  private onBeatCallback: BeatCallback | null = null;
   private metronomeStateListeners: Set<(isPlaying: boolean) => void> =
     new Set();
 
   constructor() {
     // AudioContext will be lazily initialized upon first user gesture
-  }
-
-  private getContext(): AudioContext {
-    if (!this.ctx) {
-      const AudioCtx =
-        window.AudioContext ||
-        (window as unknown as { webkitAudioContext: typeof AudioContext })
-          .webkitAudioContext;
-      this.ctx = new AudioCtx();
-      this.masterGain = this.ctx.createGain();
-      this.masterGain.gain.setValueAtTime(this.volume, this.ctx.currentTime);
-      this.masterGain.connect(this.ctx.destination);
-    }
-    if (this.ctx.state === "suspended") {
-      this.ctx.resume();
-    }
-    return this.ctx;
-  }
-
-  public setVolume(vol: number) {
-    this.volume = Math.max(0, Math.min(1, vol));
-    if (this.masterGain && this.ctx) {
-      this.masterGain.gain.setValueAtTime(this.volume, this.ctx.currentTime);
-    }
-  }
-
-  public setMuted(muted: boolean) {
-    this.isMuted = muted;
   }
 
   private notifyMetronomeStateListeners() {
@@ -70,11 +67,7 @@ class AudioEngine {
     };
   }
 
-  public setMetronomeBeatCallback(
-    onBeat:
-      | ((beat: number, isAccent: boolean, isSubdivision: boolean) => void)
-      | null,
-  ) {
+  public setMetronomeBeatCallback(onBeat: BeatCallback | null) {
     this.onBeatCallback = onBeat;
   }
 
@@ -87,6 +80,223 @@ class AudioEngine {
       soundType: this.soundType,
       currentBeat: this.currentBeat,
     };
+  }
+
+  private createImpulseResponse(
+    durationSec: number = 2.2,
+    decayRate: number = 2.5,
+  ): AudioBuffer | null {
+    if (!this.ctx) return null;
+    const sampleRate = this.ctx.sampleRate;
+    const length = Math.max(1, Math.floor(sampleRate * durationSec));
+    const impulse = this.ctx.createBuffer(2, length, sampleRate);
+    const left = impulse.getChannelData(0);
+    const right = impulse.getChannelData(1);
+
+    for (let i = 0; i < length; i++) {
+      const t = i / length;
+      const envelope = Math.pow(1 - t, decayRate);
+      left[i] = (Math.random() * 2 - 1) * envelope;
+      right[i] = (Math.random() * 2 - 1) * envelope;
+    }
+    return impulse;
+  }
+
+  private getContext(): AudioContext {
+    if (!this.ctx) {
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext })
+          .webkitAudioContext;
+      this.ctx = new AudioCtx();
+
+      this.masterGain = this.ctx.createGain();
+      this.masterGain.gain.setValueAtTime(this.volume, this.ctx.currentTime);
+
+      // Dedicated metronome bus bypasses reverb so click timing stays dry/clean.
+      this.metronomeGain = this.ctx.createGain();
+      this.metronomeGain.gain.setValueAtTime(this.volume, this.ctx.currentTime);
+
+      this.dryGain = this.ctx.createGain();
+      this.dryGain.gain.setValueAtTime(1.0, this.ctx.currentTime);
+
+      this.wetGain = this.ctx.createGain();
+      this.wetGain.gain.setValueAtTime(
+        this.reverbEnabled ? this.reverbWet : 0,
+        this.ctx.currentTime,
+      );
+
+      this.convolver = this.ctx.createConvolver();
+      const impulseBuffer = this.createImpulseResponse(
+        this.reverbDecaySec,
+        2.5,
+      );
+      if (impulseBuffer) {
+        this.convolver.buffer = impulseBuffer;
+      }
+
+      this.highpassFilter = this.ctx.createBiquadFilter();
+      this.highpassFilter.type = "highpass";
+      this.highpassFilter.frequency.setValueAtTime(65, this.ctx.currentTime);
+      this.highpassFilter.Q.setValueAtTime(0.707, this.ctx.currentTime);
+
+      this.compressor = this.ctx.createDynamicsCompressor();
+      this.compressor.threshold.setValueAtTime(-12, this.ctx.currentTime);
+      this.compressor.knee.setValueAtTime(8, this.ctx.currentTime);
+      this.compressor.ratio.setValueAtTime(3, this.ctx.currentTime);
+      this.compressor.attack.setValueAtTime(0.005, this.ctx.currentTime);
+      this.compressor.release.setValueAtTime(0.15, this.ctx.currentTime);
+
+      this.masterGain.connect(this.dryGain);
+      this.dryGain.connect(this.highpassFilter);
+
+      this.masterGain.connect(this.convolver);
+      this.convolver.connect(this.wetGain);
+      this.wetGain.connect(this.highpassFilter);
+
+      this.metronomeGain.connect(this.highpassFilter);
+
+      this.highpassFilter.connect(this.compressor);
+      this.compressor.connect(this.ctx.destination);
+    }
+
+    if (this.ctx.state === "suspended") {
+      this.ctx.resume();
+    }
+
+    return this.ctx;
+  }
+
+  public setVolume(vol: number) {
+    this.volume = Math.max(0, Math.min(1, vol));
+    if (this.masterGain && this.ctx) {
+      this.masterGain.gain.setValueAtTime(this.volume, this.ctx.currentTime);
+    }
+    if (this.metronomeGain && this.ctx) {
+      this.metronomeGain.gain.setValueAtTime(this.volume, this.ctx.currentTime);
+    }
+  }
+
+  public setMuted(muted: boolean) {
+    this.isMuted = muted;
+  }
+
+  // Reverb Controls
+  public setReverbWet(amount: number) {
+    this.reverbWet = Math.max(0, Math.min(1, amount));
+    if (this.wetGain && this.ctx) {
+      this.wetGain.gain.setValueAtTime(
+        this.reverbEnabled ? this.reverbWet : 0,
+        this.ctx.currentTime,
+      );
+    }
+  }
+
+  public setReverbEnabled(enabled: boolean) {
+    this.reverbEnabled = enabled;
+    if (this.wetGain && this.ctx) {
+      this.wetGain.gain.setValueAtTime(
+        this.reverbEnabled ? this.reverbWet : 0,
+        this.ctx.currentTime,
+      );
+    }
+  }
+
+  public setReverbDecay(seconds: number) {
+    this.reverbDecaySec = Math.max(0.4, Math.min(6.0, seconds));
+    if (this.convolver && this.ctx) {
+      const impulseBuffer = this.createImpulseResponse(
+        this.reverbDecaySec,
+        2.5,
+      );
+      if (impulseBuffer) {
+        this.convolver.buffer = impulseBuffer;
+      }
+    }
+  }
+
+  public getReverbState() {
+    return {
+      enabled: this.reverbEnabled,
+      wet: this.reverbWet,
+      decay: this.reverbDecaySec,
+    };
+  }
+
+  public stopAllNotes() {
+    try {
+      if (
+        this.guitarInstrument &&
+        typeof this.guitarInstrument.stop === "function"
+      ) {
+        this.guitarInstrument.stop();
+      }
+      if (
+        this.pianoInstrument &&
+        typeof this.pianoInstrument.stop === "function"
+      ) {
+        this.pianoInstrument.stop();
+      }
+    } catch {
+      // Ignore stop errors if not supported
+    }
+  }
+
+  public setSelectedInstrument(instrument: string) {
+    this.currentInstrument = instrument;
+  }
+
+  public getSelectedInstrument(): string {
+    return this.currentInstrument;
+  }
+
+  // Load High-Quality Soundfonts (Local or Remote)
+  public async loadSoundfonts(
+    guitarSource: string = "acoustic_guitar_nylon",
+    pianoSource: string = "acoustic_grand_piano",
+  ) {
+    if (!this.ctx) this.getContext();
+    if (!this.ctx) return;
+
+    this.isSoundfontLoading = true;
+    try {
+      const destination =
+        this.masterGain || this.compressor || this.ctx.destination;
+
+      if (guitarSource.toLowerCase().endsWith(".sf2")) {
+        this.guitarInstrument = Soundfont2(this.ctx as any, {
+          url: guitarSource,
+          createSoundfont: (data: ArrayBuffer) =>
+            new SoundFont2(new Uint8Array(data)),
+          destination,
+        });
+        await this.guitarInstrument.ready;
+        if (
+          this.guitarInstrument.instrumentNames &&
+          this.guitarInstrument.instrumentNames.length > 0
+        ) {
+          this.guitarInstrument.loadInstrument(
+            this.guitarInstrument.instrumentNames[0],
+          );
+        }
+      } else {
+        this.guitarInstrument = Soundfont(this.ctx as any, {
+          instrument: guitarSource,
+          destination,
+        });
+        await this.guitarInstrument.ready;
+      }
+
+      this.pianoInstrument = Soundfont(this.ctx as any, {
+        instrument: pianoSource,
+        destination,
+      });
+      await this.pianoInstrument.ready;
+    } catch (err) {
+      console.error("Failed to load soundfonts:", err);
+    } finally {
+      this.isSoundfontLoading = false;
+    }
   }
 
   // Convert Note Name + Octave to Frequency (Hz)
@@ -120,15 +330,25 @@ class AudioEngine {
   public playGuitarPluck(
     note: string,
     octave: number = 3,
-    duration: number = 2.0,
+    duration: number = 1.8,
     timeOffset: number = 0,
   ) {
     if (this.isMuted) return;
     const ctx = this.getContext();
-    const startTime = ctx.currentTime + timeOffset;
+    const startTime = ctx.currentTime + timeOffset + 0.02;
+
+    if (this.guitarInstrument) {
+      this.guitarInstrument.start({
+        note: note + octave,
+        time: startTime,
+        duration: Math.max(0.3, duration),
+        velocity: Math.floor(this.volume * 95),
+      });
+      return;
+    }
+
     const freq = this.noteToFrequency(note, octave);
 
-    // Fundamental & Harmonics
     const osc1 = ctx.createOscillator();
     const osc2 = ctx.createOscillator();
     const osc3 = ctx.createOscillator();
@@ -137,39 +357,38 @@ class AudioEngine {
     const gain2 = ctx.createGain();
     const gain3 = ctx.createGain();
 
-    // Body Filter (Lowpass with acoustic resonance)
     const filter = ctx.createBiquadFilter();
     filter.type = "lowpass";
-    filter.frequency.setValueAtTime(Math.min(freq * 6, 8000), startTime);
+    filter.frequency.setValueAtTime(Math.min(freq * 5, 5500), startTime);
     filter.frequency.exponentialRampToValueAtTime(
-      Math.max(freq * 1.5, 200),
+      Math.max(freq * 1.1, 160),
       startTime + duration,
     );
-    filter.Q.setValueAtTime(3.0, startTime);
+    filter.Q.setValueAtTime(0.707, startTime);
 
-    // Waveforms: triangle + soft sawtooth
     osc1.type = "triangle";
     osc1.frequency.setValueAtTime(freq, startTime);
 
     osc2.type = "sawtooth";
-    osc2.frequency.setValueAtTime(freq * 2, startTime); // 2nd harmonic
+    osc2.frequency.setValueAtTime(freq * 2, startTime);
 
     osc3.type = "sine";
-    osc3.frequency.setValueAtTime(freq * 3, startTime); // 3rd harmonic
+    osc3.frequency.setValueAtTime(freq * 3, startTime);
 
-    // Pluck attack & decay envelope
     const masterPluckGain = ctx.createGain();
-    masterPluckGain.gain.setValueAtTime(0, startTime);
-    masterPluckGain.gain.linearRampToValueAtTime(0.7, startTime + 0.005); // Rapid snap attack
-    masterPluckGain.gain.exponentialRampToValueAtTime(0.3, startTime + 0.15); // Initial transient decay
+    masterPluckGain.gain.setValueAtTime(0, ctx.currentTime);
+    masterPluckGain.gain.setValueAtTime(0.0001, startTime);
+    masterPluckGain.gain.linearRampToValueAtTime(0.28, startTime + 0.005);
+    masterPluckGain.gain.exponentialRampToValueAtTime(0.1, startTime + 0.12);
     masterPluckGain.gain.exponentialRampToValueAtTime(
       0.0001,
-      startTime + duration,
-    ); // Ringing tail
+      startTime + duration * 0.96,
+    );
+    masterPluckGain.gain.linearRampToValueAtTime(0, startTime + duration);
 
-    gain1.gain.setValueAtTime(0.8, startTime);
-    gain2.gain.setValueAtTime(0.3, startTime);
-    gain3.gain.setValueAtTime(0.15, startTime);
+    gain1.gain.setValueAtTime(0.7, startTime);
+    gain2.gain.setValueAtTime(0.25, startTime);
+    gain3.gain.setValueAtTime(0.1, startTime);
 
     osc1.connect(gain1);
     osc2.connect(gain2);
@@ -199,12 +418,23 @@ class AudioEngine {
   public playPianoNote(
     note: string,
     octave: number = 4,
-    duration: number = 2.5,
+    duration: number = 2.0,
     timeOffset: number = 0,
   ) {
     if (this.isMuted) return;
     const ctx = this.getContext();
-    const startTime = ctx.currentTime + timeOffset;
+    const startTime = ctx.currentTime + timeOffset + 0.02;
+
+    if (this.pianoInstrument) {
+      this.pianoInstrument.start({
+        note: note + octave,
+        time: startTime,
+        duration: Math.max(0.3, duration),
+        velocity: Math.floor(this.volume * 95),
+      });
+      return;
+    }
+
     const freq = this.noteToFrequency(note, octave);
 
     const osc1 = ctx.createOscillator();
@@ -213,23 +443,29 @@ class AudioEngine {
 
     const filter = ctx.createBiquadFilter();
     filter.type = "lowpass";
-    filter.frequency.setValueAtTime(Math.min(freq * 8, 10000), startTime);
+    filter.frequency.setValueAtTime(Math.min(freq * 6, 7000), startTime);
     filter.frequency.exponentialRampToValueAtTime(
-      Math.max(freq * 2, 350),
+      Math.max(freq * 1.5, 250),
       startTime + duration,
     );
+    filter.Q.setValueAtTime(0.707, startTime);
 
     const gainNode = ctx.createGain();
-    gainNode.gain.setValueAtTime(0, startTime);
-    gainNode.gain.linearRampToValueAtTime(0.75, startTime + 0.004);
-    gainNode.gain.exponentialRampToValueAtTime(0.4, startTime + 0.2);
-    gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+    gainNode.gain.setValueAtTime(0, ctx.currentTime);
+    gainNode.gain.setValueAtTime(0.0001, startTime);
+    gainNode.gain.linearRampToValueAtTime(0.3, startTime + 0.004);
+    gainNode.gain.exponentialRampToValueAtTime(0.15, startTime + 0.18);
+    gainNode.gain.exponentialRampToValueAtTime(
+      0.0001,
+      startTime + duration * 0.96,
+    );
+    gainNode.gain.linearRampToValueAtTime(0, startTime + duration);
 
     osc1.type = "sine";
     osc1.frequency.setValueAtTime(freq, startTime);
 
     osc2.type = "sine";
-    osc2.frequency.setValueAtTime(freq * 2.001, startTime); // Slight acoustic detune
+    osc2.frequency.setValueAtTime(freq * 2.001, startTime);
 
     osc3.type = "triangle";
     osc3.frequency.setValueAtTime(freq * 3, startTime);
@@ -239,8 +475,8 @@ class AudioEngine {
     const mix3 = ctx.createGain();
 
     mix1.gain.value = 0.8;
-    mix2.gain.value = 0.35;
-    mix3.gain.value = 0.15;
+    mix2.gain.value = 0.3;
+    mix3.gain.value = 0.1;
 
     osc1.connect(mix1);
     osc2.connect(mix2);
@@ -266,18 +502,226 @@ class AudioEngine {
     osc3.stop(startTime + duration);
   }
 
-  // Play chord arpeggio / strum
+  // Play a rich synthesized analog poly synth note
+  public playSynthNote(
+    note: string,
+    octave: number = 3,
+    duration: number = 2.0,
+    timeOffset: number = 0,
+    synthType: "poly" | "pad" | "lead" = "poly",
+  ) {
+    if (this.isMuted) return;
+    const ctx = this.getContext();
+    const startTime = ctx.currentTime + timeOffset + 0.02;
+    const freq = this.noteToFrequency(note, octave);
+
+    const osc1 = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
+    const oscSub = ctx.createOscillator();
+
+    const gainNode = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+    filter.type = "lowpass";
+
+    if (synthType === "pad") {
+      osc1.type = "sawtooth";
+      osc1.frequency.setValueAtTime(freq, startTime);
+      osc1.detune.setValueAtTime(-10, startTime);
+
+      osc2.type = "sawtooth";
+      osc2.frequency.setValueAtTime(freq, startTime);
+      osc2.detune.setValueAtTime(10, startTime);
+
+      oscSub.type = "sine";
+      oscSub.frequency.setValueAtTime(freq / 2, startTime);
+
+      filter.Q.setValueAtTime(1.8, startTime);
+      filter.frequency.setValueAtTime(Math.min(freq * 1.2, 350), startTime);
+      filter.frequency.exponentialRampToValueAtTime(
+        Math.min(freq * 4.5, 3800),
+        startTime + 0.35,
+      );
+      filter.frequency.exponentialRampToValueAtTime(
+        Math.max(freq * 1.5, 280),
+        startTime + duration,
+      );
+
+      gainNode.gain.setValueAtTime(0, ctx.currentTime);
+      gainNode.gain.setValueAtTime(0.0001, startTime);
+      gainNode.gain.linearRampToValueAtTime(0.22, startTime + 0.08);
+      gainNode.gain.exponentialRampToValueAtTime(0.18, startTime + 0.4);
+      gainNode.gain.exponentialRampToValueAtTime(
+        0.0001,
+        startTime + duration * 0.96,
+      );
+      gainNode.gain.linearRampToValueAtTime(0, startTime + duration);
+    } else if (synthType === "lead") {
+      osc1.type = "square";
+      osc1.frequency.setValueAtTime(freq, startTime);
+      osc1.detune.setValueAtTime(-5, startTime);
+
+      osc2.type = "sawtooth";
+      osc2.frequency.setValueAtTime(freq * 1.002, startTime);
+      osc2.detune.setValueAtTime(5, startTime);
+
+      oscSub.type = "triangle";
+      oscSub.frequency.setValueAtTime(freq, startTime);
+
+      filter.Q.setValueAtTime(3.5, startTime);
+      filter.frequency.setValueAtTime(Math.min(freq * 2.5, 900), startTime);
+      filter.frequency.exponentialRampToValueAtTime(
+        Math.min(freq * 8, 8000),
+        startTime + 0.03,
+      );
+      filter.frequency.exponentialRampToValueAtTime(
+        Math.max(freq * 2.0, 450),
+        startTime + duration * 0.7,
+      );
+
+      gainNode.gain.setValueAtTime(0, ctx.currentTime);
+      gainNode.gain.setValueAtTime(0.0001, startTime);
+      gainNode.gain.linearRampToValueAtTime(0.26, startTime + 0.008);
+      gainNode.gain.exponentialRampToValueAtTime(0.16, startTime + 0.15);
+      gainNode.gain.exponentialRampToValueAtTime(
+        0.0001,
+        startTime + duration * 0.96,
+      );
+      gainNode.gain.linearRampToValueAtTime(0, startTime + duration);
+    } else {
+      osc1.type = "sawtooth";
+      osc1.frequency.setValueAtTime(freq, startTime);
+      osc1.detune.setValueAtTime(-7, startTime);
+
+      osc2.type = "sawtooth";
+      osc2.frequency.setValueAtTime(freq, startTime);
+      osc2.detune.setValueAtTime(7, startTime);
+
+      oscSub.type = "triangle";
+      oscSub.frequency.setValueAtTime(freq / 2, startTime);
+
+      filter.Q.setValueAtTime(2.2, startTime);
+      filter.frequency.setValueAtTime(Math.min(freq * 1.5, 450), startTime);
+      filter.frequency.exponentialRampToValueAtTime(
+        Math.min(freq * 6, 5500),
+        startTime + 0.05,
+      );
+      filter.frequency.exponentialRampToValueAtTime(
+        Math.max(freq * 1.8, 320),
+        startTime + duration,
+      );
+
+      gainNode.gain.setValueAtTime(0, ctx.currentTime);
+      gainNode.gain.setValueAtTime(0.0001, startTime);
+      gainNode.gain.linearRampToValueAtTime(0.25, startTime + 0.012);
+      gainNode.gain.exponentialRampToValueAtTime(0.18, startTime + 0.22);
+      gainNode.gain.exponentialRampToValueAtTime(
+        0.0001,
+        startTime + duration * 0.96,
+      );
+      gainNode.gain.linearRampToValueAtTime(0, startTime + duration);
+    }
+
+    const mix1 = ctx.createGain();
+    const mix2 = ctx.createGain();
+    const mixSub = ctx.createGain();
+
+    mix1.gain.value = 0.45;
+    mix2.gain.value = 0.45;
+    mixSub.gain.value = 0.25;
+
+    osc1.connect(mix1);
+    osc2.connect(mix2);
+    oscSub.connect(mixSub);
+
+    mix1.connect(filter);
+    mix2.connect(filter);
+    mixSub.connect(filter);
+
+    filter.connect(gainNode);
+    if (this.masterGain) {
+      gainNode.connect(this.masterGain);
+    } else {
+      gainNode.connect(ctx.destination);
+    }
+
+    osc1.start(startTime);
+    osc2.start(startTime);
+    oscSub.start(startTime);
+
+    osc1.stop(startTime + duration);
+    osc2.stop(startTime + duration);
+    oscSub.stop(startTime + duration);
+  }
+
+  // Play a single note using any active or specified instrument
+  public playSingleInstrumentNote(
+    note: string,
+    octave: number = 3,
+    duration: number = 1.8,
+    timeOffset: number = 0,
+    instrument?: string,
+  ) {
+    const targetInstrument =
+      instrument || this.currentInstrument || "acoustic_guitar_nylon";
+    const isPiano =
+      targetInstrument.includes("piano") ||
+      targetInstrument.includes("grand") ||
+      targetInstrument === "piano";
+    const isSynthPad = targetInstrument === "synth_pad";
+    const isSynthLead = targetInstrument === "synth_lead";
+    const isSynth =
+      isSynthPad ||
+      isSynthLead ||
+      targetInstrument.includes("synth") ||
+      targetInstrument === "synthesizer";
+
+    if (isSynth) {
+      const synthType = isSynthPad ? "pad" : isSynthLead ? "lead" : "poly";
+      this.playSynthNote(note, octave, duration, timeOffset, synthType);
+    } else if (isPiano) {
+      this.playPianoNote(note, octave, duration, timeOffset);
+    } else {
+      this.playGuitarPluck(note, octave, duration, timeOffset);
+    }
+  }
+
+  // Play chord arpeggio / strum supporting all instrument types
   public playChordArpeggio(
     notes: { note: string; octave: number }[],
-    instrument: "guitar" | "piano" = "guitar",
+    instrument?: string,
     staggerSec: number = 0.06,
+    globalOffsetSec: number = 0,
+    noteDurationSec: number = 1.8,
   ) {
+    const targetInstrument =
+      instrument || this.currentInstrument || "acoustic_guitar_nylon";
+    const isPiano =
+      targetInstrument.includes("piano") ||
+      targetInstrument.includes("grand") ||
+      targetInstrument === "piano";
+    const isSynthPad = targetInstrument === "synth_pad";
+    const isSynthLead = targetInstrument === "synth_lead";
+    const isSynth =
+      isSynthPad ||
+      isSynthLead ||
+      targetInstrument.includes("synth") ||
+      targetInstrument === "synthesizer";
+
     notes.forEach((n, idx) => {
-      const offset = idx * staggerSec;
-      if (instrument === "guitar") {
-        this.playGuitarPluck(n.note, n.octave, 2.2, offset);
+      const offset = globalOffsetSec + idx * staggerSec;
+      if (isSynth) {
+        const synthType = isSynthPad ? "pad" : isSynthLead ? "lead" : "poly";
+        this.playSynthNote(
+          n.note,
+          n.octave,
+          noteDurationSec,
+          offset,
+          synthType,
+        );
+      } else if (isPiano) {
+        this.playPianoNote(n.note, n.octave, noteDurationSec, offset);
       } else {
-        this.playPianoNote(n.note, n.octave, 2.5, offset);
+        this.playGuitarPluck(n.note, n.octave, noteDurationSec, offset);
       }
     });
   }
@@ -309,20 +753,20 @@ class AudioEngine {
         time,
       );
 
-      const amp = isAccent ? 1.25 : isSubdivision ? 0.55 : 0.9;
+      const amp = isAccent ? 0.9 : isSubdivision ? 0.35 : 0.65;
       gain.gain.setValueAtTime(0, time);
       gain.gain.linearRampToValueAtTime(amp, time + 0.001);
       gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.045);
 
       osc.connect(filter);
       filter.connect(gain);
-      if (this.masterGain) gain.connect(this.masterGain);
+      if (this.metronomeGain) gain.connect(this.metronomeGain);
+      else if (this.masterGain) gain.connect(this.masterGain);
       else gain.connect(ctx.destination);
 
       osc.start(time);
       osc.stop(time + 0.05);
     } else if (this.soundType === "tick") {
-      // Mechanical Tick
       const bufferSize = ctx.sampleRate * 0.02;
       const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
       const output = buffer.getChannelData(0);
@@ -342,19 +786,19 @@ class AudioEngine {
       filter.Q.setValueAtTime(12, time);
 
       const gain = ctx.createGain();
-      const amp = isAccent ? 1.1 : isSubdivision ? 0.5 : 0.85;
+      const amp = isAccent ? 0.8 : isSubdivision ? 0.3 : 0.55;
       gain.gain.setValueAtTime(amp, time);
       gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.015);
 
       whiteNoise.connect(filter);
       filter.connect(gain);
-      if (this.masterGain) gain.connect(this.masterGain);
+      if (this.metronomeGain) gain.connect(this.metronomeGain);
+      else if (this.masterGain) gain.connect(this.masterGain);
       else gain.connect(ctx.destination);
 
       whiteNoise.start(time);
       whiteNoise.stop(time + 0.02);
     } else if (this.soundType === "beep") {
-      // Pure Beep
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
 
@@ -364,19 +808,19 @@ class AudioEngine {
         time,
       );
 
-      const amp = isAccent ? 1.0 : isSubdivision ? 0.45 : 0.75;
+      const amp = isAccent ? 0.7 : isSubdivision ? 0.25 : 0.5;
       gain.gain.setValueAtTime(0, time);
       gain.gain.linearRampToValueAtTime(amp, time + 0.002);
       gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.06);
 
       osc.connect(gain);
-      if (this.masterGain) gain.connect(this.masterGain);
+      if (this.metronomeGain) gain.connect(this.metronomeGain);
+      else if (this.masterGain) gain.connect(this.masterGain);
       else gain.connect(ctx.destination);
 
       osc.start(time);
       osc.stop(time + 0.07);
     } else {
-      // Crisp Digital Click (Default)
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
 
@@ -390,12 +834,13 @@ class AudioEngine {
         time + 0.012,
       );
 
-      const amp = isAccent ? 1.3 : isSubdivision ? 0.6 : 0.95;
+      const amp = isAccent ? 0.95 : isSubdivision ? 0.35 : 0.7;
       gain.gain.setValueAtTime(amp, time);
       gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.02);
 
       osc.connect(gain);
-      if (this.masterGain) gain.connect(this.masterGain);
+      if (this.metronomeGain) gain.connect(this.metronomeGain);
+      else if (this.masterGain) gain.connect(this.masterGain);
       else gain.connect(ctx.destination);
 
       osc.start(time);
@@ -403,7 +848,6 @@ class AudioEngine {
     }
   }
 
-  // High-Precision Lookahead Scheduler
   private getSubdivisionsPerBeat(): number {
     switch (this.subdivision) {
       case "eighth":
@@ -435,8 +879,8 @@ class AudioEngine {
   private scheduler() {
     if (!this.isMetronomePlaying) return;
     const ctx = this.getContext();
-    const lookaheadSec = 0.1; // 100ms lookahead
-    const scheduleIntervalMs = 25; // check every 25ms
+    const lookaheadSec = 0.1;
+    const scheduleIntervalMs = 25;
 
     while (this.nextNoteTime < ctx.currentTime + lookaheadSec) {
       const isBeatStart = this.currentSubdivisionIndex === 0;
@@ -447,13 +891,14 @@ class AudioEngine {
 
       if (this.onBeatCallback) {
         const beatNum = this.currentBeat;
+        const callback = this.onBeatCallback;
         const timeDiff = Math.max(
           0,
           (this.nextNoteTime - ctx.currentTime) * 1000,
         );
-        setTimeout(() => {
-          if (this.isMetronomePlaying && this.onBeatCallback) {
-            this.onBeatCallback(beatNum, isAccent, isSub);
+        window.setTimeout(() => {
+          if (this.isMetronomePlaying && this.onBeatCallback === callback) {
+            callback(beatNum, isAccent, isSub);
           }
         }, timeDiff);
       }
@@ -471,9 +916,9 @@ class AudioEngine {
   public startMetronome(
     bpm: number,
     timeSignature: string,
-    subdivision: "quarter" | "eighth" | "sixteenth" | "triplet",
-    sound: "click" | "woodblock" | "tick" | "beep",
-    onBeat?: (beat: number, isAccent: boolean, isSubdivision: boolean) => void,
+    subdivision: MetronomeSubdivision,
+    sound: MetronomeSound,
+    onBeat?: BeatCallback,
   ) {
     const ctx = this.getContext();
     this.bpm = bpm;
@@ -499,8 +944,8 @@ class AudioEngine {
   public updateMetronomeParams(
     bpm: number,
     timeSignature: string,
-    subdivision: "quarter" | "eighth" | "sixteenth" | "triplet",
-    sound: "click" | "woodblock" | "tick" | "beep",
+    subdivision: MetronomeSubdivision,
+    sound: MetronomeSound,
   ) {
     this.bpm = bpm;
     this.subdivision = subdivision;

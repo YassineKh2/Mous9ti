@@ -15,6 +15,7 @@ import { SettingsModal } from "./components/SettingsModal";
 import { DashboardPage } from "./pages/DashboardPage";
 import { ScalesPage } from "./pages/ScalesPage";
 import { ChordsPage } from "./pages/ChordsPage";
+import { BuilderPage } from "./pages/BuilderPage";
 import { ExercisesPage } from "./pages/ExercisesPage";
 import { ToolsPage } from "./pages/ToolsPage";
 import { StatsPage } from "./pages/StatsPage";
@@ -58,9 +59,11 @@ export function App() {
     useState<boolean>(false);
 
   useEffect(() => {
-    const unsubscribe = audioEngine.onMetronomeStateChange((playing) => {
-      setMetronomeIsPlaying(playing);
-    });
+    const unsubscribe = audioEngine.onMetronomeStateChange(
+      (playing: boolean) => {
+        setMetronomeIsPlaying(playing);
+      },
+    );
 
     setMetronomeIsPlaying(audioEngine.isRunning());
     return () => unsubscribe();
@@ -338,6 +341,13 @@ export function App() {
         kind: "tab",
       },
       {
+        id: "tab-builder",
+        label: "Builder",
+        subtitle: "Progression and arrangement builder",
+        tab: "builder",
+        kind: "tab",
+      },
+      {
         id: "tab-exercises",
         label: "Exercises",
         subtitle: "Technique and theory drills",
@@ -505,6 +515,8 @@ export function App() {
             onInitialChordHandled={() => setPendingChordSearch(null)}
           />
         )}
+
+        {activeTab === "builder" && <BuilderPage />}
 
         {activeTab === "exercises" && (
           <ExercisesPage
