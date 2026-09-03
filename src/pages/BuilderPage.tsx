@@ -26,8 +26,8 @@ import {
   Volume2,
   Save,
   Library,
-  Piano,
-  Layers,
+  Power,
+  Upload,
 } from "lucide-react";
 import {
   ALL_ROOT_NOTES,
@@ -1078,15 +1078,9 @@ export const BuilderPage: React.FC = () => {
   const [selectedInstrument, setSelectedInstrument] = useState<string>(
     "acoustic_guitar_nylon",
   );
-  const [instrumentView, setInstrumentView] = useState<
-    "guitar" | "piano" | "both"
-  >(() => {
-    return selectedInstrument.includes("piano") ||
-      selectedInstrument.includes("grand") ||
-      selectedInstrument === "electric_piano_1"
-      ? "piano"
-      : "guitar";
-  });
+  const [customSoundfontFile, setCustomSoundfontFile] = useState<File | null>(
+    null,
+  );
   const [reverbWet, setReverbWet] = useState<number>(30); // 0-100%
   const [isReverbActive, setIsReverbActive] = useState<boolean>(true);
   const [reverbSpace, setReverbSpace] = useState<"room" | "hall" | "ambient">(
@@ -1100,20 +1094,7 @@ export const BuilderPage: React.FC = () => {
       selectedInstrument.startsWith("synth_") ||
       selectedInstrument.includes("keys")
     );
-  }, [selectedInstrument]);
-
-  const handleInstrumentFamilyChange = (view: "guitar" | "piano" | "both") => {
-    setInstrumentView(view);
-
-    if (view === "guitar") {
-      setSelectedInstrument("acoustic_guitar_nylon");
-      return;
-    }
-
-    if (view === "piano") {
-      setSelectedInstrument("acoustic_grand_piano");
-    }
-  };
+  }, [selectedInstrument, customSoundfontFile]);
 
   useEffect(() => {
     if (isKeyboardOrSynth) {
@@ -1130,6 +1111,7 @@ export const BuilderPage: React.FC = () => {
   useEffect(() => {
     // Keep AudioEngine synchronized with active instrument
     audioEngine.setSelectedInstrument(selectedInstrument);
+    const soundfontSource = customSoundfontFile || selectedInstrument;
 
     // Load soundfonts depending on selection
     if (
@@ -1137,11 +1119,11 @@ export const BuilderPage: React.FC = () => {
       selectedInstrument.includes("grand") ||
       selectedInstrument === "electric_piano_1"
     ) {
-      audioEngine.loadBuilderSoundfont(selectedInstrument);
+      audioEngine.loadBuilderSoundfont(soundfontSource);
     } else if (!selectedInstrument.startsWith("synth_")) {
-      audioEngine.loadBuilderSoundfont(selectedInstrument);
+      audioEngine.loadBuilderSoundfont(soundfontSource);
     }
-  }, [selectedInstrument]);
+  }, [selectedInstrument, customSoundfontFile]);
 
   // Sync Reverb Parameters
   useEffect(() => {
@@ -1522,56 +1504,16 @@ export const BuilderPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
+    <div className="builder-page min-h-[calc(100vh-4rem)] p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
       {/* Header - Global Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="builder-global-header flex flex-wrap items-center justify-between gap-4">
         {/* Global Controls */}
-        <div className="flex flex-wrap items-center gap-3 bg-surface-container p-2.5 rounded-xl border border-outline-variant/30">
+        <div className="builder-global-controls flex flex-wrap items-center gap-3 bg-surface-container p-2.5 rounded-xl border border-outline-variant/30">
           {/* Instrument Selector */}
           <div className="flex flex-col px-2 border-b sm:border-b-0 sm:border-r border-outline-variant/30 pb-2 sm:pb-0">
             <span className="text-[10px] font-mono text-on-surface-variant uppercase tracking-wider mb-1">
               Instrument
             </span>
-            <div className="flex gap-1 bg-surface-container-low p-1 rounded border border-outline-variant/30 mb-2">
-              <button
-                type="button"
-                onClick={() => handleInstrumentFamilyChange("guitar")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-mono rounded transition-all ${
-                  instrumentView === "guitar"
-                    ? "bg-primary text-on-primary font-bold shadow"
-                    : "text-on-surface-variant hover:text-on-surface"
-                }`}
-              >
-                <Guitar size={14} />
-                <span>Guitar</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleInstrumentFamilyChange("piano")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-mono rounded transition-all ${
-                  instrumentView === "piano"
-                    ? "bg-primary text-on-primary font-bold shadow"
-                    : "text-on-surface-variant hover:text-on-surface"
-                }`}
-              >
-                <Piano size={14} />
-                <span>Piano</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleInstrumentFamilyChange("both")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-mono rounded transition-all ${
-                  instrumentView === "both"
-                    ? "bg-primary text-on-primary font-bold shadow"
-                    : "text-on-surface-variant hover:text-on-surface"
-                }`}
-              >
-                <Layers size={14} />
-                <span>Both</span>
-              </button>
-            </div>
             <div className="flex flex-col gap-1">
               <select
                 value={
@@ -1585,21 +1527,10 @@ export const BuilderPage: React.FC = () => {
                       ? "/zanderJazz.sf2"
                       : e.target.value;
 
+                  setCustomSoundfontFile(null);
                   setSelectedInstrument(nextValue);
-
-                  if (
-                    nextValue.includes("piano") ||
-                    nextValue.includes("grand") ||
-                    nextValue === "electric_piano_1"
-                  ) {
-                    setInstrumentView("piano");
-                  } else if (nextValue.startsWith("synth_")) {
-                    setInstrumentView("both");
-                  } else {
-                    setInstrumentView("guitar");
-                  }
                 }}
-                className="font-mono bg-surface border border-outline-variant/30 rounded-lg px-2.5 py-1 text-sm font-bold text-on-surface focus:outline-none focus:border-primary/50 cursor-pointer w-full max-w-[210px]"
+                className="builder-instrument-select font-mono bg-surface border border-outline-variant/30 rounded-lg px-2.5 py-1 text-sm font-bold text-on-surface focus:outline-none focus:border-primary/50 cursor-pointer w-full max-w-[210px]"
               >
                 <optgroup label="Guitars">
                   <option value="acoustic_guitar_nylon">
@@ -1631,17 +1562,49 @@ export const BuilderPage: React.FC = () => {
                   <option value="synth_lead">Punchy Synth Lead</option>
                 </optgroup>
                 <optgroup label="Custom">
-                  <option value="custom">Custom .sf2 URL</option>
+                  <option value="custom">Custom .sf2</option>
                 </optgroup>
               </select>
-              {selectedInstrument.endsWith(".sf2") && (
-                <input
-                  type="text"
-                  value={selectedInstrument}
-                  onChange={(e) => setSelectedInstrument(e.target.value)}
-                  placeholder="e.g. /my-soundfont.sf2"
-                  className="bg-surface border border-outline-variant/30 rounded-lg px-2 py-1 text-xs text-on-surface focus:outline-none focus:border-primary/50 w-full max-w-[210px]"
-                />
+              {selectedInstrument.toLowerCase().endsWith(".sf2") && (
+                <>
+                  {customSoundfontFile ? (
+                    <span className="text-[11px] text-on-surface-variant truncate max-w-[210px]">
+                      {customSoundfontFile.name}
+                    </span>
+                  ) : (
+                    <input
+                      type="text"
+                      value={selectedInstrument}
+                      onChange={(e) => setSelectedInstrument(e.target.value)}
+                      placeholder="e.g. /my-soundfont.sf2"
+                      className="bg-surface border border-outline-variant/30 rounded-lg px-2 py-1 text-xs text-on-surface focus:outline-none focus:border-primary/50 w-full max-w-[210px]"
+                    />
+                  )}
+                  <label className="flex items-center gap-1.5 cursor-pointer text-[11px] text-on-surface-variant hover:text-on-surface">
+                    <Upload size={13} />
+                    <span>
+                      {customSoundfontFile
+                        ? "Replace file"
+                        : "Upload .sf2 file"}
+                    </span>
+                    <input
+                      type="file"
+                      accept=".sf2,audio/x-soundfont,audio/sf2"
+                      className="sr-only"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        if (!file.name.toLowerCase().endsWith(".sf2")) {
+                          window.alert("Please choose a .sf2 SoundFont file.");
+                          e.target.value = "";
+                          return;
+                        }
+                        setCustomSoundfontFile(file);
+                        setSelectedInstrument(file.name);
+                      }}
+                    />
+                  </label>
+                </>
               )}
             </div>
           </div>
@@ -1663,14 +1626,22 @@ export const BuilderPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsReverbActive(!isReverbActive)}
-                className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold uppercase transition-colors cursor-pointer ${
+                className={`builder-reverb-toggle text-[9px] font-mono px-1.5 py-0.5 rounded font-bold uppercase transition-colors cursor-pointer ${
                   isReverbActive
                     ? "bg-primary/20 text-primary border border-primary/30"
                     : "bg-surface-container-highest text-on-surface-variant border border-outline-variant/20"
                 }`}
-                title="Toggle Reverb Effect"
+                title={isReverbActive ? "Turn reverb off" : "Turn reverb on"}
+                aria-label={
+                  isReverbActive ? "Turn reverb off" : "Turn reverb on"
+                }
               >
-                {isReverbActive ? "ON" : "BYPASS"}
+                <span className="builder-reverb-label-desktop">
+                  {isReverbActive ? "ON" : "BYPASS"}
+                </span>
+                <span className="builder-reverb-label-mobile">
+                  <Power size={13} strokeWidth={2.5} aria-hidden="true" />
+                </span>
               </button>
             </div>
 
@@ -1708,7 +1679,7 @@ export const BuilderPage: React.FC = () => {
           </div>
 
           {/* Tempo Controls */}
-          <div className="flex flex-col items-center px-2 border-r border-outline-variant/30">
+          <div className="builder-tempo-control flex flex-col items-center px-2 border-r border-outline-variant/30">
             <span className="text-[10px] font-mono text-on-surface-variant uppercase tracking-wider mb-1">
               Tempo
             </span>
@@ -1752,7 +1723,7 @@ export const BuilderPage: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left: Queue Management */}
-        <div className="lg:col-span-8 flex flex-col gap-4">
+        <div className="builder-queue lg:col-span-8 flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-bold text-on-surface flex items-center gap-2">
@@ -1795,10 +1766,31 @@ export const BuilderPage: React.FC = () => {
                 <Save size={14} />
                 Save
               </button>
+              <button
+                onClick={() => setIsPlaying(!isPlaying)}
+                disabled={queue.length === 0}
+                className={`builder-mobile-queue-play rounded-lg items-center justify-center transition-all ${
+                  isPlaying
+                    ? "bg-primary text-on-primary shadow-lg shadow-primary/20"
+                    : queue.length === 0
+                      ? "bg-surface-container-highest text-on-surface-variant opacity-50 cursor-not-allowed"
+                      : "bg-surface-container-highest text-on-surface hover:text-primary border border-outline-variant/30"
+                }`}
+                title={isPlaying ? "Pause" : "Play Loop"}
+                aria-label={
+                  isPlaying ? "Pause progression" : "Play progression"
+                }
+              >
+                {isPlaying ? (
+                  <Pause size={16} fill="currentColor" />
+                ) : (
+                  <Play size={16} fill="currentColor" className="ml-0.5" />
+                )}
+              </button>
             </div>
           </div>
 
-          <div className="bg-surface-container-low border border-outline-variant/30 rounded-xl flex flex-col overflow-hidden min-h-[400px]">
+          <div className="builder-queue-surface bg-surface-container-low border border-outline-variant/30 rounded-xl flex flex-col overflow-hidden min-h-[400px]">
             {queue.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-on-surface-variant">
                 <Music size={48} className="mb-4 opacity-20" />
@@ -2116,13 +2108,13 @@ export const BuilderPage: React.FC = () => {
         </div>
 
         {/* Right: Builder Panel */}
-        <div className="lg:col-span-4 flex flex-col gap-4">
+        <div className="builder-panel lg:col-span-4 flex flex-col gap-4">
           <h2 className="text-xl font-bold text-on-surface flex items-center gap-2 mt-2">
             <Settings2 size={20} className="text-primary" />
             Add to Queue
           </h2>
 
-          <div className=" bg-surface-container-low border border-outline-variant/30 rounded-xl p-5 flex flex-col gap-5">
+          <div className="builder-panel-card bg-surface-container-low border border-outline-variant/30 rounded-xl p-5 flex flex-col gap-5">
             {/* Unified Chord Search */}
             <div>
               <label className="block text-[10px] font-mono text-on-surface-variant uppercase tracking-wider mb-1.5">

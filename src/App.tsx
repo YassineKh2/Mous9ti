@@ -562,7 +562,7 @@ export function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 lg:pl-72 pt-4 px-4 lg:px-8 max-w-[1600px] w-full mx-auto">
+      <main className="flex-1 lg:pl-72 pt-4 pb-20 lg:pb-0 px-4 lg:px-8 max-w-[1600px] w-full mx-auto">
         {activeTab === "dashboard" && (
           <DashboardPage
             metronomeBpm={metronomeBpm}
