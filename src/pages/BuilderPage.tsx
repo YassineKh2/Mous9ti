@@ -987,7 +987,7 @@ export const BuilderPage: React.FC = () => {
   const [isSavedModalOpen, setIsSavedModalOpen] = useState(false);
 
   useEffect(() => {
-    const loaded = localStorage.getItem("mous9ti_saved_progressions");
+    const loaded = localStorage.getItem("Mousi9ti_saved_progressions");
     if (loaded) {
       try {
         setSavedProgressions(JSON.parse(loaded));
@@ -1020,7 +1020,7 @@ export const BuilderPage: React.FC = () => {
     const nextSaved = [newProgression, ...savedProgressions];
     setSavedProgressions(nextSaved);
     localStorage.setItem(
-      "mous9ti_saved_progressions",
+      "Mousi9ti_saved_progressions",
       JSON.stringify(nextSaved),
     );
   };
@@ -1040,7 +1040,7 @@ export const BuilderPage: React.FC = () => {
     );
     setSavedProgressions(nextSaved);
     localStorage.setItem(
-      "mous9ti_saved_progressions",
+      "Mousi9ti_saved_progressions",
       JSON.stringify(nextSaved),
     );
   };
@@ -1049,7 +1049,7 @@ export const BuilderPage: React.FC = () => {
     const nextSaved = savedProgressions.filter((p) => p.id !== id);
     setSavedProgressions(nextSaved);
     localStorage.setItem(
-      "mous9ti_saved_progressions",
+      "Mousi9ti_saved_progressions",
       JSON.stringify(nextSaved),
     );
   };

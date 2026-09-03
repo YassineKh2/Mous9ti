@@ -75,17 +75,7 @@ export const Navigation: React.FC<NavigationProps> = ({
       <aside className="hidden lg:flex fixed left-0 top-0 h-full w-72 bg-surface-container-lowest z-50 flex-col border-r border-outline-variant/30 shadow-2xl">
         {/* Brand Logo */}
         <div className="px-8 py-7 flex items-center gap-3 border-b border-outline-variant/30">
-          <div className="w-8 h-8 rounded-sm bg-primary/10 border border-primary/30 flex items-center justify-center text-primary shadow-sm">
-            <Music size={18} />
-          </div>
-          <div className="flex flex-col">
-            <span className="font-mono text-sm font-bold tracking-[0.25em] uppercase text-on-surface">
-              Mousi9ti
-            </span>
-            <span className="text-[9px] font-mono text-on-surface-variant tracking-wider">
-              Practice Better
-            </span>
-          </div>
+          <img src="Mousi9tiWhite.svg" alt="Mousi9ti Logo"></img>
         </div>
 
         {/* Navigation Links */}

@@ -75,7 +75,7 @@ export function saveSession(session: Session): void {
 }
 
 // Streak System Logic (chess.com-style with 2-day grace period)
-// 
+//
 // How it works:
 // - `recordPracticeDay` is the ONLY function that increments the streak.
 //   It is called when a session is logged. If the user hasn't practiced
@@ -116,18 +116,28 @@ export function getSavedStreak(): StreakData {
 function applyStreakDecay(data: StreakData, today: string): StreakData {
   // Find the last day the user actually practiced
   const history = data.history || [];
-  const lastPracticed = history.slice().reverse().find(h => h.practiced);
+  const lastPracticed = history
+    .slice()
+    .reverse()
+    .find((h) => h.practiced);
 
   if (!lastPracticed) {
     // No practice history at all — streak should be 0
-    const updated = { ...data, currentStreak: 0, graceDaysUsed: 0, lastVisitDate: today };
+    const updated = {
+      ...data,
+      currentStreak: 0,
+      graceDaysUsed: 0,
+      lastVisitDate: today,
+    };
     localStorage.setItem(STORAGE_KEYS.STREAK, JSON.stringify(updated));
     return updated;
   }
 
   const lastDate = new Date(lastPracticed.date);
   const nowDate = new Date(today);
-  const diffDays = Math.floor((nowDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+  const diffDays = Math.floor(
+    (nowDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24),
+  );
 
   let currentStreak = data.currentStreak;
   let graceDaysUsed = data.graceDaysUsed;
@@ -170,7 +180,13 @@ export function recordPracticeDay(dateStr: string, durationMin: number): void {
     const raw = localStorage.getItem(STORAGE_KEYS.STREAK);
     const streak: StreakData = raw
       ? JSON.parse(raw)
-      : { currentStreak: 0, longestStreak: 0, lastVisitDate: dateStr, graceDaysUsed: 0, history: [] };
+      : {
+          currentStreak: 0,
+          longestStreak: 0,
+          lastVisitDate: dateStr,
+          graceDaysUsed: 0,
+          history: [],
+        };
 
     const history = streak.history || [];
     const index = history.findIndex((h) => h.date === dateStr);
@@ -180,7 +196,8 @@ export function recordPracticeDay(dateStr: string, durationMin: number): void {
     if (index >= 0) {
       alreadyPracticedToday = history[index].practiced;
       history[index].practiced = true;
-      history[index].durationMin = (history[index].durationMin || 0) + durationMin;
+      history[index].durationMin =
+        (history[index].durationMin || 0) + durationMin;
     } else {
       history.push({ date: dateStr, practiced: true, durationMin });
     }
@@ -191,7 +208,10 @@ export function recordPracticeDay(dateStr: string, durationMin: number): void {
     // Only increment streak if this is the first session of the day
     if (!alreadyPracticedToday) {
       streak.currentStreak = (streak.currentStreak || 0) + 1;
-      streak.longestStreak = Math.max(streak.longestStreak || 0, streak.currentStreak);
+      streak.longestStreak = Math.max(
+        streak.longestStreak || 0,
+        streak.currentStreak,
+      );
       streak.graceDaysUsed = 0;
     }
 
