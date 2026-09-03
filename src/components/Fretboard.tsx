@@ -194,9 +194,9 @@ export const Fretboard: React.FC<FretboardProps> = ({
     <div className="w-full bg-surface-container border border-outline-variant/30 rounded-lg p-5 flex flex-col gap-4 shadow-xl select-none">
       {/* Controls Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-2 border-b border-outline-variant/20">
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex min-w-0 max-w-full flex-wrap items-center gap-4">
           {/* Tuning Selector */}
-          <div className="flex items-center gap-2">
+          <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto">
             <span className="text-[10px] font-mono text-on-surface-variant uppercase tracking-wider">
               Tuning:
             </span>
@@ -208,7 +208,7 @@ export const Fretboard: React.FC<FretboardProps> = ({
                 );
                 if (found) handleTuningSelect(found);
               }}
-              className="bg-surface-container-low border border-outline-variant/30 rounded px-2.5 py-1 text-xs font-mono text-on-surface focus:outline-none focus:border-primary/50 cursor-pointer"
+              className="bg-surface-container-low border border-outline-variant/30 rounded px-2.5 py-1 text-xs font-mono text-on-surface focus:outline-none focus:border-primary/50 cursor-pointer min-w-0 w-0 flex-1 sm:w-auto sm:flex-none"
             >
               {GUITAR_TUNINGS.map((t) => (
                 <option key={t.name} value={t.name}>

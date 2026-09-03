@@ -156,7 +156,7 @@ export const Navigation: React.FC<NavigationProps> = ({
       {/* Top Global Header (Sticky on desktop & mobile) */}
       <header className="sticky top-0 z-40 h-16 bg-surface/90 backdrop-blur-md border-b border-outline-variant/30 px-4 lg:px-8 flex items-center justify-between lg:pl-80">
         {/* Search Theory Input */}
-        <div className="flex items-center gap-3 w-full max-w-md">
+        <div className="flex items-center gap-3 w-full max-w-md mr-2">
           <div className="relative w-full">
             <Search
               size={16}
