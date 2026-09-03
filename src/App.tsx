@@ -23,6 +23,7 @@ import { ALL_ROOT_NOTES, SCALES_DATABASE } from "./data/musicTheory";
 import { CHORD_TYPES_CATALOG } from "./data/chordsData";
 import { EXERCISES_DATABASE } from "./data/exercisesData";
 import { GlobalSearchResult } from "./components/Navigation";
+import { GlobalSessionToast } from "./components/GlobalSessionToast";
 
 export function App() {
   type PendingScaleTarget = { scaleId: string; root: NoteName };
@@ -48,8 +49,30 @@ export function App() {
   // Practice & Sessions State
   const [sessions, setSessions] = useState<Session[]>(() => getSavedSessions());
   const [streak, setStreak] = useState<StreakData>(() => getSavedStreak());
-  const [isSessionActive, setIsSessionActive] = useState<boolean>(false);
-  const [activeSessionDuration, setActiveSessionDuration] = useState<number>(0);
+
+  // Initialize timer state from local storage
+  const [isSessionActive, setIsSessionActive] = useState<boolean>(() => {
+    return localStorage.getItem("Mousi9ti_session_is_active") === "true";
+  });
+  const [activeSessionDuration, setActiveSessionDuration] = useState<number>(
+    () => {
+      const acc = parseInt(
+        localStorage.getItem("Mousi9ti_session_accumulated") || "0",
+        10,
+      );
+      const isActive =
+        localStorage.getItem("Mousi9ti_session_is_active") === "true";
+      const startStr = localStorage.getItem("Mousi9ti_session_start_time");
+
+      if (isActive && startStr) {
+        const elapsed = Math.floor(
+          (Date.now() - parseInt(startStr, 10)) / 1000,
+        );
+        return acc + (elapsed > 0 ? elapsed : 0);
+      }
+      return acc;
+    },
+  );
   const [currentSessionBpms, setCurrentSessionBpms] = useState<number[]>([]);
 
   // Metronome State
@@ -79,12 +102,37 @@ export function App() {
     }
   }, [settings]);
 
+  // Prevent closing page if there is an active session
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // If session is active or has unlogged time, warn the user
+      if (isSessionActive || activeSessionDuration > 0) {
+        e.preventDefault();
+        e.returnValue =
+          "You have an active practice session. Are you sure you want to leave without logging it?";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isSessionActive, activeSessionDuration]);
+
   // Live session timer interval
   useEffect(() => {
     let interval: number | null = null;
+
     if (isSessionActive) {
       interval = window.setInterval(() => {
-        setActiveSessionDuration((prev) => prev + 1);
+        const acc = parseInt(
+          localStorage.getItem("Mousi9ti_session_accumulated") || "0",
+          10,
+        );
+        const startStr = localStorage.getItem("Mousi9ti_session_start_time");
+        if (startStr) {
+          const elapsed = Math.floor(
+            (Date.now() - parseInt(startStr, 10)) / 1000,
+          );
+          setActiveSessionDuration(acc + (elapsed > 0 ? elapsed : 0));
+        }
       }, 1000);
     }
     return () => {
@@ -94,12 +142,33 @@ export function App() {
 
   // Toggle active practice session
   const handleToggleSession = () => {
-    setIsSessionActive((prev) => !prev);
+    setIsSessionActive((prev) => {
+      const nextState = !prev;
+      if (nextState) {
+        localStorage.setItem("Mousi9ti_session_is_active", "true");
+        localStorage.setItem(
+          "Mousi9ti_session_start_time",
+          Date.now().toString(),
+        );
+      } else {
+        localStorage.setItem("Mousi9ti_session_is_active", "false");
+        localStorage.removeItem("Mousi9ti_session_start_time");
+        localStorage.setItem(
+          "Mousi9ti_session_accumulated",
+          activeSessionDuration.toString(),
+        );
+      }
+      return nextState;
+    });
   };
 
   // End and Log Practice Session
   const handleEndSession = useCallback(() => {
-    if (activeSessionDuration < 10) {
+    if (activeSessionDuration === 0) {
+      // Nothing to log, just clean up
+      localStorage.removeItem("Mousi9ti_session_is_active");
+      localStorage.removeItem("Mousi9ti_session_start_time");
+      localStorage.removeItem("Mousi9ti_session_accumulated");
       setIsSessionActive(false);
       setActiveSessionDuration(0);
       return;
@@ -137,6 +206,9 @@ export function App() {
       origin: { y: 0.6 },
     });
 
+    localStorage.removeItem("Mousi9ti_session_is_active");
+    localStorage.removeItem("Mousi9ti_session_start_time");
+    localStorage.removeItem("Mousi9ti_session_accumulated");
     setIsSessionActive(false);
     setActiveSessionDuration(0);
     setCurrentSessionBpms([]);
@@ -189,12 +261,15 @@ export function App() {
     localStorage.clear();
     setSessions([]);
     setStreak({
-      currentStreak: 1,
-      longestStreak: 1,
+      currentStreak: 0,
+      longestStreak: 0,
       lastVisitDate: getTodayDateString(),
       graceDaysUsed: 0,
       history: [],
     });
+    setIsSessionActive(false);
+    setActiveSessionDuration(0);
+    setCurrentSessionBpms([]);
     setIsSettingsOpen(false);
   };
 
@@ -347,13 +422,14 @@ export function App() {
         tab: "builder",
         kind: "tab",
       },
-      {
-        id: "tab-exercises",
-        label: "Exercises",
-        subtitle: "Technique and theory drills",
-        tab: "exercises",
-        kind: "tab",
-      },
+      // Hidden until further improvement
+      // {
+      //   id: "tab-exercises",
+      //   label: "Exercises",
+      //   subtitle: "Technique and theory drills",
+      //   tab: "exercises",
+      //   kind: "tab",
+      // },
       {
         id: "tab-tools",
         label: "Tools",
@@ -553,6 +629,16 @@ export function App() {
         onExportData={handleExportData}
         onClearData={handleClearData}
       />
+
+      {/* Global Persistent Timer Toast */}
+      {activeTab !== "dashboard" && (
+        <GlobalSessionToast
+          activeSessionDuration={activeSessionDuration}
+          isSessionActive={isSessionActive}
+          onToggleSession={handleToggleSession}
+          onEndSession={handleEndSession}
+        />
+      )}
     </div>
   );
 }

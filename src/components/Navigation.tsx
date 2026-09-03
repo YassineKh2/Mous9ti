@@ -63,7 +63,8 @@ export const Navigation: React.FC<NavigationProps> = ({
     { id: "scales", label: "SCALES", icon: <Sparkles size={18} /> },
     { id: "chords", label: "CHORDS", icon: <Grid3X3 size={18} /> },
     { id: "builder", label: "BUILDER", icon: <Settings size={18} /> },
-    { id: "exercises", label: "EXERCISES", icon: <Dumbbell size={18} /> },
+    //  Hidden until further improvement
+    // { id: "exercises", label: "EXERCISES", icon: <Dumbbell size={18} /> },
     { id: "tools", label: "TOOLS", icon: <Compass size={18} /> },
     { id: "stats", label: "STATS", icon: <BarChart3 size={18} /> },
   ];

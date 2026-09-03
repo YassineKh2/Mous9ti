@@ -109,16 +109,12 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({
     <div className="space-y-6 pb-12">
       {/* Header & Sub-tool Navigation Tabs */}
       <div className="bg-surface-container border border-outline-variant/30 rounded-lg p-6 flex flex-col gap-4 shadow-xl">
-        <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-outline-variant/10">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-outline-variant/10">
           <div>
             <h1 className="font-mono text-base font-bold tracking-[0.2em] text-on-surface uppercase flex items-center gap-2">
               <Compass size={18} className="text-primary" />
               Music Theory & Ear Tools
             </h1>
-            <p className="text-xs text-on-surface-variant mt-1">
-              Harmonic circle analysis, audio pitch references, and interval
-              training
-            </p>
           </div>
 
           <div className="flex items-center gap-1.5 bg-surface-container-low p-1 rounded-lg border border-outline-variant/30 flex-wrap">

@@ -44,90 +44,15 @@ export function saveSettings(settings: AppSettings): void {
   }
 }
 
-// Initial dummy sessions if user is new, so analytics charts look rich like the screenshot!
-const SEED_SESSIONS: Session[] = [
-  {
-    id: "seed-1",
-    date: "2026-08-30",
-    startTime: Date.now() - 86400000,
-    endTime: Date.now() - 86400000 + 45 * 60 * 1000,
-    durationSeconds: 45 * 60,
-    bpmsUsed: [120, 140, 160],
-    highestBpm: 160,
-    scalesPracticed: ["C Harmonic Minor", "A Minor Pentatonic"],
-    exercisesOpened: ["spider_1234"],
-    focus: "C Harmonic Minor / Alternate Picking",
-    completed: true,
-  },
-  {
-    id: "seed-2",
-    date: "2026-08-29",
-    startTime: Date.now() - 2 * 86400000,
-    endTime: Date.now() - 2 * 86400000 + 60 * 60 * 1000,
-    durationSeconds: 60 * 60,
-    bpmsUsed: [140],
-    highestBpm: 140,
-    scalesPracticed: ["Dorian Mode"],
-    exercisesOpened: ["spider_permutation_1324"],
-    focus: "Drop D Riffing / Syncopation",
-    completed: true,
-  },
-  {
-    id: "seed-3",
-    date: "2026-08-28",
-    startTime: Date.now() - 3 * 86400000,
-    endTime: Date.now() - 3 * 86400000 + 30 * 60 * 1000,
-    durationSeconds: 30 * 60,
-    bpmsUsed: [180, 200],
-    highestBpm: 200,
-    scalesPracticed: ["Major (Ionian)"],
-    exercisesOpened: ["string_skipping_pentatonic"],
-    focus: "Sweep Picking Arpeggios",
-    completed: true,
-  },
-  {
-    id: "seed-4",
-    date: "2026-08-27",
-    startTime: Date.now() - 4 * 86400000,
-    endTime: Date.now() - 4 * 86400000 + 45 * 60 * 1000,
-    durationSeconds: 45 * 60,
-    bpmsUsed: [100],
-    highestBpm: 100,
-    scalesPracticed: ["Minor Pentatonic"],
-    exercisesOpened: ["scale_sequences_in_3rds"],
-    focus: "Pentatonic Modes",
-    completed: true,
-  },
-  {
-    id: "seed-5",
-    date: "2026-08-26",
-    startTime: Date.now() - 5 * 86400000,
-    endTime: Date.now() - 5 * 86400000 + 50 * 60 * 1000,
-    durationSeconds: 50 * 60,
-    bpmsUsed: [120, 150],
-    highestBpm: 150,
-    scalesPracticed: ["Dorian Mode", "Blues Scale"],
-    exercisesOpened: ["hammer_pull_legato"],
-    focus: "A Dorian Legato Runs",
-    completed: true,
-  },
-];
-
 export function getSavedSessions(): Session[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.SESSIONS);
-    if (!raw) {
-      localStorage.setItem(
-        STORAGE_KEYS.SESSIONS,
-        JSON.stringify(SEED_SESSIONS),
-      );
-      return SEED_SESSIONS;
-    }
+    if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : SEED_SESSIONS;
+    return Array.isArray(parsed) ? parsed : [];
   } catch (e) {
     console.error("Failed to get sessions", e);
-    return SEED_SESSIONS;
+    return [];
   }
 }
 
@@ -150,11 +75,20 @@ export function saveSession(session: Session): void {
 }
 
 // Streak System Logic (chess.com-style with 2-day grace period)
+// 
+// How it works:
+// - `recordPracticeDay` is the ONLY function that increments the streak.
+//   It is called when a session is logged. If the user hasn't practiced
+//   today yet, the streak goes up by 1.
+// - `getSavedStreak` is called on app load / refresh. It checks if the
+//   streak has decayed (missed too many days since last practice) and
+//   resets it if needed, but NEVER increments.
+
 export function getSavedStreak(): StreakData {
   const today = getTodayDateString();
   const defaultStreak: StreakData = {
-    currentStreak: 12,
-    longestStreak: 45,
+    currentStreak: 0,
+    longestStreak: 0,
     lastVisitDate: today,
     graceDaysUsed: 0,
     history: [],
@@ -163,95 +97,106 @@ export function getSavedStreak(): StreakData {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.STREAK);
     if (!raw) {
-      // Generate last 7 days history seed
-      const hist = [];
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const ds = d.toISOString().split("T")[0];
-        hist.push({
-          date: ds,
-          practiced: i !== 1,
-          durationMin: i !== 1 ? 40 + i * 5 : 0,
-        });
-      }
-      defaultStreak.history = hist;
       localStorage.setItem(STORAGE_KEYS.STREAK, JSON.stringify(defaultStreak));
       return defaultStreak;
     }
 
     const data: StreakData = JSON.parse(raw);
-    return calculateUpdatedStreak(data, today);
+    return applyStreakDecay(data, today);
   } catch (e) {
     console.error("Failed to get streak", e);
     return defaultStreak;
   }
 }
 
-function calculateUpdatedStreak(data: StreakData, today: string): StreakData {
-  if (data.lastVisitDate === today) {
-    return data;
+/**
+ * Called on app open / refresh. Checks how many days since last practice
+ * and applies grace period or resets the streak. Never increments.
+ */
+function applyStreakDecay(data: StreakData, today: string): StreakData {
+  // Find the last day the user actually practiced
+  const history = data.history || [];
+  const lastPracticed = history.slice().reverse().find(h => h.practiced);
+
+  if (!lastPracticed) {
+    // No practice history at all — streak should be 0
+    const updated = { ...data, currentStreak: 0, graceDaysUsed: 0, lastVisitDate: today };
+    localStorage.setItem(STORAGE_KEYS.STREAK, JSON.stringify(updated));
+    return updated;
   }
 
-  const lastDate = new Date(data.lastVisitDate);
+  const lastDate = new Date(lastPracticed.date);
   const nowDate = new Date(today);
-  const diffTime = Math.abs(nowDate.getTime() - lastDate.getTime());
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  const diffDays = Math.floor((nowDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
 
   let currentStreak = data.currentStreak;
   let graceDaysUsed = data.graceDaysUsed;
 
-  if (diffDays === 1) {
-    // Visited consecutive day
-    currentStreak += 1;
+  if (diffDays <= 1) {
+    // Practiced today or yesterday — streak is fine
     graceDaysUsed = 0;
   } else if (diffDays === 2) {
-    // Missed 1 day -> Grace period active!
+    // Missed 1 day — grace period
     graceDaysUsed = 1;
-    // Streak is preserved / paused
   } else if (diffDays === 3) {
-    // Missed 2 days -> Grace period 2 active
+    // Missed 2 days — grace period 2
     graceDaysUsed = 2;
-  } else if (diffDays > 3) {
-    // Missed 3 or more days -> Streak broken, restart at 1 today
-    currentStreak = 1;
+  } else {
+    // Missed 3+ days — streak broken
+    currentStreak = 0;
     graceDaysUsed = 0;
   }
-
-  const longestStreak = Math.max(currentStreak, data.longestStreak || 0);
 
   const updated: StreakData = {
     ...data,
     currentStreak,
-    longestStreak,
+    longestStreak: Math.max(currentStreak, data.longestStreak || 0),
     lastVisitDate: today,
     graceDaysUsed,
   };
 
-  try {
-    localStorage.setItem(STORAGE_KEYS.STREAK, JSON.stringify(updated));
-  } catch (e) {
-    console.error("Failed to update streak in storage", e);
-  }
-
+  localStorage.setItem(STORAGE_KEYS.STREAK, JSON.stringify(updated));
   return updated;
 }
 
+/**
+ * Called when a session is saved. This is the ONLY place the streak increments.
+ * Reads raw localStorage to avoid the decay recalculation race condition.
+ */
 export function recordPracticeDay(dateStr: string, durationMin: number): void {
   try {
-    const streak = getSavedStreak();
-    const existingHist = streak.history || [];
-    const index = existingHist.findIndex((h) => h.date === dateStr);
+    // Read raw streak data — do NOT go through getSavedStreak() to avoid
+    // the decay logic resetting the streak before we can increment it.
+    const raw = localStorage.getItem(STORAGE_KEYS.STREAK);
+    const streak: StreakData = raw
+      ? JSON.parse(raw)
+      : { currentStreak: 0, longestStreak: 0, lastVisitDate: dateStr, graceDaysUsed: 0, history: [] };
+
+    const history = streak.history || [];
+    const index = history.findIndex((h) => h.date === dateStr);
+
+    let alreadyPracticedToday = false;
 
     if (index >= 0) {
-      existingHist[index].practiced = true;
-      existingHist[index].durationMin =
-        (existingHist[index].durationMin || 0) + durationMin;
+      alreadyPracticedToday = history[index].practiced;
+      history[index].practiced = true;
+      history[index].durationMin = (history[index].durationMin || 0) + durationMin;
     } else {
-      existingHist.push({ date: dateStr, practiced: true, durationMin });
+      history.push({ date: dateStr, practiced: true, durationMin });
     }
 
-    streak.history = existingHist.slice(-90); // keep 90 days
+    // Sort chronologically
+    history.sort((a, b) => a.date.localeCompare(b.date));
+
+    // Only increment streak if this is the first session of the day
+    if (!alreadyPracticedToday) {
+      streak.currentStreak = (streak.currentStreak || 0) + 1;
+      streak.longestStreak = Math.max(streak.longestStreak || 0, streak.currentStreak);
+      streak.graceDaysUsed = 0;
+    }
+
+    streak.history = history.slice(-90); // keep 90 days
+    streak.lastVisitDate = dateStr;
     localStorage.setItem(STORAGE_KEYS.STREAK, JSON.stringify(streak));
   } catch (e) {
     console.error("Failed to record practice day", e);
