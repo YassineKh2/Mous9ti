@@ -24,6 +24,8 @@ import {
   Check,
   Waves,
   Volume2,
+  Save,
+  Library,
 } from "lucide-react";
 import {
   ALL_ROOT_NOTES,
@@ -32,20 +34,16 @@ import {
   CHROMATIC_SHARPS,
 } from "../data/musicTheory";
 import { CHORD_TYPES_CATALOG, getChordDefinition } from "../data/chordsData";
-import { KeyboardVoicing, NoteName } from "../types";
+import {
+  KeyboardVoicing,
+  NoteName,
+  QueueItem,
+  SavedProgression,
+} from "../types";
 import { ChordDiagram } from "../components/ChordDiagram";
 import { KeyboardChordDiagram } from "../components/KeyboardChordDiagram";
+import { SavedProgressionsModal } from "../components/SavedProgressionsModal";
 import { audioEngine } from "../lib/audio";
-
-interface QueueItem {
-  id: string;
-  root: NoteName;
-  type: string;
-  repeats: number;
-  duration: number; // Duration in beats (1 = quarter note, 2 = half note, 3 = dotted half, 4 = whole note, 8 = 2 bars)
-  style: string; // Strumming pattern key
-  voicingIndex?: number;
-}
 
 export interface StyleStroke {
   beat: number;
@@ -524,14 +522,14 @@ const RepeatsDropdown = forwardRef<
 
         if (openUpwards) {
           setDropdownStyle({
-            position: 'fixed',
+            position: "fixed",
             left,
             bottom: window.innerHeight - rect.top + 6,
             width: dropdownWidth,
           });
         } else {
           setDropdownStyle({
-            position: 'fixed',
+            position: "fixed",
             left,
             top: rect.bottom + 6,
             width: dropdownWidth,
@@ -544,8 +542,8 @@ const RepeatsDropdown = forwardRef<
     useEffect(() => {
       if (!isOpen) return;
       const onScroll = () => handleOpenToggle(false);
-      window.addEventListener('scroll', onScroll, true);
-      return () => window.removeEventListener('scroll', onScroll, true);
+      window.addEventListener("scroll", onScroll, true);
+      return () => window.removeEventListener("scroll", onScroll, true);
     }, [isOpen]);
 
     return (
@@ -976,6 +974,85 @@ function buildKeyboardVoicing(
 export const BuilderPage: React.FC = () => {
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [savedProgressions, setSavedProgressions] = useState<
+    SavedProgression[]
+  >([]);
+  const [isSavedModalOpen, setIsSavedModalOpen] = useState(false);
+
+  useEffect(() => {
+    const loaded = localStorage.getItem("mous9ti_saved_progressions");
+    if (loaded) {
+      try {
+        setSavedProgressions(JSON.parse(loaded));
+      } catch (e) {
+        console.error("Failed to parse saved progressions", e);
+      }
+    }
+  }, []);
+
+  const handleSaveProgression = () => {
+    if (queue.length === 0) {
+      alert("Queue is empty.");
+      return;
+    }
+    const name = window.prompt("Enter a name for this progression:");
+    if (!name) return;
+
+    const newProgression: SavedProgression = {
+      id: generateId(),
+      name,
+      queue,
+      tempo,
+      instrument: selectedInstrument,
+      reverbWet,
+      isReverbActive,
+      reverbSpace,
+      updatedAt: Date.now(),
+    };
+
+    const nextSaved = [newProgression, ...savedProgressions];
+    setSavedProgressions(nextSaved);
+    localStorage.setItem(
+      "mous9ti_saved_progressions",
+      JSON.stringify(nextSaved),
+    );
+  };
+
+  const handleLoadProgression = (prog: SavedProgression) => {
+    setQueue(prog.queue);
+    setTempo(prog.tempo);
+    setSelectedInstrument(prog.instrument);
+    setReverbWet(prog.reverbWet);
+    setIsReverbActive(prog.isReverbActive);
+    setReverbSpace(prog.reverbSpace);
+  };
+
+  const handleRenameProgression = (id: string, newName: string) => {
+    const nextSaved = savedProgressions.map((p) =>
+      p.id === id ? { ...p, name: newName, updatedAt: Date.now() } : p,
+    );
+    setSavedProgressions(nextSaved);
+    localStorage.setItem(
+      "mous9ti_saved_progressions",
+      JSON.stringify(nextSaved),
+    );
+  };
+
+  const handleDeleteProgression = (id: string) => {
+    const nextSaved = savedProgressions.filter((p) => p.id !== id);
+    setSavedProgressions(nextSaved);
+    localStorage.setItem(
+      "mous9ti_saved_progressions",
+      JSON.stringify(nextSaved),
+    );
+  };
+
+  const handleClearQueue = () => {
+    if (window.confirm("Are you sure you want to clear all chords?")) {
+      setQueue([]);
+    }
+  };
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [tempo, setTempo] = useState(120);
   const [currentQueueIndex, setCurrentQueueIndex] = useState(-1);
@@ -1585,13 +1662,48 @@ export const BuilderPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left: Queue Management */}
         <div className="lg:col-span-8 flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-on-surface flex items-center gap-2">
-              <Guitar size={20} className="text-primary" />
-              Progression Queue
-            </h2>
-            <div className="text-xs font-mono text-on-surface-variant bg-surface-container px-2 py-1 rounded">
-              {queue.length} CHORDS
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-bold text-on-surface flex items-center gap-2">
+                <Guitar size={20} className="text-primary" />
+                Progression Queue
+              </h2>
+              <div className="flex items-center gap-1.5 ml-2">
+                <div className="text-xs font-mono text-on-surface-variant bg-surface-container px-2 py-1 rounded">
+                  {queue.length} CHORDS
+                </div>
+                {queue.length > 0 && (
+                  <button
+                    onClick={handleClearQueue}
+                    className="p-1 rounded text-on-surface-variant hover:text-error hover:bg-error/10 transition-colors"
+                    title="Clear All Chords"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsSavedModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-container hover:bg-surface-container-highest text-on-surface text-xs font-mono font-bold rounded-lg border border-outline-variant/30 transition-colors"
+              >
+                <Library size={14} className="text-primary" />
+                Saved ({savedProgressions.length})
+              </button>
+              <button
+                onClick={handleSaveProgression}
+                disabled={queue.length === 0}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-bold rounded-lg transition-colors ${
+                  queue.length === 0
+                    ? "bg-surface-container text-on-surface-variant opacity-50 cursor-not-allowed"
+                    : "bg-primary/20 text-primary hover:bg-primary/30 border border-primary/30"
+                }`}
+              >
+                <Save size={14} />
+                Save
+              </button>
             </div>
           </div>
 
@@ -1599,10 +1711,10 @@ export const BuilderPage: React.FC = () => {
             {queue.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-on-surface-variant">
                 <Music size={48} className="mb-4 opacity-20" />
-                <p className="text-lg font-bold text-on-surface mb-2">
+                <p className="font-mono text-lg font-bold text-on-surface mb-2">
                   Queue is empty
                 </p>
-                <p className="text-sm max-w-sm">
+                <p className="font-mono text-sm max-w-sm">
                   Use the builder panel on the right to search and add chords to
                   your progression.
                 </p>
@@ -1662,7 +1774,11 @@ export const BuilderPage: React.FC = () => {
                         zIndex:
                           openDropdownId === item.id
                             ? 20
-                            : isDragging ? 15 : isEditing ? 10 : Math.max(1, queue.length - index),
+                            : isDragging
+                              ? 15
+                              : isEditing
+                                ? 10
+                                : Math.max(1, queue.length - index),
                       }}
                       className={`flex flex-col sm:flex-row gap-4 p-4 rounded-xl border transition-colors relative ${
                         isDragging
@@ -1856,9 +1972,13 @@ export const BuilderPage: React.FC = () => {
                               }
                             />
                             {item.repeats > 1 && (
-                              <span className={`text-[10px] font-mono font-bold px-1 rounded shrink-0 transition-opacity ${
-                                isActive ? "text-primary bg-primary/10 opacity-100" : "opacity-0"
-                              }`}>
+                              <span
+                                className={`text-[10px] font-mono font-bold px-1 rounded shrink-0 transition-opacity ${
+                                  isActive
+                                    ? "text-primary bg-primary/10 opacity-100"
+                                    : "opacity-0"
+                                }`}
+                              >
                                 ({currentRepeat + 1}/{item.repeats})
                               </span>
                             )}
@@ -2063,7 +2183,8 @@ export const BuilderPage: React.FC = () => {
                           root={selectedRoot}
                         />
                       )}
-                      <div className="absolute inset-0 bg-surface-container-highest/60 backdrop-blur-[2px] opacity-0 group-hover/voicing:opacity-100 transition-opacity rounded-xl flex items-center justify-center pointer-events-none">
+                      {/* Desktop: hover overlay */}
+                      <div className="absolute inset-0 bg-surface-container-highest/60 backdrop-blur-[2px] opacity-0 group-hover/voicing:opacity-100 transition-opacity rounded-xl hidden lg:flex items-center justify-center pointer-events-none">
                         <button
                           onClick={() => handleAddChord(idx)}
                           className="pointer-events-auto flex items-center gap-2 bg-primary text-on-primary font-bold px-4 py-2.5 rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all"
@@ -2072,6 +2193,14 @@ export const BuilderPage: React.FC = () => {
                           ADD VOICING
                         </button>
                       </div>
+                      {/* Mobile: always-visible button */}
+                      <button
+                        onClick={() => handleAddChord(idx)}
+                        className="lg:hidden w-full flex items-center justify-center gap-2 bg-primary text-on-primary font-bold px-4 py-2.5 rounded-lg shadow-sm active:scale-95 transition-all mt-2"
+                      >
+                        <Plus size={16} strokeWidth={3} />
+                        ADD VOICING
+                      </button>
                     </div>
                   ),
                 )}
@@ -2080,6 +2209,15 @@ export const BuilderPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <SavedProgressionsModal
+        isOpen={isSavedModalOpen}
+        onClose={() => setIsSavedModalOpen(false)}
+        progressions={savedProgressions}
+        onLoad={handleLoadProgression}
+        onRename={handleRenameProgression}
+        onDelete={handleDeleteProgression}
+      />
     </div>
   );
 };

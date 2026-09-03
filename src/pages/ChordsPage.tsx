@@ -385,7 +385,7 @@ export const ChordsPage: React.FC<ChordsPageProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowStaffNotation((prev) => !prev)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                  className={`font-mono px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
                     showStaffNotation
                       ? "bg-primary text-on-primary border-primary shadow"
                       : "bg-surface-container text-on-surface hover:bg-surface-container-high border-outline-variant/10"

@@ -163,3 +163,25 @@ export interface AppSettings {
   fretboardWood: "ebony" | "rosewood" | "maple";
   autoSaveSession: boolean;
 }
+
+export interface QueueItem {
+  id: string;
+  root: NoteName;
+  type: string;
+  repeats: number;
+  duration: number; // Duration in beats (1 = quarter note, 2 = half note, 3 = dotted half, 4 = whole note, 8 = 2 bars)
+  style: string; // Strumming pattern key
+  voicingIndex?: number;
+}
+
+export interface SavedProgression {
+  id: string;
+  name: string;
+  queue: QueueItem[];
+  tempo: number;
+  instrument: string;
+  reverbWet: number;
+  isReverbActive: boolean;
+  reverbSpace: "room" | "hall" | "ambient";
+  updatedAt: number;
+}
