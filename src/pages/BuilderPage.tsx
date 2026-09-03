@@ -504,6 +504,50 @@ const RepeatsDropdown = forwardRef<
       }
     };
 
+    const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
+
+    useEffect(() => {
+      if (isOpen && containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const dropdownWidth = 224; // w-56 = 14rem = 224px
+        const padding = 10;
+
+        let left = rect.left;
+        // Clamp right edge to viewport
+        if (left + dropdownWidth > window.innerWidth - padding) {
+          left = window.innerWidth - dropdownWidth - padding;
+        }
+        // Clamp left edge
+        if (left < padding) {
+          left = padding;
+        }
+
+        if (openUpwards) {
+          setDropdownStyle({
+            position: 'fixed',
+            left,
+            bottom: window.innerHeight - rect.top + 6,
+            width: dropdownWidth,
+          });
+        } else {
+          setDropdownStyle({
+            position: 'fixed',
+            left,
+            top: rect.bottom + 6,
+            width: dropdownWidth,
+          });
+        }
+      }
+    }, [isOpen, openUpwards]);
+
+    // Close on scroll so the dropdown doesn't float detached
+    useEffect(() => {
+      if (!isOpen) return;
+      const onScroll = () => handleOpenToggle(false);
+      window.addEventListener('scroll', onScroll, true);
+      return () => window.removeEventListener('scroll', onScroll, true);
+    }, [isOpen]);
+
     return (
       <div
         ref={containerRef}
@@ -527,7 +571,8 @@ const RepeatsDropdown = forwardRef<
 
         {isOpen && (
           <div
-            className={`absolute z-50 ${compact ? "right-0 sm:left-0 sm:right-auto" : "left-0 right-0 sm:right-auto"} ${openUpwards ? "bottom-full mb-1.5" : "top-full mt-1.5"} w-56 max-w-[calc(100vw-2.5rem)] bg-surface-container-high border border-outline-variant/40 rounded-xl shadow-2xl overflow-hidden p-3 flex flex-col gap-3 backdrop-blur-md`}
+            style={dropdownStyle}
+            className="fixed z-[9999] bg-surface-container-high border border-outline-variant/40 rounded-xl shadow-2xl overflow-hidden p-3 flex flex-col gap-3 backdrop-blur-md"
           >
             {/* Custom Input Inside Dropdown */}
             <div>
@@ -939,6 +984,11 @@ export const BuilderPage: React.FC = () => {
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const repeatsRefs = useRef<Record<string, { toggle: () => void } | null>>({});
+
+  // Close repeats dropdown when playback moves to a new chord
+  useEffect(() => {
+    setOpenDropdownId(null);
+  }, [currentQueueIndex]);
 
   // New chord selection state
   const [selectedRoot, setSelectedRoot] = useState<NoteName>("C");
@@ -1611,21 +1661,20 @@ export const BuilderPage: React.FC = () => {
                       style={{
                         zIndex:
                           openDropdownId === item.id
-                            ? 5000
-                            : (isDragging ? 3000 : isEditing ? 2000 : 1000) -
-                              index,
+                            ? 20
+                            : isDragging ? 15 : isEditing ? 10 : Math.max(1, queue.length - index),
                       }}
-                      className={`flex flex-col sm:flex-row gap-4 p-4 rounded-xl border transition-all relative ${
+                      className={`flex flex-col sm:flex-row gap-4 p-4 rounded-xl border transition-colors relative ${
                         isDragging
-                          ? "opacity-40 border-dashed border-primary scale-[0.98]"
+                          ? "opacity-40 border-dashed border-primary"
                           : isDragOver
-                            ? "ring-2 ring-primary bg-primary/10 border-primary scale-[1.01]"
+                            ? "ring-2 ring-primary bg-primary/10 border-primary"
                             : isEditing
                               ? "ring-2 ring-primary/40 shadow-lg"
                               : ""
                       } ${
                         isActive
-                          ? "bg-primary/5 border-primary shadow-sm scale-[1.01]"
+                          ? "bg-primary/5 border-primary shadow-sm border-l-4"
                           : "bg-surface border-outline-variant/30 hover:border-outline-variant/60"
                       }`}
                     >
@@ -1806,8 +1855,10 @@ export const BuilderPage: React.FC = () => {
                                 setOpenDropdownId(isOpen ? item.id : null)
                               }
                             />
-                            {isActive && item.repeats > 1 && (
-                              <span className="text-[10px] font-mono text-primary font-bold bg-primary/10 px-1 rounded shrink-0">
+                            {item.repeats > 1 && (
+                              <span className={`text-[10px] font-mono font-bold px-1 rounded shrink-0 transition-opacity ${
+                                isActive ? "text-primary bg-primary/10 opacity-100" : "opacity-0"
+                              }`}>
                                 ({currentRepeat + 1}/{item.repeats})
                               </span>
                             )}
