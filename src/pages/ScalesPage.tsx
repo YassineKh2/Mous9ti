@@ -437,11 +437,11 @@ export const ScalesPage: React.FC<ScalesPageProps> = ({
   });
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-4 sm:space-y-6 pb-8 sm:pb-12">
       {/* Selected Scale Detail Card (Formula, Degrees, CAGED boxes) */}
-      <div className="bg-surface-container border border-outline-variant/30 rounded-lg p-6 shadow-xl space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-outline-variant/30">
-          <div className="flex items-center gap-3">
+      <div className="bg-surface-container border border-outline-variant/30 rounded-lg p-3 sm:p-6 shadow-xl space-y-4">
+        <div className="flex flex-col items-stretch gap-3 pb-3 border-b border-outline-variant/30 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          <div className="flex min-w-0 items-center gap-2 sm:flex-1 sm:gap-3">
             {/* Interactive Root Note Badge Selector */}
             <div className="relative" ref={rootMenuRef}>
               <button
@@ -500,19 +500,19 @@ export const ScalesPage: React.FC<ScalesPageProps> = ({
             </div>
 
             {/* Interactive Scale Name Dropdown Selector */}
-            <div className="relative" ref={scaleMenuRef}>
+            <div className="relative min-w-0 flex-1" ref={scaleMenuRef}>
               <button
                 type="button"
                 onClick={() => {
                   setIsScaleMenuOpen((prev) => !prev);
                   setIsRootMenuOpen(false);
                 }}
-                className="group text-left px-2 py-1 -ml-2 rounded-lg hover:bg-surface-container-high transition-colors focus:outline-none focus:ring-1 focus:ring-primary/40 cursor-pointer"
+                className="group w-full min-w-0 max-w-full text-left px-2 py-1 -ml-2 rounded-lg hover:bg-surface-container-high transition-colors focus:outline-none focus:ring-1 focus:ring-primary/40 cursor-pointer"
                 title="Click to select another scale"
               >
                 <div className="flex items-center gap-1.5">
-                  <h2 className="font-mono text-lg font-bold text-on-surface group-hover:text-primary transition-colors flex items-center gap-1.5">
-                    <span>
+                  <h2 className="font-mono text-base sm:text-lg font-bold text-on-surface group-hover:text-primary transition-colors flex min-w-0 items-center gap-1.5">
+                    <span className="truncate">
                       {selectedRoot} {selectedScale.name}
                     </span>
                     <ChevronDown
@@ -521,14 +521,14 @@ export const ScalesPage: React.FC<ScalesPageProps> = ({
                     />
                   </h2>
                 </div>
-                <div className="flex items-center gap-2 mt-0.5">
+                <div className="mt-0.5 flex flex-wrap items-center gap-2">
                   <span className="text-xs font-mono text-on-surface-variant">
                     Formula:{" "}
                     <strong className="text-on-surface">
                       {selectedScale.formula}
                     </strong>
                   </span>
-                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-surface-container-low border border-outline-variant/30 text-on-surface-variant">
+                  <span className="inline-flex w-fit shrink-0 rounded bg-surface-container-low px-1.5 py-0.5 text-[10px] font-mono text-on-surface-variant border border-outline-variant/30">
                     {selectedScale.category}
                   </span>
                 </div>
@@ -536,7 +536,7 @@ export const ScalesPage: React.FC<ScalesPageProps> = ({
 
               {/* Comprehensive Scale Picker Popover */}
               {isScaleMenuOpen && (
-                <div className="absolute top-full left-0 mt-2 z-50 bg-surface border border-outline-variant/40 rounded-xl p-3 shadow-2xl w-[320px] sm:w-[420px] animate-in fade-in zoom-in-95 duration-150">
+                <div className="absolute top-full left-1/2 right-auto -translate-x-1/2 -ml-6 mt-2 z-50 bg-surface border border-outline-variant/40 rounded-xl p-3 shadow-2xl w-[calc(100vw-1rem)] max-w-[320px] sm:left-0 sm:right-auto sm:translate-x-0 sm:ml-0 sm:w-105 sm:max-w-none animate-in fade-in zoom-in-95 duration-150">
                   <div className="flex items-center justify-between pb-2 mb-2 border-b border-outline-variant/20">
                     <span className="text-[11px] font-mono font-bold text-on-surface uppercase tracking-wider">
                       Select Scale or Mode
@@ -637,52 +637,58 @@ export const ScalesPage: React.FC<ScalesPageProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center justify-between gap-2 flex-nowrap sm:justify-end">
             {/* Instrument Toggle (Guitar / Piano / Both) */}
             <div className="flex items-center gap-1 bg-surface-container-low p-1 rounded-lg border border-outline-variant/30">
               <button
                 type="button"
                 onClick={() => setInstrumentView("guitar")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono rounded transition-all cursor-pointer ${
+                aria-label="Guitar view"
+                title="Guitar view"
+                className={`w-8 sm:w-auto h-8 px-0 sm:px-2 flex items-center justify-center gap-1.5 text-xs font-mono rounded transition-all cursor-pointer ${
                   instrumentView === "guitar"
                     ? "bg-primary text-on-primary font-bold shadow"
                     : "text-on-surface-variant hover:text-on-surface"
                 }`}
               >
                 <Guitar size={14} />
-                <span>Guitar</span>
+                <span className="hidden sm:inline">GUITAR</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setInstrumentView("piano")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono rounded transition-all cursor-pointer ${
+                aria-label="Piano view"
+                title="Piano view"
+                className={`w-8 sm:w-auto h-8 px-0 sm:px-2 flex items-center justify-center gap-1.5 text-xs font-mono rounded transition-all cursor-pointer ${
                   instrumentView === "piano"
                     ? "bg-primary text-on-primary font-bold shadow"
                     : "text-on-surface-variant hover:text-on-surface"
                 }`}
               >
                 <Piano size={14} />
-                <span>Piano</span>
+                <span className="hidden sm:inline">PIANO</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setInstrumentView("both")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono rounded transition-all cursor-pointer ${
+                aria-label="Guitar and piano view"
+                title="Guitar and piano view"
+                className={`w-8 sm:w-auto h-8 px-0 sm:px-2 flex items-center justify-center gap-1.5 text-xs font-mono rounded transition-all cursor-pointer ${
                   instrumentView === "both"
                     ? "bg-primary text-on-primary font-bold shadow"
                     : "text-on-surface-variant hover:text-on-surface"
                 }`}
               >
                 <Layers size={14} />
-                <span>Both</span>
+                <span className="hidden sm:inline">BOTH</span>
               </button>
             </div>
 
             {/* Play Scale with Integrated Direction Dropdown */}
             <div
-              className="relative inline-flex items-center"
+              className="relative inline-flex min-w-0 items-center"
               ref={playMenuRef}
             >
               {isPlaying ? (
@@ -703,7 +709,8 @@ export const ScalesPage: React.FC<ScalesPageProps> = ({
                     title={`Play ${playDirection === "ascending" ? "Ascending" : playDirection === "descending" ? "Descending" : "Ascending & Descending"}`}
                   >
                     <Volume2 size={15} />
-                    <span>
+                    <span className="sm:hidden">PLAY</span>
+                    <span className="hidden sm:inline">
                       PLAY{" "}
                       {playDirection === "ascending"
                         ? "ASCENDING"
@@ -845,17 +852,17 @@ export const ScalesPage: React.FC<ScalesPageProps> = ({
         {(instrumentView === "guitar" || instrumentView === "both") &&
           selectedScale.cagedBoxes && (
             <div className="pt-3 border-t border-outline-variant/30 space-y-2">
-              <div className="flex items-center gap-2">
+              <div className="flex items-start gap-2">
                 <Box size={15} className="text-primary" />
-                <span className="text-xs font-mono font-bold text-on-surface uppercase tracking-wider">
+                <span className="text-[11px] sm:text-xs font-mono font-bold text-on-surface uppercase tracking-wider leading-5">
                   CAGED Box Patterns (Guitar):
                 </span>
               </div>
 
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap">
                 <button
                   onClick={() => setActiveCagedBox(null)}
-                  className={`px-3 py-1.5 rounded font-mono text-xs transition-all cursor-pointer ${
+                  className={`w-full px-3 py-2 text-left sm:w-auto sm:py-1.5 rounded font-mono text-xs transition-all cursor-pointer ${
                     activeCagedBox === null
                       ? "bg-primary text-on-primary font-bold"
                       : "bg-surface-container-low text-on-surface-variant hover:text-on-surface border border-outline-variant/30"
@@ -868,7 +875,7 @@ export const ScalesPage: React.FC<ScalesPageProps> = ({
                   <button
                     key={boxKey}
                     onClick={() => setActiveCagedBox(boxKey)}
-                    className={`px-3 py-1.5 rounded font-mono text-xs transition-all cursor-pointer ${
+                    className={`w-full px-3 py-2 text-left sm:w-auto sm:py-1.5 rounded font-mono text-xs transition-all cursor-pointer ${
                       activeCagedBox === boxKey
                         ? "bg-primary text-on-primary font-bold"
                         : "bg-surface-container-low text-on-surface-variant hover:text-on-surface border border-outline-variant/30"
@@ -884,10 +891,10 @@ export const ScalesPage: React.FC<ScalesPageProps> = ({
         {/* Piano Visible Range / Scale Span Focus (Shown when Piano or Both is chosen) */}
         {(instrumentView === "piano" || instrumentView === "both") && (
           <div className="pt-3 border-t border-outline-variant/30 space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-2">
                 <Piano size={15} className="text-primary" />
-                <span className="text-xs font-mono font-bold text-on-surface uppercase tracking-wider">
+                <span className="text-[11px] sm:text-xs font-mono font-bold text-on-surface uppercase tracking-wider leading-5">
                   Piano Visible Range (Scale Focus):
                 </span>
               </div>
@@ -897,10 +904,10 @@ export const ScalesPage: React.FC<ScalesPageProps> = ({
               </span>
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap">
               <button
                 onClick={() => setPianoFocusRange("octave4")}
-                className={`px-3 py-1.5 rounded font-mono text-xs transition-all cursor-pointer ${
+                className={`w-full px-3 py-2 text-left sm:w-auto sm:py-1.5 rounded font-mono text-xs transition-all cursor-pointer ${
                   pianoFocusRange === "octave4"
                     ? "bg-primary text-on-primary font-bold"
                     : "bg-surface-container-low text-on-surface-variant hover:text-on-surface border border-outline-variant/30"
@@ -911,7 +918,7 @@ export const ScalesPage: React.FC<ScalesPageProps> = ({
 
               <button
                 onClick={() => setPianoFocusRange("octave3")}
-                className={`px-3 py-1.5 rounded font-mono text-xs transition-all cursor-pointer ${
+                className={`w-full px-3 py-2 text-left sm:w-auto sm:py-1.5 rounded font-mono text-xs transition-all cursor-pointer ${
                   pianoFocusRange === "octave3"
                     ? "bg-primary text-on-primary font-bold"
                     : "bg-surface-container-low text-on-surface-variant hover:text-on-surface border border-outline-variant/30"
@@ -922,7 +929,7 @@ export const ScalesPage: React.FC<ScalesPageProps> = ({
 
               <button
                 onClick={() => setPianoFocusRange("octave34")}
-                className={`px-3 py-1.5 rounded font-mono text-xs transition-all cursor-pointer ${
+                className={`w-full px-3 py-2 text-left sm:w-auto sm:py-1.5 rounded font-mono text-xs transition-all cursor-pointer ${
                   pianoFocusRange === "octave34"
                     ? "bg-primary text-on-primary font-bold"
                     : "bg-surface-container-low text-on-surface-variant hover:text-on-surface border border-outline-variant/30"
@@ -933,7 +940,7 @@ export const ScalesPage: React.FC<ScalesPageProps> = ({
 
               <button
                 onClick={() => setPianoFocusRange("all")}
-                className={`px-3 py-1.5 rounded font-mono text-xs transition-all cursor-pointer ${
+                className={`w-full px-3 py-2 text-left sm:w-auto sm:py-1.5 rounded font-mono text-xs transition-all cursor-pointer ${
                   pianoFocusRange === "all"
                     ? "bg-primary text-on-primary font-bold"
                     : "bg-surface-container-low text-on-surface-variant hover:text-on-surface border border-outline-variant/30"

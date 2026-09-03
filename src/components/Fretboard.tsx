@@ -191,10 +191,10 @@ export const Fretboard: React.FC<FretboardProps> = ({
   const doubleInlays = [12, 24];
 
   return (
-    <div className="w-full bg-surface-container border border-outline-variant/30 rounded-lg p-5 flex flex-col gap-4 shadow-xl select-none">
+    <div className="w-full bg-surface-container border border-outline-variant/30 rounded-lg p-3 sm:p-5 flex flex-col gap-3 sm:gap-4 shadow-xl select-none">
       {/* Controls Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 pb-2 border-b border-outline-variant/20">
-        <div className="flex min-w-0 max-w-full flex-wrap items-center gap-4">
+      <div className="flex flex-col items-stretch gap-3 pb-2 border-b border-outline-variant/20 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <div className="flex min-w-0 max-w-full flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
           {/* Tuning Selector */}
           <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto">
             <span className="text-[10px] font-mono text-on-surface-variant uppercase tracking-wider">
@@ -238,12 +238,12 @@ export const Fretboard: React.FC<FretboardProps> = ({
         </div>
 
         {/* Display Mode Selector */}
-        <div className="flex items-center gap-1.5 bg-surface-container-low p-1 rounded border border-outline-variant/30">
+        <div className="flex w-full items-center gap-1.5 overflow-x-auto bg-surface-container-low p-1 rounded border border-outline-variant/30 sm:w-auto">
           {(["name", "degree", "interval"] as NoteDisplayMode[]).map((mode) => (
             <button
               key={mode}
               onClick={() => handleDisplayModeSelect(mode)}
-              className={`px-2.5 py-1 text-[10px] font-mono tracking-wider rounded transition-colors uppercase ${
+              className={`shrink-0 px-2.5 py-1 text-[10px] font-mono tracking-wider rounded transition-colors uppercase ${
                 displayMode === mode
                   ? "bg-primary text-on-primary font-semibold shadow-sm"
                   : "text-on-surface-variant hover:text-on-surface hover:bg-outline-variant/10"

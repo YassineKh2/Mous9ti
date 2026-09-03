@@ -42,7 +42,7 @@ export const SessionWidget: React.FC<SessionWidgetProps> = ({
   });
 
   return (
-    <div className="bg-surface-container border border-outline-variant/30 rounded-lg p-5 flex flex-col justify-between relative shadow-xl">
+    <div className="bg-surface-container border border-outline-variant/30 rounded-lg p-4 md:p-5 flex flex-col justify-between relative shadow-xl">
       {/* Top Header */}
       <div className="flex items-center justify-between pb-3 border-b border-outline-variant/10">
         <div className="flex items-center gap-2">
@@ -112,20 +112,22 @@ export const SessionWidget: React.FC<SessionWidgetProps> = ({
       <div className="flex items-center justify-between pt-2 border-t border-outline-variant/10 mt-1">
         <button
           onClick={onToggleSession}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-mono tracking-wider border transition-all ${
+          className={`flex min-h-10 items-center gap-1.5 px-3 py-1.5 rounded text-xs font-mono tracking-wider border transition-all md:min-h-0 ${
             isSessionActive
               ? "bg-surface-container-high text-on-surface border-outline-variant/30 hover:bg-surface-container-highest"
               : "bg-primary text-on-primary border-primary hover:border-primary-container hover:bg-primary-container shadow-sm shadow-primary/20"
           }`}
         >
           {isSessionActive ? <Pause size={12} /> : <Play size={12} />}
-          <span>{isSessionActive ? "PAUSE" : "START SESSION"}</span>
+          <span className="font-bold">
+            {isSessionActive ? "PAUSE" : "START SESSION"}
+          </span>
         </button>
 
         {activeSessionDuration > 0 && (
           <button
             onClick={onEndSession}
-            className="text-[10px] font-mono text-on-surface-variant hover:text-on-surface border border-outline-variant/30 hover:border-outline-variant px-2.5 py-1.5 rounded transition-all"
+            className="min-h-10 text-[10px] font-mono text-on-surface-variant hover:text-on-surface border border-outline-variant/30 hover:border-outline-variant px-2.5 py-1.5 rounded transition-all md:min-h-0"
           >
             LOG & FINISH
           </button>

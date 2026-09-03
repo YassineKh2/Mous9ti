@@ -10,7 +10,16 @@ import { CHORD_TYPES_CATALOG, getChordDefinition } from "../data/chordsData";
 import { ChordDiagram } from "../components/ChordDiagram";
 import { PianoKeyboard } from "../components/PianoKeyboard";
 import { ChordSheetMusic } from "../components/ChordSheetMusic";
-import { Search, Play, AlertCircle, X, ExternalLink } from "lucide-react";
+import {
+  Search,
+  Play,
+  AlertCircle,
+  X,
+  ExternalLink,
+  Guitar,
+  Piano,
+  Layers,
+} from "lucide-react";
 import { audioEngine } from "../lib/audio";
 
 interface ChordsPageProps {
@@ -25,9 +34,9 @@ export const ChordsPage: React.FC<ChordsPageProps> = ({
   const [selectedRoot, setSelectedRoot] = useState<NoteName>("E");
   const [selectedType, setSelectedType] = useState<string>("min7");
   const [showStaffNotation, setShowStaffNotation] = useState(false);
-  const [instrumentView, setInstrumentView] = useState<"guitar" | "piano">(
-    "guitar",
-  );
+  const [instrumentView, setInstrumentView] = useState<
+    "guitar" | "piano" | "both"
+  >("guitar");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedInversion, setSelectedInversion] = useState<number>(0);
 
@@ -36,6 +45,7 @@ export const ChordsPage: React.FC<ChordsPageProps> = ({
     to: string;
   } | null>(null);
   const [showRedirectModal, setShowRedirectModal] = useState(false);
+  const [showChordCoverageModal, setShowChordCoverageModal] = useState(false);
 
   useEffect(() => {
     if (!searchQuery) return;
@@ -201,14 +211,44 @@ export const ChordsPage: React.FC<ChordsPageProps> = ({
       note: v.noteName as NoteName,
       octave: v.octave,
     }));
+
+    if (instrumentView === "both") {
+      audioEngine.playChordArpeggio(notesToPlay, "guitar", 0.06, 0, 1.8);
+      audioEngine.playChordArpeggio(notesToPlay, "piano", 0.06, 0.18, 1.2);
+      return;
+    }
+
     audioEngine.playChordArpeggio(notesToPlay, instrumentView, 0.06);
+  };
+
+  const handleInversionSelect = (index: number) => {
+    setSelectedInversion(index);
+
+    const inversionSemitones = [...chordDef.intervals];
+    for (let i = 0; i < index; i++) {
+      inversionSemitones[i] += 12;
+    }
+    inversionSemitones.sort((a, b) => a - b);
+
+    const notesToPlay = inversionSemitones.map((st) => {
+      const totalSemitones = rootIndex + st;
+      const noteIndex = totalSemitones % 12;
+      const noteName = getSpelledNote(noteIndex, { root: chordDef.root });
+      const octave =
+        pianoBaseOctave +
+        Math.floor(totalSemitones / 12) -
+        Math.floor(rootIndex / 12);
+      return { note: noteName as NoteName, octave };
+    });
+
+    audioEngine.playChordArpeggio(notesToPlay, "piano", 0.06);
   };
 
   return (
     <div className="space-y-8 pb-12 pt-4">
       {/* Search and Instrument Toggle Bar */}
-      <div className="flex items-center gap-4 bg-surface-container-low rounded-lg p-2 border border-outline-variant/30">
-        <div className="flex-1 relative flex items-center">
+      <div className="flex flex-col items-stretch gap-2 bg-surface-container-low rounded-lg p-2 border border-outline-variant/30 sm:flex-row sm:items-center sm:gap-4">
+        <div className="relative flex min-w-0 flex-1 items-center">
           <Search
             size={16}
             className="absolute left-3 text-on-surface-variant"
@@ -221,26 +261,42 @@ export const ChordsPage: React.FC<ChordsPageProps> = ({
             className="w-full bg-transparent pl-10 pr-4 py-2 text-sm font-mono text-on-surface placeholder:text-on-surface-variant focus:outline-none"
           />
         </div>
-        <div className="flex bg-surface-container rounded border border-outline-variant/30 overflow-hidden text-xs font-mono font-bold">
+        <div className="flex w-full shrink-0 overflow-hidden rounded border border-outline-variant/30 bg-surface-container text-xs font-mono font-bold sm:w-auto">
           <button
             onClick={() => setInstrumentView("guitar")}
-            className={`px-6 py-2 transition-colors ${
+            aria-label="Guitar view"
+            className={`flex min-h-11 flex-1 items-center justify-center gap-2 px-3 py-2 transition-colors sm:min-h-0 sm:flex-none sm:px-4 ${
               instrumentView === "guitar"
                 ? "bg-primary text-on-primary"
                 : "text-on-surface-variant hover:text-on-surface"
             }`}
           >
-            GUITAR
+            <Guitar size={14} />
+            <span className="hidden sm:inline">GUITAR</span>
           </button>
           <button
             onClick={() => setInstrumentView("piano")}
-            className={`px-6 py-2 transition-colors ${
+            aria-label="Piano view"
+            className={`flex min-h-11 flex-1 items-center justify-center gap-2 px-3 py-2 transition-colors sm:min-h-0 sm:flex-none sm:px-4 ${
               instrumentView === "piano"
                 ? "bg-primary text-on-primary"
                 : "text-on-surface-variant hover:text-on-surface"
             }`}
           >
-            PIANO
+            <Piano size={14} />
+            <span className="hidden sm:inline">PIANO</span>
+          </button>
+          <button
+            onClick={() => setInstrumentView("both")}
+            aria-label="Both instrument views"
+            className={`flex min-h-11 flex-1 items-center justify-center gap-2 px-3 py-2 transition-colors sm:min-h-0 sm:flex-none sm:px-4 ${
+              instrumentView === "both"
+                ? "bg-primary text-on-primary"
+                : "text-on-surface-variant hover:text-on-surface"
+            }`}
+          >
+            <Layers size={14} />
+            <span className="hidden sm:inline">BOTH</span>
           </button>
         </div>
       </div>
@@ -268,11 +324,11 @@ export const ChordsPage: React.FC<ChordsPageProps> = ({
         {/* Left Sidebar: Filters */}
         <div className="w-full lg:w-72 flex flex-col gap-4 shrink-0">
           {/* Root Note Panel */}
-          <div className="order-2 lg:order-1 bg-surface-container-low rounded-xl p-5 border border-outline-variant/30">
+          <div className="rounded-xl border border-outline-variant/30 bg-surface-container-low p-4 sm:p-5">
             <span className="text-xs font-mono text-on-surface-variant tracking-[0.2em] uppercase font-bold block mb-4">
               Root Note
             </span>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-4 gap-2">
               {ALL_ROOT_NOTES.map((n) => (
                 <button
                   key={n}
@@ -280,7 +336,7 @@ export const ChordsPage: React.FC<ChordsPageProps> = ({
                     setSelectedRoot(n);
                     setSearchQuery("");
                   }}
-                  className={`h-9 px-3 rounded font-bold text-sm transition-all flex items-center justify-center flex-grow ${
+                  className={`flex h-9 items-center justify-center rounded px-3 text-sm font-bold transition-colors ${
                     selectedRoot === n
                       ? "bg-primary text-on-primary"
                       : "bg-surface-container text-on-surface hover:bg-surface-container-high border border-outline-variant/10"
@@ -293,7 +349,7 @@ export const ChordsPage: React.FC<ChordsPageProps> = ({
           </div>
 
           {/* Chord Type Panel */}
-          <div className="order-1 lg:order-2 bg-surface-container-low rounded-xl p-5 border border-outline-variant/30">
+          <div className="rounded-xl border border-outline-variant/30 bg-surface-container-low p-4 sm:p-5">
             <span className="text-xs font-mono text-on-surface-variant tracking-[0.2em] uppercase font-bold block mb-4">
               Chord Type
             </span>
@@ -373,10 +429,10 @@ export const ChordsPage: React.FC<ChordsPageProps> = ({
         {/* Right Content Area */}
         <div className="flex-1 space-y-8 min-w-0 max-w-full w-full">
           {/* Chord Header Panel */}
-          <div className="bg-surface-container-low rounded-xl p-6 sm:p-8 border border-outline-variant/30 flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-6">
+          <div className="flex flex-col items-stretch justify-between gap-5 rounded-xl border border-outline-variant/30 bg-surface-container-low p-4 sm:gap-6 sm:p-8 xl:flex-row xl:items-center">
             <div className="space-y-4 min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-                <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-on-surface tracking-tight">
+                <h2 className="text-3xl font-bold tracking-tight text-on-surface sm:text-5xl lg:text-6xl">
                   {chordDef.name}
                 </h2>
                 <div className="bg-surface-container border border-outline-variant/30 px-3 py-1.5 rounded-lg text-primary font-mono text-xs sm:text-sm font-bold">
@@ -457,31 +513,62 @@ export const ChordsPage: React.FC<ChordsPageProps> = ({
 
           {/* Voicings / Keyboard area */}
           <div className="w-full max-w-full min-w-0">
-            <h3 className="text-2xl font-bold text-on-surface mb-6">
-              Voicings
-            </h3>
+            <div className="mb-5 flex items-center gap-2 sm:mb-6">
+              <h3 className="text-2xl font-bold text-on-surface">Voicings</h3>
+              <button
+                type="button"
+                onClick={() => setShowChordCoverageModal(true)}
+                className="flex h-3.5 w-3.5 cursor-pointer items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-[8px] font-bold leading-none text-primary transition-colors hover:bg-primary/15"
+                aria-label="Chord coverage info"
+                title="Chord coverage info"
+              >
+                ?
+              </button>
+            </div>
 
-            {instrumentView === "guitar" ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {chordDef.voicings
-                  .slice()
-                  .sort((a, b) => (a.baseFret || 1) - (b.baseFret || 1))
-                  .map((voicing, idx) => (
-                    <ChordDiagram
-                      key={idx}
-                      chordName={chordDef.name}
-                      voicing={voicing}
-                      root={selectedRoot}
-                    />
-                  ))}
+            {(instrumentView === "guitar" || instrumentView === "both") && (
+              <div className="space-y-6">
+                <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
+                  <div className="flex items-center gap-2 text-sm font-mono font-bold uppercase tracking-[0.2em] text-on-surface-variant">
+                    <Guitar size={14} />
+                    <span>Guitar Voicings</span>
+                  </div>
+                  <span className="text-right text-[10px] font-mono uppercase tracking-[0.15em] text-on-surface-variant/80 sm:tracking-[0.2em]">
+                    click to play
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 sm:gap-6">
+                  {chordDef.voicings
+                    .slice()
+                    .sort((a, b) => (a.baseFret || 1) - (b.baseFret || 1))
+                    .map((voicing, idx) => (
+                      <ChordDiagram
+                        key={idx}
+                        chordName={chordDef.name}
+                        voicing={voicing}
+                        root={selectedRoot}
+                      />
+                    ))}
+                </div>
               </div>
-            ) : (
-              <div className="flex flex-col gap-4 w-full max-w-full min-w-0">
+            )}
+
+            {(instrumentView === "piano" || instrumentView === "both") && (
+              <div className="flex flex-col gap-4 w-full max-w-full min-w-0 mt-8">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-sm font-mono font-bold uppercase tracking-[0.2em] text-on-surface-variant">
+                    <Piano size={14} />
+                    <span>Piano Voicing</span>
+                  </div>
+                  <span className="text-[10px] font-mono text-on-surface-variant/80 uppercase tracking-[0.2em]">
+                    click buttons to play
+                  </span>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {Array.from({ length: numNotes }).map((_, idx) => (
                     <button
                       key={idx}
-                      onClick={() => setSelectedInversion(idx)}
+                      onClick={() => handleInversionSelect(idx)}
                       className={`px-4 py-1.5 rounded-full text-xs font-mono font-bold transition-colors ${
                         activeInversion === idx
                           ? "bg-primary text-on-primary shadow"
@@ -510,6 +597,52 @@ export const ChordsPage: React.FC<ChordsPageProps> = ({
           </div>
         </div>
       </div>
+
+      {showChordCoverageModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-surface rounded-2xl w-full max-w-md border border-outline-variant/30 overflow-hidden shadow-2xl">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <h3 className="text-xl font-bold text-on-surface">
+                  Chord Coverage
+                </h3>
+                <button
+                  onClick={() => setShowChordCoverageModal(false)}
+                  className="text-on-surface-variant hover:text-on-surface p-1 rounded-full hover:bg-surface-container"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <p className="text-on-surface-variant text-sm mb-4 leading-relaxed">
+                Not all chords are available yet. Some chords are still missing
+                from this collection.
+              </p>
+
+              <p className="text-on-surface-variant text-sm mb-6 leading-relaxed">
+                If you find a mistake or a missing chord, feel free to contact
+                me at
+                <br />
+                <a
+                  href="mailto:yassinekhemiri.dev@gmail.com"
+                  className="text-primary font-semibold underline break-all"
+                >
+                  yassinekhemiri.dev@gmail.com
+                </a>
+              </p>
+
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowChordCoverageModal(false)}
+                  className="px-4 py-2 bg-primary text-on-primary text-sm font-bold rounded-lg hover:bg-primary/90 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Redirect Explanation Modal */}
       {showRedirectModal && redirectNotice && (

@@ -129,13 +129,17 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
       const chordElements = container.querySelectorAll<HTMLElement>(
         '[data-chord-key="true"]',
       );
-      if (chordElements.length === 0) return;
+      const targetElements =
+        chordElements.length > 0
+          ? chordElements
+          : container.querySelectorAll<HTMLElement>('[data-scale-key="true"]');
+      if (targetElements.length === 0) return;
 
       const containerRect = container.getBoundingClientRect();
       let minLeft = Infinity;
       let maxRight = -Infinity;
 
-      chordElements.forEach((el) => {
+      targetElements.forEach((el) => {
         const rect = el.getBoundingClientRect();
         const relativeLeft =
           rect.left - containerRect.left + container.scrollLeft;
@@ -228,7 +232,9 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
                       (activePlayingOctave === null ||
                         activePlayingOctave === currentOctave);
                     const isRoot =
-                      (!!selectedScale || chordNotes.length > 0 || (exactVoicing && exactVoicing.length > 0)) &&
+                      (!!selectedScale ||
+                        chordNotes.length > 0 ||
+                        (exactVoicing && exactVoicing.length > 0)) &&
                       noteSemitone === NOTE_SEMITONES[selectedRoot] &&
                       (!exactVoicing || inChord);
 
@@ -251,6 +257,14 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
                         {/* White Key */}
                         <button
                           data-chord-key={inChord ? "true" : undefined}
+                          data-scale-key={
+                            inScale &&
+                            (!focusLimits ||
+                              (keyPitch >= focusLimits.minVal &&
+                                keyPitch <= focusLimits.maxVal))
+                              ? "true"
+                              : undefined
+                          }
                           onClick={() =>
                             handleKeyClick(spelledNote, currentOctave)
                           }
@@ -266,7 +280,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
                                     : isRoot
                                       ? "bg-primary text-on-primary font-black border-t-4 border-primary shadow-md z-10"
                                       : inChord
-                                        ? "bg-primary-container text-on-primary-container font-bold z-10"
+                                        ? "bg-inverse-surface text-inverse-on-surface font-bold z-10"
                                         : inScale
                                           ? "bg-inverse-surface text-inverse-on-surface hover:opacity-90 active:opacity-80"
                                           : "bg-surface-container-highest text-on-surface-variant/40 hover:bg-surface-bright"
@@ -326,7 +340,9 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
                                 (activePlayingOctave === null ||
                                   activePlayingOctave === currentOctave);
                               const bIsRoot =
-                                (!!selectedScale || chordNotes.length > 0 || (exactVoicing && exactVoicing.length > 0)) &&
+                                (!!selectedScale ||
+                                  chordNotes.length > 0 ||
+                                  (exactVoicing && exactVoicing.length > 0)) &&
                                 bSemitone === NOTE_SEMITONES[selectedRoot] &&
                                 (!exactVoicing || bInChord);
                               const bDegreeInfo = scaleMap.get(bSemitone);
@@ -342,6 +358,14 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
                               return (
                                 <button
                                   data-chord-key={bInChord ? "true" : undefined}
+                                  data-scale-key={
+                                    bInScale &&
+                                    (!focusLimits ||
+                                      (bKeyPitch >= focusLimits.minVal &&
+                                        bKeyPitch <= focusLimits.maxVal))
+                                      ? "true"
+                                      : undefined
+                                  }
                                   onClick={() =>
                                     handleKeyClick(bSpelledNote, currentOctave)
                                   }
@@ -357,7 +381,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
                                             : bIsRoot
                                               ? "bg-primary text-on-primary font-bold shadow-lg ring-1 ring-primary"
                                               : bInChord
-                                                ? "bg-primary-container text-on-primary-container shadow-md"
+                                                ? "bg-black text-white shadow-[0_4px_8px_rgba(0,0,0,0.8)] border border-zinc-800"
                                                 : bInScale
                                                   ? "bg-black text-white shadow-[0_4px_8px_rgba(0,0,0,0.8)] border border-zinc-800"
                                                   : "bg-surface-container-low text-on-surface-variant/20 shadow-none border border-transparent hover:bg-surface-container"
@@ -390,7 +414,9 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
                 ? keyPitch < focusLimits.minVal || keyPitch > focusLimits.maxVal
                 : false;
 
-              const inScale = selectedScale ? scaleMap.has(noteSemitone) : false;
+              const inScale = selectedScale
+                ? scaleMap.has(noteSemitone)
+                : false;
               const inChord = exactVoicing
                 ? exactVoicing.some(
                     (v) => v.noteName === "C" && v.octave === finalOctave,
@@ -404,7 +430,9 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
                 (activePlayingOctave === null ||
                   activePlayingOctave === finalOctave);
               const isRoot =
-                (!!selectedScale || chordNotes.length > 0 || (exactVoicing && exactVoicing.length > 0)) &&
+                (!!selectedScale ||
+                  chordNotes.length > 0 ||
+                  (exactVoicing && exactVoicing.length > 0)) &&
                 noteSemitone === NOTE_SEMITONES[selectedRoot] &&
                 (!exactVoicing || inChord);
               const degreeInfo = scaleMap.get(noteSemitone);
@@ -422,6 +450,14 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
                 <div className="relative">
                   <button
                     data-chord-key={inChord ? "true" : undefined}
+                    data-scale-key={
+                      inScale &&
+                      (!focusLimits ||
+                        (keyPitch >= focusLimits.minVal &&
+                          keyPitch <= focusLimits.maxVal))
+                        ? "true"
+                        : undefined
+                    }
                     onClick={() => handleKeyClick("C", finalOctave)}
                     className={`w-11 h-44 rounded-b-md border-r border-l border-b border-outline-variant/30 flex flex-col justify-end pb-3 items-center transition-all ${
                       isDimmed
@@ -435,7 +471,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
                               : isRoot
                                 ? "bg-primary text-on-primary font-black border-t-4 border-primary shadow-md z-10"
                                 : inChord
-                                  ? "bg-primary-container text-on-primary-container font-bold z-10"
+                                  ? "bg-inverse-surface text-inverse-on-surface font-bold z-10"
                                   : inScale
                                     ? "bg-inverse-surface text-inverse-on-surface hover:opacity-90 active:opacity-80"
                                     : "bg-surface-container-highest text-on-surface-variant/40 hover:bg-surface-bright"

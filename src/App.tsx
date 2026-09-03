@@ -40,6 +40,10 @@ export function App() {
     string | null
   >(null);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [activeTab]);
+
   // Settings & Theme
   const [settings, setSettings] = useState<AppSettings>(() =>
     getSavedSettings(),

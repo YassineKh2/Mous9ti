@@ -102,7 +102,7 @@ export const RandomDrill: React.FC<RandomDrillProps> = ({
   }, [pickNextRandomNote]);
 
   return (
-    <div className="bg-surface-container border border-outline-variant/30 rounded-lg p-5 flex flex-col justify-between relative shadow-xl">
+    <div className="bg-surface-container border border-outline-variant/30 rounded-lg p-4 md:p-5 flex flex-col justify-between relative shadow-xl">
       {/* Top Header */}
       <div className="flex items-center justify-between pb-3 border-b border-outline-variant/10">
         <div className="flex items-center gap-2">
@@ -116,7 +116,7 @@ export const RandomDrill: React.FC<RandomDrillProps> = ({
         <select
           value={accidentalMode}
           onChange={(e) => setAccidentalMode(e.target.value as AccidentalMode)}
-          className="bg-surface-container-low border border-outline-variant/30 rounded px-2 py-1 text-[11px] font-mono text-on-surface focus:outline-none focus:border-primary/50 cursor-pointer"
+          className="min-h-10 bg-surface-container-low border border-outline-variant/30 rounded px-2 py-1 text-[11px] font-mono text-on-surface focus:outline-none focus:border-primary/50 cursor-pointer md:min-h-0"
         >
           <option value="both">All (# / b)</option>
           <option value="sharps">Sharps (#)</option>
@@ -148,7 +148,7 @@ export const RandomDrill: React.FC<RandomDrillProps> = ({
           {onToggleHighlight && (
             <button
               onClick={onToggleHighlight}
-              className={`text-[9px] font-mono px-2 py-0.5 rounded border transition-colors ${
+              className={`min-h-9 text-[9px] font-mono px-2 py-0.5 rounded border transition-colors md:min-h-0 ${
                 showHighlight
                   ? "bg-primary/20 text-primary border-primary/40"
                   : "bg-surface-container-high text-on-surface-variant border-outline-variant/30 hover:text-on-surface"
@@ -175,7 +175,7 @@ export const RandomDrill: React.FC<RandomDrillProps> = ({
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => setAutoAdvance(!autoAdvance)}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded font-mono text-[10px] tracking-wider border transition-all ${
+              className={`flex min-h-10 items-center gap-1.5 px-2.5 py-1.5 rounded font-mono text-[10px] tracking-wider border transition-all md:min-h-0 ${
                 autoAdvance
                   ? "bg-primary/20 text-primary border-primary/50"
                   : "bg-transparent text-on-surface-variant border-outline-variant/30 hover:text-on-surface"
@@ -192,7 +192,7 @@ export const RandomDrill: React.FC<RandomDrillProps> = ({
                   e.target.value as "1s" | "2s" | "5s" | "10s" | "15s",
                 )
               }
-              className="bg-surface-container-low border border-outline-variant/30 rounded px-2 py-1.5 text-[10px] font-mono text-on-surface focus:outline-none cursor-pointer"
+              className="min-h-10 bg-surface-container-low border border-outline-variant/30 rounded px-2 py-1.5 text-[10px] font-mono text-on-surface focus:outline-none cursor-pointer md:min-h-0"
             >
               <option value="1s">1 Sec</option>
               <option value="2s">2 Sec</option>
@@ -204,7 +204,7 @@ export const RandomDrill: React.FC<RandomDrillProps> = ({
 
           <button
             onClick={pickNextRandomNote}
-            className="flex items-center gap-1.5 bg-surface-container-low hover:bg-surface-container-high text-on-surface border border-outline-variant/30 px-3 py-1.5 rounded text-xs font-mono tracking-wider active:scale-95 transition-all shadow"
+            className="flex min-h-10 items-center gap-1.5 bg-surface-container-low hover:bg-surface-container-high text-on-surface border border-outline-variant/30 px-3 py-1.5 rounded text-xs font-mono tracking-wider active:scale-95 transition-all shadow md:min-h-0"
           >
             <span>NEXT</span>
             <ArrowRight size={13} />

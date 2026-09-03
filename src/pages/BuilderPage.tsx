@@ -26,6 +26,8 @@ import {
   Volume2,
   Save,
   Library,
+  Piano,
+  Layers,
 } from "lucide-react";
 import {
   ALL_ROOT_NOTES,
@@ -1076,6 +1078,15 @@ export const BuilderPage: React.FC = () => {
   const [selectedInstrument, setSelectedInstrument] = useState<string>(
     "acoustic_guitar_nylon",
   );
+  const [instrumentView, setInstrumentView] = useState<
+    "guitar" | "piano" | "both"
+  >(() => {
+    return selectedInstrument.includes("piano") ||
+      selectedInstrument.includes("grand") ||
+      selectedInstrument === "electric_piano_1"
+      ? "piano"
+      : "guitar";
+  });
   const [reverbWet, setReverbWet] = useState<number>(30); // 0-100%
   const [isReverbActive, setIsReverbActive] = useState<boolean>(true);
   const [reverbSpace, setReverbSpace] = useState<"room" | "hall" | "ambient">(
@@ -1090,6 +1101,19 @@ export const BuilderPage: React.FC = () => {
       selectedInstrument.includes("keys")
     );
   }, [selectedInstrument]);
+
+  const handleInstrumentFamilyChange = (view: "guitar" | "piano" | "both") => {
+    setInstrumentView(view);
+
+    if (view === "guitar") {
+      setSelectedInstrument("acoustic_guitar_nylon");
+      return;
+    }
+
+    if (view === "piano") {
+      setSelectedInstrument("acoustic_grand_piano");
+    }
+  };
 
   useEffect(() => {
     if (isKeyboardOrSynth) {
@@ -1439,7 +1463,14 @@ export const BuilderPage: React.FC = () => {
       selectedInstrument.includes("grand") ||
       selectedInstrument.includes("synth");
     const stagger = isKeyboardOrSynth ? 0.015 : 0.04;
-    audioEngine.playChordArpeggio(notesToPlay, selectedInstrument, stagger, 0, 1.8, true);
+    audioEngine.playChordArpeggio(
+      notesToPlay,
+      selectedInstrument,
+      stagger,
+      0,
+      1.8,
+      true,
+    );
   };
 
   const handleAddChord = (voicingIndex: number) => {
@@ -1501,6 +1532,46 @@ export const BuilderPage: React.FC = () => {
             <span className="text-[10px] font-mono text-on-surface-variant uppercase tracking-wider mb-1">
               Instrument
             </span>
+            <div className="flex gap-1 bg-surface-container-low p-1 rounded border border-outline-variant/30 mb-2">
+              <button
+                type="button"
+                onClick={() => handleInstrumentFamilyChange("guitar")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-mono rounded transition-all ${
+                  instrumentView === "guitar"
+                    ? "bg-primary text-on-primary font-bold shadow"
+                    : "text-on-surface-variant hover:text-on-surface"
+                }`}
+              >
+                <Guitar size={14} />
+                <span>Guitar</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleInstrumentFamilyChange("piano")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-mono rounded transition-all ${
+                  instrumentView === "piano"
+                    ? "bg-primary text-on-primary font-bold shadow"
+                    : "text-on-surface-variant hover:text-on-surface"
+                }`}
+              >
+                <Piano size={14} />
+                <span>Piano</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleInstrumentFamilyChange("both")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-mono rounded transition-all ${
+                  instrumentView === "both"
+                    ? "bg-primary text-on-primary font-bold shadow"
+                    : "text-on-surface-variant hover:text-on-surface"
+                }`}
+              >
+                <Layers size={14} />
+                <span>Both</span>
+              </button>
+            </div>
             <div className="flex flex-col gap-1">
               <select
                 value={
@@ -1508,13 +1579,26 @@ export const BuilderPage: React.FC = () => {
                     ? "custom"
                     : selectedInstrument
                 }
-                onChange={(e) =>
-                  setSelectedInstrument(
+                onChange={(e) => {
+                  const nextValue =
                     e.target.value === "custom"
                       ? "/zanderJazz.sf2"
-                      : e.target.value,
-                  )
-                }
+                      : e.target.value;
+
+                  setSelectedInstrument(nextValue);
+
+                  if (
+                    nextValue.includes("piano") ||
+                    nextValue.includes("grand") ||
+                    nextValue === "electric_piano_1"
+                  ) {
+                    setInstrumentView("piano");
+                  } else if (nextValue.startsWith("synth_")) {
+                    setInstrumentView("both");
+                  } else {
+                    setInstrumentView("guitar");
+                  }
+                }}
                 className="font-mono bg-surface border border-outline-variant/30 rounded-lg px-2.5 py-1 text-sm font-bold text-on-surface focus:outline-none focus:border-primary/50 cursor-pointer w-full max-w-[210px]"
               >
                 <optgroup label="Guitars">
@@ -2100,7 +2184,7 @@ export const BuilderPage: React.FC = () => {
                     onChange={(e) =>
                       setSelectedDuration(Number(e.target.value))
                     }
-                    className="w-full max-w-full bg-surface border border-outline-variant/30 rounded-lg px-3 py-2 text-sm text-on-surface focus:outline-none focus:border-primary/50 transition-colors cursor-pointer truncate"
+                    className="font-mono w-full max-w-full bg-surface border border-outline-variant/30 rounded-lg px-3 py-2 text-sm text-on-surface focus:outline-none focus:border-primary/50 transition-colors cursor-pointer truncate"
                   >
                     {DURATION_OPTIONS.map((d) => (
                       <option key={d.value} value={d.value}>
@@ -2132,7 +2216,7 @@ export const BuilderPage: React.FC = () => {
                 <select
                   value={selectedStyle}
                   onChange={(e) => setSelectedStyle(e.target.value)}
-                  className="w-full max-w-full bg-surface border border-outline-variant/30 rounded-lg px-3 py-2 text-sm text-on-surface focus:outline-none focus:border-primary/50 transition-colors cursor-pointer truncate"
+                  className="font-mono w-full max-w-full bg-surface border border-outline-variant/30 rounded-lg px-3 py-2 text-sm text-on-surface focus:outline-none focus:border-primary/50 transition-colors cursor-pointer truncate"
                 >
                   {(isKeyboardOrSynth
                     ? Object.entries(KEYBOARD_PLAYING_STYLES)

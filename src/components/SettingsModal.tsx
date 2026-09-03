@@ -1,7 +1,7 @@
-import React from 'react';
-import { X, Volume2, Moon, Sun, Download, Trash2, Sliders } from 'lucide-react';
-import { AppSettings } from '../types';
-import { GUITAR_TUNINGS } from '../data/musicTheory';
+import React from "react";
+import { X, Volume2, Moon, Sun, Download, Trash2, Sliders } from "lucide-react";
+import { AppSettings } from "../types";
+import { GUITAR_TUNINGS } from "../data/musicTheory";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -18,7 +18,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   settings,
   onUpdateSettings,
   onExportData,
-  onClearData
+  onClearData,
 }) => {
   if (!isOpen) return null;
 
@@ -60,7 +60,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               max="1"
               step="0.01"
               value={settings.soundVolume}
-              onChange={(e) => onUpdateSettings({ soundVolume: parseFloat(e.target.value) })}
+              onChange={(e) =>
+                onUpdateSettings({ soundVolume: parseFloat(e.target.value) })
+              }
               className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
             />
           </div>
@@ -78,22 +80,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
             <div className="flex items-center gap-1 bg-[#1c1b1b] p-1 rounded-lg border border-white/10">
               <button
-                onClick={() => onUpdateSettings({ theme: 'dark' })}
+                onClick={() => onUpdateSettings({ theme: "dark" })}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-mono transition-all ${
-                  settings.theme === 'dark'
-                    ? 'bg-blue-600 text-white font-bold'
-                    : 'text-zinc-400 hover:text-white'
+                  settings.theme === "dark"
+                    ? "bg-blue-600 text-white font-bold"
+                    : "text-zinc-400 hover:text-white"
                 }`}
               >
                 <Moon size={13} />
                 <span>Dark</span>
               </button>
               <button
-                onClick={() => onUpdateSettings({ theme: 'light' })}
+                onClick={() => onUpdateSettings({ theme: "light" })}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-mono transition-all ${
-                  settings.theme === 'light'
-                    ? 'bg-blue-600 text-white font-bold'
-                    : 'text-zinc-400 hover:text-white'
+                  settings.theme === "light"
+                    ? "bg-blue-600 text-white font-bold"
+                    : "text-zinc-400 hover:text-white"
                 }`}
               >
                 <Sun size={13} />
@@ -109,12 +111,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </label>
             <select
               value={settings.defaultTuning}
-              onChange={(e) => onUpdateSettings({ defaultTuning: e.target.value })}
+              onChange={(e) =>
+                onUpdateSettings({ defaultTuning: e.target.value })
+              }
               className="w-full bg-[#1c1b1b] border border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200 focus:outline-none focus:border-blue-500"
             >
               {GUITAR_TUNINGS.map((t) => (
                 <option key={t.name} value={t.name}>
-                  {t.name} ({t.strings.join(' ')})
+                  {t.name} ({t.strings.join(" ")})
                 </option>
               ))}
             </select>
@@ -132,8 +136,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   onClick={() => onUpdateSettings({ fretCount: cnt })}
                   className={`py-2 rounded font-mono text-xs border transition-all ${
                     settings.fretCount === cnt
-                      ? 'bg-blue-600 text-white border-blue-500 font-bold'
-                      : 'bg-[#1c1b1b] border-white/10 text-zinc-400 hover:text-white'
+                      ? "bg-blue-600 text-white border-blue-500 font-bold"
+                      : "bg-[#1c1b1b] border-white/10 text-zinc-400 hover:text-white"
                   }`}
                 >
                   {cnt} Frets
@@ -148,19 +152,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               Default Metronome Timbre
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {(['click', 'woodblock', 'tick', 'beep'] as const).map((sound) => (
-                <button
-                  key={sound}
-                  onClick={() => onUpdateSettings({ metronomeSound: sound })}
-                  className={`py-2 px-1 rounded font-mono text-[11px] uppercase border transition-all ${
-                    settings.metronomeSound === sound
-                      ? 'bg-blue-600 text-white border-blue-500 font-bold'
-                      : 'bg-[#1c1b1b] border-white/10 text-zinc-400 hover:text-white'
-                  }`}
-                >
-                  {sound}
-                </button>
-              ))}
+              {(["click", "woodblock", "tick", "beep"] as const).map(
+                (sound) => (
+                  <button
+                    key={sound}
+                    onClick={() => onUpdateSettings({ metronomeSound: sound })}
+                    className={`py-2 px-1 rounded font-mono text-[11px] uppercase border transition-all ${
+                      settings.metronomeSound === sound
+                        ? "bg-blue-600 text-white border-blue-500 font-bold"
+                        : "bg-[#1c1b1b] border-white/10 text-zinc-400 hover:text-white"
+                    }`}
+                  >
+                    {sound}
+                  </button>
+                ),
+              )}
             </div>
           </div>
 
@@ -181,14 +187,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
               <button
                 onClick={() => {
-                  if (window.confirm('Are you sure you want to reset all practice logs and streaks?')) {
+                  if (
+                    window.confirm(
+                      "Are you sure you want to reset all practice logs and streaks?",
+                    )
+                  ) {
                     onClearData();
                   }
                 }}
                 className="flex items-center gap-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 px-3.5 py-2 rounded text-xs font-mono transition-all"
               >
                 <Trash2 size={14} />
-                <span>Reset Practice Data</span>
+                <span>Reset All Data</span>
               </button>
             </div>
           </div>

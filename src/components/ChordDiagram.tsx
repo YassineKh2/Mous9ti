@@ -1,8 +1,12 @@
-import React from 'react';
-import { Volume2 } from 'lucide-react';
-import { GuitarVoicing, NoteName } from '../types';
-import { audioEngine } from '../lib/audio';
-import { CHROMATIC_SHARPS, GUITAR_TUNINGS, NOTE_SEMITONES } from '../data/musicTheory';
+import React from "react";
+import { Volume2 } from "lucide-react";
+import { GuitarVoicing, NoteName } from "../types";
+import { audioEngine } from "../lib/audio";
+import {
+  CHROMATIC_SHARPS,
+  GUITAR_TUNINGS,
+  NOTE_SEMITONES,
+} from "../data/musicTheory";
 
 interface ChordDiagramProps {
   chordName: string;
@@ -15,7 +19,7 @@ export const ChordDiagram: React.FC<ChordDiagramProps> = ({
   chordName,
   voicing,
   root,
-  onPlay
+  onPlay,
 }) => {
   // SVG Dimensions & Layout
   const svgWidth = 240;
@@ -31,7 +35,7 @@ export const ChordDiagram: React.FC<ChordDiagramProps> = ({
 
   const baseFret = voicing.baseFret || 1;
   const isNut = baseFret === 1;
-  
+
   const tuning = GUITAR_TUNINGS[0]; // E A D G B E
 
   // Handle Play Sound
@@ -52,15 +56,19 @@ export const ChordDiagram: React.FC<ChordDiagramProps> = ({
       const totalSemi = openSemi + fret;
       const currentSemi = totalSemi % 12;
       const noteName = CHROMATIC_SHARPS[currentSemi];
-      const oct = baseOct + Math.floor(totalSemi / 12) - Math.floor(openSemi / 12);
+      const oct =
+        baseOct + Math.floor(totalSemi / 12) - Math.floor(openSemi / 12);
       notesToPlay.push({ note: noteName, octave: oct });
     });
 
-    audioEngine.playChordArpeggio(notesToPlay, 'guitar', 0.05);
+    audioEngine.playChordArpeggio(notesToPlay, "guitar", 0.05);
   };
 
   return (
-    <div className="bg-surface-container-low border border-outline-variant/30 rounded-xl p-6 flex flex-col items-center shadow-lg group hover:border-outline-variant/60 transition-all cursor-pointer" onClick={handlePlayChord}>
+    <div
+      className="group flex cursor-pointer flex-col items-center rounded-xl border border-outline-variant/30 bg-surface-container-low p-4 shadow-lg transition-all hover:border-outline-variant/60 sm:p-6"
+      onClick={handlePlayChord}
+    >
       {/* Chord Card Header */}
       <div className="w-full flex items-center justify-between pb-4 mb-2">
         <div className="flex items-center gap-4">
@@ -74,7 +82,11 @@ export const ChordDiagram: React.FC<ChordDiagramProps> = ({
       </div>
 
       {/* SVG Diagram Canvas */}
-      <svg width={svgWidth} height={svgHeight} className="overflow-visible select-none my-2">
+      <svg
+        width={svgWidth}
+        height={svgHeight}
+        className="overflow-visible select-none my-2"
+      >
         {/* Base Fret Indicator on left if not open */}
         {!isNut && (
           <text
@@ -146,10 +158,12 @@ export const ChordDiagram: React.FC<ChordDiagramProps> = ({
         })}
 
         {/* Barre line if present */}
-        {voicing.barre && voicing.barre.fret > 0 && (
+        {voicing.barre &&
+          voicing.barre.fret > 0 &&
           (() => {
             const relFret = voicing.barre.fret - baseFret + 1;
-            const fromX = margin.left + voicing.barre.fromString * stringSpacing;
+            const fromX =
+              margin.left + voicing.barre.fromString * stringSpacing;
             const toX = margin.left + voicing.barre.toString * stringSpacing;
             const y = margin.top + (relFret - 0.5) * fretSpacing;
 
@@ -176,13 +190,12 @@ export const ChordDiagram: React.FC<ChordDiagramProps> = ({
                 </text>
               </g>
             );
-          })()
-        )}
+          })()}
 
         {/* Finger Dots, Open 'O' and Muted 'X' indicators */}
         {voicing.frets.map((fret, stringIdx) => {
           const x = margin.left + stringIdx * stringSpacing;
-          
+
           if (fret === null) {
             // Muted String 'X'
             return (
@@ -228,15 +241,18 @@ export const ChordDiagram: React.FC<ChordDiagramProps> = ({
             const totalSemi = openSemi + fret;
             const currentSemi = totalSemi % 12;
             const isRoot = currentSemi === NOTE_SEMITONES[root];
-            
+
             // Skip drawing individual dot if it is covered by the barre
-            const isCoveredByBarre = voicing.barre && 
-                                     voicing.barre.fret === fret && 
-                                     stringIdx >= Math.min(voicing.barre.fromString, voicing.barre.toString) && 
-                                     stringIdx <= Math.max(voicing.barre.fromString, voicing.barre.toString);
-            
+            const isCoveredByBarre =
+              voicing.barre &&
+              voicing.barre.fret === fret &&
+              stringIdx >=
+                Math.min(voicing.barre.fromString, voicing.barre.toString) &&
+              stringIdx <=
+                Math.max(voicing.barre.fromString, voicing.barre.toString);
+
             if (isCoveredByBarre) {
-              // We might still want to highlight if it's a root note under the barre, 
+              // We might still want to highlight if it's a root note under the barre,
               // but standard diagrams usually just leave the barre solid.
               if (isRoot) {
                 const y = margin.top + (relFret - 0.5) * fretSpacing;
@@ -254,19 +270,20 @@ export const ChordDiagram: React.FC<ChordDiagramProps> = ({
             }
 
             const y = margin.top + (relFret - 0.5) * fretSpacing;
-            const fingerNum = voicing.fingers ? voicing.fingers[stringIdx] : null;
+            const fingerNum = voicing.fingers
+              ? voicing.fingers[stringIdx]
+              : null;
 
-            const dotFill = isRoot ? "var(--color-secondary)" : "var(--color-on-surface)";
-            const textFill = isRoot ? "var(--color-on-secondary)" : "var(--color-background)";
+            const dotFill = isRoot
+              ? "var(--color-secondary)"
+              : "var(--color-on-surface)";
+            const textFill = isRoot
+              ? "var(--color-on-secondary)"
+              : "var(--color-background)";
 
             return (
               <g key={`dot-${stringIdx}`}>
-                <circle
-                  cx={x}
-                  cy={y}
-                  r={10}
-                  fill={dotFill}
-                />
+                <circle cx={x} cy={y} r={10} fill={dotFill} />
                 {fingerNum && (
                   <text
                     x={x}
@@ -286,25 +303,29 @@ export const ChordDiagram: React.FC<ChordDiagramProps> = ({
 
           return null;
         })}
-        
+
         {/* String Names at bottom */}
         {tuning.strings.map((noteName, i) => (
-           <text
-             key={`str-name-${i}`}
-             x={margin.left + i * stringSpacing}
-             y={margin.top + height + 20}
-             fill={
-                voicing.frets[i] === null 
-                  ? "var(--color-outline-variant)" 
-                  : (voicing.frets[i] !== null && NOTE_SEMITONES[noteName] === NOTE_SEMITONES[root] && voicing.frets[i] === 0) ? "var(--color-secondary)" : "var(--color-on-surface)"
-             }
-             fontSize="10"
-             fontFamily="monospace"
-             textAnchor="middle"
-             fontWeight="bold"
-           >
-             {noteName}
-           </text>
+          <text
+            key={`str-name-${i}`}
+            x={margin.left + i * stringSpacing}
+            y={margin.top + height + 20}
+            fill={
+              voicing.frets[i] === null
+                ? "var(--color-outline-variant)"
+                : voicing.frets[i] !== null &&
+                    NOTE_SEMITONES[noteName] === NOTE_SEMITONES[root] &&
+                    voicing.frets[i] === 0
+                  ? "var(--color-secondary)"
+                  : "var(--color-on-surface)"
+            }
+            fontSize="10"
+            fontFamily="monospace"
+            textAnchor="middle"
+            fontWeight="bold"
+          >
+            {noteName}
+          </text>
         ))}
       </svg>
     </div>
