@@ -42,6 +42,7 @@ import {
   QueueItem,
   SavedProgression,
 } from "../types";
+import { SONG_PRESETS } from "../data/songPresets";
 import { ChordDiagram } from "../components/ChordDiagram";
 import { KeyboardChordDiagram } from "../components/KeyboardChordDiagram";
 import { SavedProgressionsModal } from "../components/SavedProgressionsModal";
@@ -973,6 +974,10 @@ function buildKeyboardVoicing(
   };
 }
 
+function getKeyboardVoicingCount(root: NoteName, type: string): number {
+  return getChordDefinition(root, type).notes.length * 3;
+}
+
 export const BuilderPage: React.FC = () => {
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
@@ -1186,8 +1191,19 @@ export const BuilderPage: React.FC = () => {
 
       let notesToPlay: { note: NoteName; octave: number }[] = [];
       const tuning = GUITAR_TUNINGS[0];
+      const isInstKeyboard =
+        state.instrument.includes("piano") ||
+        state.instrument.includes("grand") ||
+        state.instrument.startsWith("synth_") ||
+        state.instrument.includes("keys");
 
-      if (
+      if (isInstKeyboard) {
+        notesToPlay = buildKeyboardVoicing(
+          item.root,
+          item.type,
+          item.voicingIndex ?? 0,
+        ).notes.map((note) => ({ note: note.note, octave: note.octave }));
+      } else if (
         item.voicingIndex !== undefined &&
         chordDef.voicings[item.voicingIndex]
       ) {
@@ -1217,11 +1233,6 @@ export const BuilderPage: React.FC = () => {
       const durationMs = itemDurationBeats * beatDurationSec * 1000;
 
       const activeInst = state.instrument || selectedInstrument;
-      const isInstKeyboard =
-        activeInst.includes("piano") ||
-        activeInst.includes("grand") ||
-        activeInst.startsWith("synth_") ||
-        activeInst.includes("keys");
       const styleDef = getPlayingStyle(item.style, isInstKeyboard);
       const strokes = styleDef.getStrokes(itemDurationBeats);
 
@@ -1411,6 +1422,29 @@ export const BuilderPage: React.FC = () => {
     voicingIndex?: number,
   ) => {
     const chordDef = getChordDefinition(root, type);
+    const isKeyboardOrSynth =
+      selectedInstrument.includes("piano") ||
+      selectedInstrument.includes("grand") ||
+      selectedInstrument.startsWith("synth_") ||
+      selectedInstrument.includes("keys");
+
+    if (isKeyboardOrSynth) {
+      const notesToPlay = buildKeyboardVoicing(
+        root,
+        type,
+        voicingIndex ?? 0,
+      ).notes.map((note) => ({ note: note.note, octave: note.octave }));
+      audioEngine.playChordArpeggio(
+        notesToPlay,
+        selectedInstrument,
+        0.015,
+        0,
+        1.8,
+        true,
+      );
+      return;
+    }
+
     const voicing =
       voicingIndex !== undefined && chordDef.voicings[voicingIndex]
         ? chordDef.voicings[voicingIndex]
@@ -1440,10 +1474,6 @@ export const BuilderPage: React.FC = () => {
       });
     }
 
-    const isKeyboardOrSynth =
-      selectedInstrument.includes("piano") ||
-      selectedInstrument.includes("grand") ||
-      selectedInstrument.includes("synth");
     const stagger = isKeyboardOrSynth ? 0.015 : 0.04;
     audioEngine.playChordArpeggio(
       notesToPlay,
@@ -1466,6 +1496,29 @@ export const BuilderPage: React.FC = () => {
       voicingIndex,
     };
     setQueue((prev) => [...prev, newItem]);
+  };
+
+  const handleLoadSongPreset = (presetId: string) => {
+    const preset = SONG_PRESETS.find(({ id }) => id === presetId);
+    if (!preset) return;
+
+    setIsPlaying(false);
+    setCurrentQueueIndex(-1);
+    setCurrentRepeat(0);
+    setQueue(
+      preset.chords.map((item) => ({
+        ...item,
+        id: generateId(),
+      })),
+    );
+    setTempo(preset.tempo);
+    setSelectedInstrument(preset.instrument);
+    setSelectedStyle(preset.style);
+    setReverbWet(preset.reverbWet);
+    setReverbSpace(preset.reverbSpace);
+    setIsReverbActive(true);
+    setSelectedRoot(preset.chords[0].root);
+    setSelectedType(preset.chords[0].type);
   };
 
   const handleRemoveItem = (index: number) => {
@@ -1792,15 +1845,39 @@ export const BuilderPage: React.FC = () => {
 
           <div className="builder-queue-surface bg-surface-container-low border border-outline-variant/30 rounded-xl flex flex-col overflow-hidden min-h-[400px]">
             {queue.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-on-surface-variant">
+              <div className="flex-1 flex flex-col items-center justify-center text-center p-6 sm:p-8 text-on-surface-variant">
                 <Music size={48} className="mb-4 opacity-20" />
                 <p className="font-mono text-lg font-bold text-on-surface mb-2">
                   Queue is empty
                 </p>
                 <p className="font-mono text-sm max-w-sm">
-                  Use the builder panel on the right to search and add chords to
-                  your progression.
+                  Start with an original showcase groove or build your own
+                  progression on the right.
                 </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl mt-6 text-left">
+                  {SONG_PRESETS.map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => handleLoadSongPreset(preset.id)}
+                      className="group p-3 rounded-lg bg-surface border border-outline-variant/30 hover:border-primary/60 hover:bg-primary/5 transition-colors"
+                    >
+                      <span className="flex items-center justify-between gap-3">
+                        <span className="font-bold text-sm text-on-surface group-hover:text-primary transition-colors">
+                          {preset.title}
+                        </span>
+                        <Sparkles size={14} className="text-primary shrink-0" />
+                      </span>
+                      <span className="block mt-1 text-[11px] font-mono text-on-surface-variant">
+                        {preset.arrangement}
+                      </span>
+                      <span className="block mt-2 text-[10px] font-mono text-on-surface-variant/80">
+                        {preset.key} · {preset.tempo} BPM ·{" "}
+                        {preset.chords.length} chords
+                      </span>
+                    </button>
+                  ))}
+                </div>
               </div>
             ) : (
               <div className="flex-1 overflow-y-auto p-4 pb-32 space-y-3">
@@ -1938,8 +2015,14 @@ export const BuilderPage: React.FC = () => {
                             </h3>
                             <span className="text-xs text-on-surface-variant font-mono">
                               {item.voicingIndex !== undefined
-                                ? getChordDefinition(item.root, item.type)
-                                    .voicings[item.voicingIndex]?.name
+                                ? isKeyboardOrSynth
+                                  ? buildKeyboardVoicing(
+                                      item.root,
+                                      item.type,
+                                      item.voicingIndex,
+                                    ).name
+                                  : getChordDefinition(item.root, item.type)
+                                      .voicings[item.voicingIndex]?.name
                                 : CHORD_TYPES_CATALOG.find(
                                     (c) => c.type === item.type,
                                   )?.name}
@@ -2241,52 +2324,58 @@ export const BuilderPage: React.FC = () => {
               </div>
 
               <div className="flex flex-col gap-4 max-h-[420px] overflow-y-auto pr-1 pb-1">
-                {getChordDefinition(selectedRoot, selectedType).voicings.map(
-                  (voicing, idx) => (
-                    <div key={idx} className="relative group/voicing">
-                      {isKeyboardOrSynth ? (
-                        <KeyboardChordDiagram
-                          chordName={
-                            getChordDefinition(selectedRoot, selectedType).name
-                          }
-                          voicing={buildKeyboardVoicing(
-                            selectedRoot,
-                            selectedType,
-                            idx,
-                          )}
-                          root={selectedRoot}
-                          instrument={selectedInstrument}
-                        />
-                      ) : (
-                        <ChordDiagram
-                          chordName={
-                            getChordDefinition(selectedRoot, selectedType).name
-                          }
-                          voicing={voicing}
-                          root={selectedRoot}
-                        />
-                      )}
-                      {/* Desktop: hover overlay */}
-                      <div className="absolute inset-0 bg-surface-container-highest/60 backdrop-blur-[2px] opacity-0 group-hover/voicing:opacity-100 transition-opacity rounded-xl hidden lg:flex items-center justify-center pointer-events-none">
-                        <button
-                          onClick={() => handleAddChord(idx)}
-                          className="pointer-events-auto flex items-center gap-2 bg-primary text-on-primary font-bold px-4 py-2.5 rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all"
-                        >
-                          <Plus size={16} strokeWidth={3} />
-                          ADD VOICING
-                        </button>
-                      </div>
-                      {/* Mobile: always-visible button */}
+                {(isKeyboardOrSynth
+                  ? Array.from({
+                      length: getKeyboardVoicingCount(
+                        selectedRoot,
+                        selectedType,
+                      ),
+                    })
+                  : getChordDefinition(selectedRoot, selectedType).voicings
+                ).map((voicing, idx) => (
+                  <div key={idx} className="relative group/voicing">
+                    {isKeyboardOrSynth ? (
+                      <KeyboardChordDiagram
+                        chordName={
+                          getChordDefinition(selectedRoot, selectedType).name
+                        }
+                        voicing={buildKeyboardVoicing(
+                          selectedRoot,
+                          selectedType,
+                          idx,
+                        )}
+                        root={selectedRoot}
+                        instrument={selectedInstrument}
+                      />
+                    ) : (
+                      <ChordDiagram
+                        chordName={
+                          getChordDefinition(selectedRoot, selectedType).name
+                        }
+                        voicing={voicing}
+                        root={selectedRoot}
+                      />
+                    )}
+                    {/* Desktop: hover overlay */}
+                    <div className="absolute inset-0 bg-surface-container-highest/60 backdrop-blur-[2px] opacity-0 group-hover/voicing:opacity-100 transition-opacity rounded-xl hidden lg:flex items-center justify-center pointer-events-none">
                       <button
                         onClick={() => handleAddChord(idx)}
-                        className="lg:hidden w-full flex items-center justify-center gap-2 bg-primary text-on-primary font-bold px-4 py-2.5 rounded-lg shadow-sm active:scale-95 transition-all mt-2"
+                        className="pointer-events-auto flex items-center gap-2 bg-primary text-on-primary font-bold px-4 py-2.5 rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all"
                       >
                         <Plus size={16} strokeWidth={3} />
                         ADD VOICING
                       </button>
                     </div>
-                  ),
-                )}
+                    {/* Mobile: always-visible button */}
+                    <button
+                      onClick={() => handleAddChord(idx)}
+                      className="lg:hidden w-full flex items-center justify-center gap-2 bg-primary text-on-primary font-bold px-4 py-2.5 rounded-lg shadow-sm active:scale-95 transition-all mt-2"
+                    >
+                      <Plus size={16} strokeWidth={3} />
+                      ADD VOICING
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

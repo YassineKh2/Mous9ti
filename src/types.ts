@@ -80,7 +80,12 @@ export interface GuitarVoicing {
     toString: number;
     finger: number;
   };
-  category?: "fundamental-open" | "fundamental-barre" | "CAGED" | "movable" | "variation";
+  category?:
+    | "fundamental-open"
+    | "fundamental-barre"
+    | "CAGED"
+    | "movable"
+    | "variation";
   isFundamental?: boolean;
 }
 
@@ -172,6 +177,22 @@ export interface QueueItem {
   duration: number; // Duration in beats (1 = quarter note, 2 = half note, 3 = dotted half, 4 = whole note, 8 = 2 bars)
   style: string; // Strumming pattern key
   voicingIndex?: number;
+}
+
+export interface SongPreset {
+  id: string;
+  title: string;
+  artist: string;
+  category: "Original";
+  arrangement: string;
+  key: string;
+  tempo: number;
+  instrument: string;
+  style: string;
+  reverbWet: number;
+  reverbSpace: "room" | "hall" | "ambient";
+  chords: Omit<QueueItem, "id">[];
+  source: string;
 }
 
 export interface SavedProgression {
