@@ -1113,9 +1113,9 @@ export const BuilderPage: React.FC = () => {
       selectedInstrument.includes("grand") ||
       selectedInstrument === "electric_piano_1"
     ) {
-      audioEngine.loadSoundfonts("acoustic_guitar_nylon", selectedInstrument);
+      audioEngine.loadBuilderSoundfont(selectedInstrument);
     } else if (!selectedInstrument.startsWith("synth_")) {
-      audioEngine.loadSoundfonts(selectedInstrument, "acoustic_grand_piano");
+      audioEngine.loadBuilderSoundfont(selectedInstrument);
     }
   }, [selectedInstrument]);
 
@@ -1256,6 +1256,7 @@ export const BuilderPage: React.FC = () => {
             staggerSec,
             globalOffsetSec,
             strokeDurationSec,
+            true,
           );
         } else if (action.type === "arpeggio_down") {
           // Play each pitch in descending cascading order spaced melodically
@@ -1271,6 +1272,7 @@ export const BuilderPage: React.FC = () => {
             staggerSec,
             globalOffsetSec,
             strokeDurationSec,
+            true,
           );
         } else if (action.type === "arpeggio_step") {
           // Rhythmic step arpeggio (e.g. 8th or 16th note continuous cycle through chord tones)
@@ -1295,6 +1297,7 @@ export const BuilderPage: React.FC = () => {
               strokeDurationSec,
               globalOffsetSec,
               activeInst,
+              true,
             );
           }
         } else if (action.type === "bass_only") {
@@ -1307,6 +1310,7 @@ export const BuilderPage: React.FC = () => {
               strokeDurationSec,
               globalOffsetSec,
               activeInst,
+              true,
             );
           }
         } else if (action.type === "chords_only") {
@@ -1321,6 +1325,7 @@ export const BuilderPage: React.FC = () => {
             staggerSec,
             globalOffsetSec,
             strokeDurationSec,
+            true,
           );
         } else if (action.type === "alberti") {
           const notesList =
@@ -1343,6 +1348,7 @@ export const BuilderPage: React.FC = () => {
               strokeDurationSec,
               globalOffsetSec,
               activeInst,
+              true,
             );
           }
         } else {
@@ -1355,6 +1361,7 @@ export const BuilderPage: React.FC = () => {
             staggerSec,
             globalOffsetSec,
             strokeDurationSec,
+            true,
           );
         }
       });
@@ -1432,7 +1439,7 @@ export const BuilderPage: React.FC = () => {
       selectedInstrument.includes("grand") ||
       selectedInstrument.includes("synth");
     const stagger = isKeyboardOrSynth ? 0.015 : 0.04;
-    audioEngine.playChordArpeggio(notesToPlay, selectedInstrument, stagger);
+    audioEngine.playChordArpeggio(notesToPlay, selectedInstrument, stagger, 0, 1.8, true);
   };
 
   const handleAddChord = (voicingIndex: number) => {

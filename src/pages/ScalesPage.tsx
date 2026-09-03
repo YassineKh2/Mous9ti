@@ -222,7 +222,8 @@ export const ScalesPage: React.FC<ScalesPageProps> = ({
     stopScalePlayback();
     setIsPlaying(true);
 
-    const baseOctave = instrumentView === "piano" ? 4 : 3;
+    const playingInstrument = instrumentView;
+    const baseOctave = playingInstrument === "piano" ? 4 : 3;
     const rootSemitone = NOTE_SEMITONES[selectedRoot] ?? 0;
     const scaleSemitones = new Set(
       selectedScale.intervals.map((iv) => (rootSemitone + iv) % 12),
@@ -237,6 +238,7 @@ export const ScalesPage: React.FC<ScalesPageProps> = ({
 
     // 1. If a CAGED box pattern / shape is selected (on Guitar or Both view), play only the notes in that shape
     if (
+      (playingInstrument === "guitar" || playingInstrument === "both") &&
       activeCagedBox &&
       selectedScale.cagedBoxes &&
       selectedScale.cagedBoxes[activeCagedBox]
@@ -312,7 +314,7 @@ export const ScalesPage: React.FC<ScalesPageProps> = ({
     // 2. If no CAGED shape is active and Piano Focus Range is enabled (on Piano or Both view), play that focused range
     if (
       playSequence.length === 0 &&
-      (instrumentView === "piano" || instrumentView === "both") &&
+      (playingInstrument === "piano" || playingInstrument === "both") &&
       pianoFocusRange !== "all"
     ) {
       const startOct = pianoFocusRange === "octave4" ? 4 : 3;
@@ -399,9 +401,10 @@ export const ScalesPage: React.FC<ScalesPageProps> = ({
         setActivePlayingString(item.stringIdx ?? null);
         setActivePlayingFret(item.fretNum ?? null);
 
-        if (instrumentView === "piano") {
+        if (playingInstrument === "piano" || playingInstrument === "both") {
           audioEngine.playPianoNote(item.note, item.octave, noteDurationSec);
-        } else {
+        }
+        if (playingInstrument === "guitar" || playingInstrument === "both") {
           audioEngine.playGuitarPluck(item.note, item.octave, noteDurationSec);
         }
 

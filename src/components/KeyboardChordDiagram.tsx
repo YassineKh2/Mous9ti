@@ -68,7 +68,7 @@ export const KeyboardChordDiagram: React.FC<KeyboardChordDiagramProps> = ({
     const targetInst = instrument || audioEngine.getSelectedInstrument();
     const isSynth = targetInst.includes("synth");
     const stagger = isSynth ? 0.012 : 0.016;
-    audioEngine.playChordArpeggio(notesToPlay, targetInst, stagger, 0, 2.2);
+    audioEngine.playChordArpeggio(notesToPlay, targetInst, stagger, 0, 2.2, true);
   };
 
   // Keyboard dimensions for SVG

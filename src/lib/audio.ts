@@ -31,6 +31,8 @@ class AudioEngine {
   private currentInstrument = "acoustic_guitar_nylon";
   private guitarInstrument: any = null;
   private pianoInstrument: any = null;
+  private builderInstrumentInstance: any = null;
+  private defaultSoundfontsRequested = false;
   public isSoundfontLoading = false;
 
   // Metronome Scheduling State
@@ -158,6 +160,12 @@ class AudioEngine {
 
       this.highpassFilter.connect(this.compressor);
       this.compressor.connect(this.ctx.destination);
+
+      // Auto-load default guitar & piano soundfonts on first context init
+      if (!this.defaultSoundfontsRequested) {
+        this.defaultSoundfontsRequested = true;
+        this.loadSoundfonts();
+      }
     }
 
     if (this.ctx.state === "suspended") {
@@ -237,6 +245,12 @@ class AudioEngine {
       ) {
         this.pianoInstrument.stop();
       }
+      if (
+        this.builderInstrumentInstance &&
+        typeof this.builderInstrumentInstance.stop === "function"
+      ) {
+        this.builderInstrumentInstance.stop();
+      }
     } catch {
       // Ignore stop errors if not supported
     }
@@ -260,40 +274,64 @@ class AudioEngine {
 
     this.isSoundfontLoading = true;
     try {
-      const destination =
-        this.masterGain || this.compressor || this.ctx.destination;
+      const destination = this.compressor || this.ctx.destination;
 
-      if (guitarSource.toLowerCase().endsWith(".sf2")) {
-        this.guitarInstrument = Soundfont2(this.ctx as any, {
-          url: guitarSource,
-          createSoundfont: (data: ArrayBuffer) =>
-            new SoundFont2(new Uint8Array(data)),
-          destination,
-        });
-        await this.guitarInstrument.ready;
-        if (
-          this.guitarInstrument.instrumentNames &&
-          this.guitarInstrument.instrumentNames.length > 0
-        ) {
-          this.guitarInstrument.loadInstrument(
-            this.guitarInstrument.instrumentNames[0],
-          );
-        }
-      } else {
+      // Always load the defaults if not already loaded (dry destination)
+      if (!this.guitarInstrument) {
         this.guitarInstrument = Soundfont(this.ctx as any, {
           instrument: guitarSource,
           destination,
         });
         await this.guitarInstrument.ready;
       }
-
-      this.pianoInstrument = Soundfont(this.ctx as any, {
-        instrument: pianoSource,
-        destination,
-      });
-      await this.pianoInstrument.ready;
+      if (!this.pianoInstrument) {
+        this.pianoInstrument = Soundfont(this.ctx as any, {
+          instrument: pianoSource,
+          destination,
+        });
+        await this.pianoInstrument.ready;
+      }
     } catch (err) {
-      console.error("Failed to load soundfonts:", err);
+      console.error("Failed to load default soundfonts:", err);
+    } finally {
+      this.isSoundfontLoading = false;
+    }
+  }
+
+  public async loadBuilderSoundfont(source: string) {
+    if (!this.ctx) this.getContext();
+    if (!this.ctx) return;
+
+    this.isSoundfontLoading = true;
+    try {
+      // Builder instrument uses masterGain (gets reverb)
+      const destination = this.masterGain || this.compressor || this.ctx.destination;
+      
+      if (source.toLowerCase().endsWith(".sf2")) {
+        this.builderInstrumentInstance = Soundfont2(this.ctx as any, {
+          url: source,
+          createSoundfont: (data: ArrayBuffer) =>
+            new SoundFont2(new Uint8Array(data)),
+          destination,
+        });
+        await this.builderInstrumentInstance.ready;
+        if (
+          this.builderInstrumentInstance.instrumentNames &&
+          this.builderInstrumentInstance.instrumentNames.length > 0
+        ) {
+          this.builderInstrumentInstance.loadInstrument(
+            this.builderInstrumentInstance.instrumentNames[0],
+          );
+        }
+      } else {
+        this.builderInstrumentInstance = Soundfont(this.ctx as any, {
+          instrument: source,
+          destination,
+        });
+        await this.builderInstrumentInstance.ready;
+      }
+    } catch (err) {
+      console.error("Failed to load builder soundfont:", err);
     } finally {
       this.isSoundfontLoading = false;
     }
@@ -332,13 +370,16 @@ class AudioEngine {
     octave: number = 3,
     duration: number = 1.8,
     timeOffset: number = 0,
+    useBuilderInst: boolean = false,
   ) {
     if (this.isMuted) return;
     const ctx = this.getContext();
     const startTime = ctx.currentTime + timeOffset + 0.02;
 
-    if (this.guitarInstrument) {
-      this.guitarInstrument.start({
+    const instToUse = useBuilderInst ? this.builderInstrumentInstance : this.guitarInstrument;
+
+    if (instToUse) {
+      instToUse.start({
         note: note + octave,
         time: startTime,
         duration: Math.max(0.3, duration),
@@ -399,8 +440,10 @@ class AudioEngine {
     gain3.connect(filter);
 
     filter.connect(masterPluckGain);
-    if (this.masterGain) {
+    if (useBuilderInst && this.masterGain) {
       masterPluckGain.connect(this.masterGain);
+    } else if (!useBuilderInst && this.compressor) {
+      masterPluckGain.connect(this.compressor);
     } else {
       masterPluckGain.connect(ctx.destination);
     }
@@ -420,13 +463,16 @@ class AudioEngine {
     octave: number = 4,
     duration: number = 2.0,
     timeOffset: number = 0,
+    useBuilderInst: boolean = false,
   ) {
     if (this.isMuted) return;
     const ctx = this.getContext();
     const startTime = ctx.currentTime + timeOffset + 0.02;
 
-    if (this.pianoInstrument) {
-      this.pianoInstrument.start({
+    const instToUse = useBuilderInst ? this.builderInstrumentInstance : this.pianoInstrument;
+
+    if (instToUse) {
+      instToUse.start({
         note: note + octave,
         time: startTime,
         duration: Math.max(0.3, duration),
@@ -487,8 +533,10 @@ class AudioEngine {
     mix3.connect(filter);
 
     filter.connect(gainNode);
-    if (this.masterGain) {
+    if (useBuilderInst && this.masterGain) {
       gainNode.connect(this.masterGain);
+    } else if (!useBuilderInst && this.compressor) {
+      gainNode.connect(this.compressor);
     } else {
       gainNode.connect(ctx.destination);
     }
@@ -509,6 +557,7 @@ class AudioEngine {
     duration: number = 2.0,
     timeOffset: number = 0,
     synthType: "poly" | "pad" | "lead" = "poly",
+    useBuilderInst: boolean = false,
   ) {
     if (this.isMuted) return;
     const ctx = this.getContext();
@@ -638,8 +687,10 @@ class AudioEngine {
     mixSub.connect(filter);
 
     filter.connect(gainNode);
-    if (this.masterGain) {
+    if (useBuilderInst && this.masterGain) {
       gainNode.connect(this.masterGain);
+    } else if (!useBuilderInst && this.compressor) {
+      gainNode.connect(this.compressor);
     } else {
       gainNode.connect(ctx.destination);
     }
@@ -660,6 +711,7 @@ class AudioEngine {
     duration: number = 1.8,
     timeOffset: number = 0,
     instrument?: string,
+    useBuilder: boolean = false,
   ) {
     const targetInstrument =
       instrument || this.currentInstrument || "acoustic_guitar_nylon";
@@ -677,11 +729,11 @@ class AudioEngine {
 
     if (isSynth) {
       const synthType = isSynthPad ? "pad" : isSynthLead ? "lead" : "poly";
-      this.playSynthNote(note, octave, duration, timeOffset, synthType);
+      this.playSynthNote(note, octave, duration, timeOffset, synthType, useBuilder);
     } else if (isPiano) {
-      this.playPianoNote(note, octave, duration, timeOffset);
+      this.playPianoNote(note, octave, duration, timeOffset, useBuilder);
     } else {
-      this.playGuitarPluck(note, octave, duration, timeOffset);
+      this.playGuitarPluck(note, octave, duration, timeOffset, useBuilder);
     }
   }
 
@@ -692,6 +744,7 @@ class AudioEngine {
     staggerSec: number = 0.06,
     globalOffsetSec: number = 0,
     noteDurationSec: number = 1.8,
+    useBuilder: boolean = false,
   ) {
     const targetInstrument =
       instrument || this.currentInstrument || "acoustic_guitar_nylon";
@@ -717,11 +770,12 @@ class AudioEngine {
           noteDurationSec,
           offset,
           synthType,
+          useBuilder,
         );
       } else if (isPiano) {
-        this.playPianoNote(n.note, n.octave, noteDurationSec, offset);
+        this.playPianoNote(n.note, n.octave, noteDurationSec, offset, useBuilder);
       } else {
-        this.playGuitarPluck(n.note, n.octave, noteDurationSec, offset);
+        this.playGuitarPluck(n.note, n.octave, noteDurationSec, offset, useBuilder);
       }
     });
   }
