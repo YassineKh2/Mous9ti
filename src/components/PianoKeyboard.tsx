@@ -207,7 +207,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
 
                     const inScale = selectedScale
                       ? scaleMap.has(noteSemitone)
-                      : true;
+                      : false;
 
                     const inChord = exactVoicing
                       ? exactVoicing.some(
@@ -228,7 +228,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
                       (activePlayingOctave === null ||
                         activePlayingOctave === currentOctave);
                     const isRoot =
-                      !!selectedScale &&
+                      (!!selectedScale || chordNotes.length > 0 || (exactVoicing && exactVoicing.length > 0)) &&
                       noteSemitone === NOTE_SEMITONES[selectedRoot] &&
                       (!exactVoicing || inChord);
 
@@ -304,7 +304,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
 
                               const bInScale = selectedScale
                                 ? scaleMap.has(bSemitone)
-                                : true;
+                                : false;
 
                               const bInChord = exactVoicing
                                 ? exactVoicing.some(
@@ -326,7 +326,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
                                 (activePlayingOctave === null ||
                                   activePlayingOctave === currentOctave);
                               const bIsRoot =
-                                !!selectedScale &&
+                                (!!selectedScale || chordNotes.length > 0 || (exactVoicing && exactVoicing.length > 0)) &&
                                 bSemitone === NOTE_SEMITONES[selectedRoot] &&
                                 (!exactVoicing || bInChord);
                               const bDegreeInfo = scaleMap.get(bSemitone);
@@ -390,7 +390,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
                 ? keyPitch < focusLimits.minVal || keyPitch > focusLimits.maxVal
                 : false;
 
-              const inScale = selectedScale ? scaleMap.has(noteSemitone) : true;
+              const inScale = selectedScale ? scaleMap.has(noteSemitone) : false;
               const inChord = exactVoicing
                 ? exactVoicing.some(
                     (v) => v.noteName === "C" && v.octave === finalOctave,
@@ -404,7 +404,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
                 (activePlayingOctave === null ||
                   activePlayingOctave === finalOctave);
               const isRoot =
-                !!selectedScale &&
+                (!!selectedScale || chordNotes.length > 0 || (exactVoicing && exactVoicing.length > 0)) &&
                 noteSemitone === NOTE_SEMITONES[selectedRoot] &&
                 (!exactVoicing || inChord);
               const degreeInfo = scaleMap.get(noteSemitone);

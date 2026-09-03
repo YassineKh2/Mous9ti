@@ -113,9 +113,6 @@ export const KeyboardChordDiagram: React.FC<KeyboardChordDiagramProps> = ({
       {/* Top Header */}
       <div className="w-full flex items-center justify-between gap-2 mb-3 pb-2 border-b border-outline-variant/20">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="p-1 rounded bg-primary/10 text-primary group-hover:scale-110 transition-transform">
-            <Volume2 size={13} />
-          </div>
           <div className="flex flex-col min-w-0">
             <span className="font-bold text-xs sm:text-sm text-on-surface truncate">
               {voicing.name}
@@ -193,15 +190,15 @@ export const KeyboardChordDiagram: React.FC<KeyboardChordDiagramProps> = ({
                     ry={3}
                     fill={
                       isRootKey
-                        ? "url(#activeRootKeyGrad)"
+                        ? "var(--color-primary)"
                         : isChordKey
-                          ? "url(#activeWhiteKeyGrad)"
-                          : "var(--color-surface-container-highest, #f8f9fa)"
+                          ? "var(--color-inverse-surface)"
+                          : "var(--color-surface-container-highest)"
                     }
                     stroke={
                       isChordKey
-                        ? "var(--color-primary)"
-                        : "var(--color-outline-variant, #cbd5e1)"
+                        ? "var(--color-inverse-surface)"
+                        : "var(--color-outline-variant)"
                     }
                     strokeWidth={isChordKey ? 1.5 : 0.8}
                     className="transition-colors"
@@ -217,17 +214,17 @@ export const KeyboardChordDiagram: React.FC<KeyboardChordDiagramProps> = ({
                         fill={
                           isRootKey
                             ? "var(--color-primary)"
-                            : "var(--color-surface)"
+                            : "var(--color-inverse-surface)"
                         }
-                        stroke={isRootKey ? "#fff" : "var(--color-primary)"}
+                        stroke={isRootKey ? "#fff" : "var(--color-inverse-on-surface)"}
                         strokeWidth={1.2}
                       />
                       <text
                         y={3}
                         fill={
                           isRootKey
-                            ? "var(--color-on-primary, #fff)"
-                            : "var(--color-primary)"
+                            ? "var(--color-on-primary)"
+                            : "var(--color-inverse-on-surface)"
                         }
                         fontSize={isRootKey ? "8" : "7.5"}
                         fontWeight="bold"
@@ -288,10 +285,10 @@ export const KeyboardChordDiagram: React.FC<KeyboardChordDiagramProps> = ({
                         isRootKey
                           ? "var(--color-primary)"
                           : isChordKey
-                            ? "var(--color-primary)"
-                            : "#1e293b"
+                            ? "#000000"
+                            : "var(--color-surface-container-low)"
                       }
-                      stroke={isChordKey ? "#fff" : "#0f172a"}
+                      stroke={isChordKey ? "#27272a" : "transparent"}
                       strokeWidth={isChordKey ? 1.2 : 0.6}
                       className="transition-colors"
                     />
@@ -303,14 +300,14 @@ export const KeyboardChordDiagram: React.FC<KeyboardChordDiagramProps> = ({
                       >
                         <circle
                           r={5.5}
-                          fill={isRootKey ? "#fff" : "var(--color-surface)"}
+                          fill={isRootKey ? "#fff" : "transparent"}
                         />
                         <text
                           y={2.5}
                           fill={
                             isRootKey
                               ? "var(--color-primary)"
-                              : "var(--color-on-surface)"
+                              : "#ffffff"
                           }
                           fontSize="6.5"
                           fontWeight="bold"
