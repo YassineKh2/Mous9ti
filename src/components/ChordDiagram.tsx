@@ -154,15 +154,27 @@ export const ChordDiagram: React.FC<ChordDiagramProps> = ({
             const y = margin.top + (relFret - 0.5) * fretSpacing;
 
             return (
-              <rect
-                x={Math.min(fromX, toX) - 5}
-                y={y - 8}
-                width={Math.abs(toX - fromX) + 10}
-                height={16}
-                rx={8}
-                fill="var(--color-on-surface-variant)"
-                opacity={0.4}
-              />
+              <g key="barre">
+                <rect
+                  x={Math.min(fromX, toX) - 6}
+                  y={y - 6}
+                  width={Math.abs(toX - fromX) + 12}
+                  height={12}
+                  rx={6}
+                  fill="var(--color-on-surface)"
+                />
+                <text
+                  x={Math.min(fromX, toX) - 16}
+                  y={y + 3.5}
+                  fill="var(--color-on-surface)"
+                  fontSize="10"
+                  fontFamily="sans-serif"
+                  textAnchor="middle"
+                  fontWeight="bold"
+                >
+                  {voicing.barre.finger}
+                </text>
+              </g>
             );
           })()
         )}
@@ -210,15 +222,39 @@ export const ChordDiagram: React.FC<ChordDiagramProps> = ({
           // Fretted note dot
           const relFret = fret - baseFret + 1;
           if (relFret >= 1 && relFret <= numFrets) {
-            const y = margin.top + (relFret - 0.5) * fretSpacing;
-            const fingerNum = voicing.fingers ? voicing.fingers[stringIdx] : null;
-
             // Determine if root
             const openNote = tuning.strings[stringIdx];
             const openSemi = NOTE_SEMITONES[openNote];
             const totalSemi = openSemi + fret;
             const currentSemi = totalSemi % 12;
             const isRoot = currentSemi === NOTE_SEMITONES[root];
+            
+            // Skip drawing individual dot if it is covered by the barre
+            const isCoveredByBarre = voicing.barre && 
+                                     voicing.barre.fret === fret && 
+                                     stringIdx >= Math.min(voicing.barre.fromString, voicing.barre.toString) && 
+                                     stringIdx <= Math.max(voicing.barre.fromString, voicing.barre.toString);
+            
+            if (isCoveredByBarre) {
+              // We might still want to highlight if it's a root note under the barre, 
+              // but standard diagrams usually just leave the barre solid.
+              if (isRoot) {
+                const y = margin.top + (relFret - 0.5) * fretSpacing;
+                return (
+                  <circle
+                    key={`dot-barre-root-${stringIdx}`}
+                    cx={x}
+                    cy={y}
+                    r={5}
+                    fill="var(--color-secondary)"
+                  />
+                );
+              }
+              return null;
+            }
+
+            const y = margin.top + (relFret - 0.5) * fretSpacing;
+            const fingerNum = voicing.fingers ? voicing.fingers[stringIdx] : null;
 
             const dotFill = isRoot ? "var(--color-secondary)" : "var(--color-on-surface)";
             const textFill = isRoot ? "var(--color-on-secondary)" : "var(--color-background)";

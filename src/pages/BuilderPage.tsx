@@ -1,4 +1,11 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 import {
   Play,
   Pause,
@@ -242,8 +249,8 @@ export const KEYBOARD_PLAYING_STYLES: Record<
     getStrokes: () => [{ beat: 0, type: "down" }],
   },
   "arpeggio-8ths": {
-    label: "8th-Note Melodic Arpeggio",
-    shortLabel: "8th Arpeggio ♫",
+    label: "8th-Note Arpeggio",
+    shortLabel: "8th Arpeggio",
     getStrokes: (beats) => {
       const strokes: StyleStroke[] = [];
       let sub = 0;
@@ -256,14 +263,39 @@ export const KEYBOARD_PLAYING_STYLES: Record<
     },
   },
   "arpeggiator-16ths": {
-    label: "16th-Note Fast Arpeggiator",
-    shortLabel: "16th Arpeggiator",
+    label: "16th-Note Arpeggio",
+    shortLabel: "16th Arpeggio",
     getStrokes: (beats) => {
       const strokes: StyleStroke[] = [];
       let sub = 0;
       for (let b = 0; b < beats; b += 0.25) {
         strokes.push({ beat: b, type: "arpeggio_step", subIndex: sub });
         sub++;
+      }
+      if (strokes.length === 0) strokes.push({ beat: 0, type: "down" });
+      return strokes;
+    },
+  },
+  "ballad-8ths": {
+    label: "8ths Pulse",
+    shortLabel: "8ths Pulse",
+    getStrokes: (beats) => {
+      const strokes: StyleStroke[] = [];
+      for (let b = 0; b < beats; b += 0.5) {
+        strokes.push({ beat: b, type: b % 1 === 0 ? "down" : "up" });
+      }
+      if (strokes.length === 0) strokes.push({ beat: 0, type: "down" });
+      return strokes;
+    },
+  },
+
+  "synth-16th": {
+    label: "16th Pulse",
+    shortLabel: "16th Pulse",
+    getStrokes: (beats) => {
+      const strokes: StyleStroke[] = [];
+      for (let b = 0; b < beats; b += 0.25) {
+        strokes.push({ beat: b, type: "down" });
       }
       if (strokes.length === 0) strokes.push({ beat: 0, type: "down" });
       return strokes;
@@ -353,30 +385,6 @@ export const KEYBOARD_PLAYING_STYLES: Record<
       return strokes;
     },
   },
-  "ballad-8ths": {
-    label: "Flowing Ballad 8ths (Ambient Comping)",
-    shortLabel: "Ballad 8ths",
-    getStrokes: (beats) => {
-      const strokes: StyleStroke[] = [];
-      for (let b = 0; b < beats; b += 0.5) {
-        strokes.push({ beat: b, type: b % 1 === 0 ? "down" : "up" });
-      }
-      if (strokes.length === 0) strokes.push({ beat: 0, type: "down" });
-      return strokes;
-    },
-  },
-  "synth-16th": {
-    label: "Driving 16th Pulse Stabs",
-    shortLabel: "16th Pulse",
-    getStrokes: (beats) => {
-      const strokes: StyleStroke[] = [];
-      for (let b = 0; b < beats; b += 0.25) {
-        strokes.push({ beat: b, type: "down" });
-      }
-      if (strokes.length === 0) strokes.push({ beat: 0, type: "down" });
-      return strokes;
-    },
-  },
 };
 
 // Combined Registry
@@ -424,163 +432,185 @@ interface RepeatsDropdownProps {
   onChange: (value: number) => void;
   className?: string;
   compact?: boolean;
+  openUpwards?: boolean;
+  onOpenChange?: (isOpen: boolean) => void;
 }
 
-const RepeatsDropdown: React.FC<RepeatsDropdownProps> = ({
-  value,
-  onChange,
-  className = "",
-  compact = false,
-}) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [customVal, setCustomVal] = useState<string>(value.toString());
-  const containerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+const RepeatsDropdown = forwardRef<
+  { toggle: () => void },
+  RepeatsDropdownProps
+>(
+  (
+    {
+      value,
+      onChange,
+      className = "",
+      compact = false,
+      openUpwards = false,
+      onOpenChange,
+    },
+    ref,
+  ) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [customVal, setCustomVal] = useState<string>(value.toString());
+    const containerRef = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    setCustomVal(value.toString());
-  }, [value]);
+    const handleOpenToggle = (newState: boolean) => {
+      setIsOpen(newState);
+      onOpenChange?.(newState);
+    };
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
-        setIsOpen(false);
+    useImperativeHandle(ref, () => ({
+      toggle: () => handleOpenToggle(!isOpen),
+    }));
+
+    useEffect(() => {
+      setCustomVal(value.toString());
+    }, [value]);
+
+    useEffect(() => {
+      const handleClickOutside = (e: MouseEvent) => {
+        if (
+          containerRef.current &&
+          !containerRef.current.contains(e.target as Node)
+        ) {
+          handleOpenToggle(false);
+        }
+      };
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    useEffect(() => {
+      if (isOpen) {
+        setTimeout(() => {
+          inputRef.current?.focus();
+          inputRef.current?.select();
+        }, 50);
+      }
+    }, [isOpen]);
+
+    const handleCustomSubmit = (e?: React.FormEvent) => {
+      if (e) e.preventDefault();
+      const val = parseInt(customVal, 10);
+      if (!isNaN(val) && val >= 1) {
+        const sanitized = Math.min(999, Math.max(1, val));
+        onChange(sanitized);
+        setCustomVal(sanitized.toString());
+      } else {
+        setCustomVal(value.toString());
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
-  useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => {
-        inputRef.current?.focus();
-        inputRef.current?.select();
-      }, 50);
-    }
-  }, [isOpen]);
-
-  const handleCustomSubmit = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const val = parseInt(customVal, 10);
-    if (!isNaN(val) && val >= 1) {
-      const sanitized = Math.min(999, Math.max(1, val));
-      onChange(sanitized);
-      setCustomVal(sanitized.toString());
-    } else {
-      setCustomVal(value.toString());
-    }
-  };
-
-  return (
-    <div
-      ref={containerRef}
-      className={`relative ${isOpen ? "z-50" : "z-auto"} ${className}`}
-    >
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className={
-          compact
-            ? "flex items-center gap-1 bg-transparent text-xs font-mono font-bold text-on-surface hover:text-primary transition-colors focus:outline-none cursor-pointer py-0.5"
-            : "w-full bg-surface border border-outline-variant/30 rounded-lg px-3 py-2 text-sm font-mono font-bold text-on-surface cursor-pointer flex justify-between items-center hover:border-primary/50 transition-colors focus:outline-none"
-        }
+    return (
+      <div
+        ref={containerRef}
+        className={`relative ${isOpen ? "z-50" : "z-auto"} ${className}`}
       >
-        <span>{value}x</span>
-        <ChevronDown
-          size={compact ? 12 : 14}
-          className={`text-on-surface-variant transition-transform flex-shrink-0 ${isOpen ? "rotate-180 text-primary" : ""}`}
-        />
-      </button>
-
-      {isOpen && (
-        <div
-          className={`absolute z-50 ${compact ? "right-0 sm:left-0 sm:right-auto" : "left-0 right-0 sm:right-auto"} top-full mt-1.5 w-56 max-w-[calc(100vw-2.5rem)] bg-surface-container-high border border-outline-variant/40 rounded-xl shadow-2xl overflow-hidden p-3 flex flex-col gap-3 backdrop-blur-md`}
+        <button
+          type="button"
+          onClick={() => handleOpenToggle(!isOpen)}
+          className={
+            compact
+              ? "flex items-center gap-1 bg-transparent text-xs font-mono font-bold text-on-surface hover:text-primary transition-colors focus:outline-none cursor-pointer py-0.5"
+              : "w-full bg-surface border border-outline-variant/30 rounded-lg px-3 py-2 text-sm font-mono font-bold text-on-surface cursor-pointer flex justify-between items-center hover:border-primary/50 transition-colors focus:outline-none"
+          }
         >
-          {/* Custom Input Inside Dropdown */}
-          <div>
-            <div className="text-[10px] font-mono text-on-surface-variant uppercase tracking-wider font-semibold mb-1.5 flex justify-between items-center">
-              <span>Custom Repeats</span>
-              <span className="text-primary font-bold">{value}x</span>
-            </div>
-            <form
-              onSubmit={handleCustomSubmit}
-              className="flex items-center gap-1.5"
-            >
-              <div className="relative flex-1 min-w-0">
-                <input
-                  ref={inputRef}
-                  type="number"
-                  min={1}
-                  max={999}
-                  value={customVal}
-                  onChange={(e) => {
-                    setCustomVal(e.target.value);
-                    const val = parseInt(e.target.value, 10);
-                    if (!isNaN(val) && val >= 1) {
-                      onChange(Math.min(999, val));
-                    }
-                  }}
-                  onBlur={() => handleCustomSubmit()}
-                  placeholder="e.g. 5"
-                  className="w-full bg-surface-container-lowest border border-outline-variant/40 rounded-lg pl-2.5 pr-6 py-1.5 text-xs font-mono font-bold text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/40"
-                />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-mono text-on-surface-variant select-none pointer-events-none">
-                  x
-                </span>
+          <span>{value}x</span>
+          <ChevronDown
+            size={compact ? 12 : 14}
+            className={`text-on-surface-variant transition-transform flex-shrink-0 ${isOpen ? "rotate-180 text-primary" : ""}`}
+          />
+        </button>
+
+        {isOpen && (
+          <div
+            className={`absolute z-50 ${compact ? "right-0 sm:left-0 sm:right-auto" : "left-0 right-0 sm:right-auto"} ${openUpwards ? "bottom-full mb-1.5" : "top-full mt-1.5"} w-56 max-w-[calc(100vw-2.5rem)] bg-surface-container-high border border-outline-variant/40 rounded-xl shadow-2xl overflow-hidden p-3 flex flex-col gap-3 backdrop-blur-md`}
+          >
+            {/* Custom Input Inside Dropdown */}
+            <div>
+              <div className="text-[10px] font-mono text-on-surface-variant uppercase tracking-wider font-semibold mb-1.5 flex justify-between items-center">
+                <span>Custom Repeats</span>
+                <span className="text-primary font-bold">{value}x</span>
               </div>
-              <button
-                type="submit"
-                onClick={() => {
-                  handleCustomSubmit();
-                  setIsOpen(false);
-                }}
-                className="px-2.5 py-1.5 bg-primary/15 hover:bg-primary/25 text-primary text-xs font-mono font-bold rounded-lg transition-colors border border-primary/20 cursor-pointer shrink-0"
+              <form
+                onSubmit={handleCustomSubmit}
+                className="flex items-center gap-1.5"
               >
-                Done
-              </button>
-            </form>
-          </div>
-
-          <div className="h-px bg-outline-variant/25 w-full" />
-
-          {/* Presets Inside Dropdown */}
-          <div>
-            <div className="text-[10px] font-mono text-on-surface-variant uppercase tracking-wider font-semibold mb-1.5">
-              Presets
-            </div>
-            <div className="grid grid-cols-4 gap-1">
-              {REPEAT_PRESETS.map((n) => {
-                const isSelected = value === n;
-                return (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => {
-                      onChange(n);
-                      setCustomVal(n.toString());
-                      setIsOpen(false);
+                <div className="relative flex-1 min-w-0">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={customVal}
+                    onChange={(e) => {
+                      setCustomVal(e.target.value);
+                      const val = parseInt(e.target.value, 10);
+                      if (!isNaN(val) && val >= 1) {
+                        onChange(Math.min(999, val));
+                      }
                     }}
-                    className={`px-1.5 py-1.5 rounded-md text-xs font-mono font-semibold text-center transition-all cursor-pointer ${
-                      isSelected
-                        ? "bg-primary text-on-primary font-bold shadow-sm"
-                        : "bg-surface-container hover:bg-surface-container-highest text-on-surface hover:text-primary"
-                    }`}
-                  >
-                    {n}x
-                  </button>
-                );
-              })}
+                    onBlur={() => handleCustomSubmit()}
+                    placeholder="e.g. 5"
+                    className="w-full bg-surface-container-lowest border border-outline-variant/40 rounded-lg pl-2.5 pr-6 py-1.5 text-xs font-mono font-bold text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-mono text-on-surface-variant select-none pointer-events-none">
+                    x
+                  </span>
+                </div>
+                <button
+                  type="submit"
+                  onClick={() => {
+                    handleCustomSubmit();
+                    handleOpenToggle(false);
+                  }}
+                  className="px-2.5 py-1.5 bg-primary/15 hover:bg-primary/25 text-primary text-xs font-mono font-bold rounded-lg transition-colors border border-primary/20 cursor-pointer shrink-0"
+                >
+                  Done
+                </button>
+              </form>
+            </div>
+
+            <div className="h-px bg-outline-variant/25 w-full" />
+
+            {/* Presets Inside Dropdown */}
+            <div>
+              <div className="text-[10px] font-mono text-on-surface-variant uppercase tracking-wider font-semibold mb-1.5">
+                Presets
+              </div>
+              <div className="grid grid-cols-4 gap-1">
+                {REPEAT_PRESETS.map((n) => {
+                  const isSelected = value === n;
+                  return (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => {
+                        onChange(n);
+                        setCustomVal(n.toString());
+                        handleOpenToggle(false);
+                      }}
+                      className={`px-1.5 py-1.5 rounded-md text-xs font-mono font-semibold text-center transition-all cursor-pointer ${
+                        isSelected
+                          ? "bg-primary text-on-primary font-bold shadow-sm"
+                          : "bg-surface-container hover:bg-surface-container-highest text-on-surface hover:text-primary"
+                      }`}
+                    >
+                      {n}x
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
-  );
-};
+        )}
+      </div>
+    );
+  },
+);
 
 const SearchableSelect = ({
   value,
@@ -636,7 +666,7 @@ const SearchableSelect = ({
           <input
             type="text"
             autoFocus
-            className="w-full bg-transparent text-sm focus:outline-none text-on-surface placeholder:text-on-surface-variant/60"
+            className="placeholder:font-mono w-full bg-transparent text-sm focus:outline-none text-on-surface placeholder:text-on-surface-variant/60"
             placeholder={placeholder}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -907,6 +937,8 @@ export const BuilderPage: React.FC = () => {
   const [currentRepeat, setCurrentRepeat] = useState(0);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const repeatsRefs = useRef<Record<string, { toggle: () => void } | null>>({});
 
   // New chord selection state
   const [selectedRoot, setSelectedRoot] = useState<NoteName>("C");
@@ -1349,7 +1381,7 @@ export const BuilderPage: React.FC = () => {
                       : e.target.value,
                   )
                 }
-                className="bg-surface border border-outline-variant/30 rounded-lg px-2.5 py-1 text-sm font-bold text-on-surface focus:outline-none focus:border-primary/50 cursor-pointer w-full max-w-[210px]"
+                className="font-mono bg-surface border border-outline-variant/30 rounded-lg px-2.5 py-1 text-sm font-bold text-on-surface focus:outline-none focus:border-primary/50 cursor-pointer w-full max-w-[210px]"
               >
                 <optgroup label="Guitars">
                   <option value="acoustic_guitar_nylon">
@@ -1526,7 +1558,7 @@ export const BuilderPage: React.FC = () => {
                 </p>
               </div>
             ) : (
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              <div className="flex-1 overflow-y-auto p-4 pb-32 space-y-3">
                 {queue.map((item, index) => {
                   const isActive = currentQueueIndex === index;
                   const isEditing = editingItemId === item.id;
@@ -1576,16 +1608,21 @@ export const BuilderPage: React.FC = () => {
                         setDraggedIndex(null);
                         setDragOverIndex(null);
                       }}
-                      className={`flex flex-col sm:flex-row gap-4 p-4 rounded-xl border transition-all ${
+                      style={{
+                        zIndex:
+                          openDropdownId === item.id
+                            ? 5000
+                            : (isDragging ? 3000 : isEditing ? 2000 : 1000) -
+                              index,
+                      }}
+                      className={`flex flex-col sm:flex-row gap-4 p-4 rounded-xl border transition-all relative ${
                         isDragging
                           ? "opacity-40 border-dashed border-primary scale-[0.98]"
                           : isDragOver
                             ? "ring-2 ring-primary bg-primary/10 border-primary scale-[1.01]"
                             : isEditing
-                              ? "relative z-30 ring-2 ring-primary/40 shadow-lg"
-                              : isActive
-                                ? "relative z-10"
-                                : "relative z-0"
+                              ? "ring-2 ring-primary/40 shadow-lg"
+                              : ""
                       } ${
                         isActive
                           ? "bg-primary/5 border-primary shadow-sm scale-[1.01]"
@@ -1615,7 +1652,7 @@ export const BuilderPage: React.FC = () => {
                       {/* Chord Info */}
                       <div className="flex-1 flex flex-col justify-center">
                         {editingItemId === item.id ? (
-                          <div className="mb-1 max-w-sm">
+                          <div className="font-mono mb-1 max-w-sm">
                             <SearchableSelect
                               value={`${item.root}-${item.type}`}
                               options={ALL_CHORDS_OPTIONS}
@@ -1669,8 +1706,22 @@ export const BuilderPage: React.FC = () => {
                         {/* Inline Edit Controls */}
                         <div className="flex flex-wrap items-center gap-2 mt-2 max-w-full">
                           {/* Duration (Note Length) */}
-                          <div className="flex items-center gap-1.5 bg-surface-container px-2 py-1 rounded-lg border border-outline-variant/20 min-w-0">
-                            <span className="text-[10px] font-mono text-on-surface-variant uppercase font-semibold shrink-0">
+                          <div
+                            className="flex items-center gap-1.5 bg-surface-container px-2 py-1 rounded-lg border border-outline-variant/20 min-w-0 cursor-pointer"
+                            onClick={(e) => {
+                              const select = (
+                                e.currentTarget as HTMLElement
+                              ).querySelector("select");
+                              if (select && e.target !== select) {
+                                try {
+                                  select.showPicker();
+                                } catch {
+                                  select.focus();
+                                }
+                              }
+                            }}
+                          >
+                            <span className="text-[10px] font-mono text-on-surface-variant uppercase font-semibold shrink-0 hover:text-primary transition-colors">
                               Duration
                             </span>
                             <select
@@ -1691,8 +1742,22 @@ export const BuilderPage: React.FC = () => {
                           </div>
 
                           {/* Strum / Playing Style */}
-                          <div className="flex items-center gap-1.5 bg-surface-container px-2 py-1 rounded-lg border border-outline-variant/20 min-w-0">
-                            <span className="text-[10px] font-mono text-on-surface-variant uppercase font-semibold shrink-0">
+                          <div
+                            className="flex items-center gap-1.5 bg-surface-container px-2 py-1 rounded-lg border border-outline-variant/20 min-w-0 cursor-pointer"
+                            onClick={(e) => {
+                              const select = (
+                                e.currentTarget as HTMLElement
+                              ).querySelector("select");
+                              if (select && e.target !== select) {
+                                try {
+                                  select.showPicker();
+                                } catch {
+                                  select.focus();
+                                }
+                              }
+                            }}
+                          >
+                            <span className="text-[10px] font-mono text-on-surface-variant uppercase font-semibold shrink-0 hover:text-primary transition-colors">
                               {isKeyboardOrSynth ? "Style" : "Strum"}
                             </span>
                             <select
@@ -1717,15 +1782,29 @@ export const BuilderPage: React.FC = () => {
 
                           {/* Repeats */}
                           <div className="flex items-center gap-1.5 bg-surface-container px-2 py-1 rounded-lg border border-outline-variant/20 shrink-0">
-                            <span className="text-[10px] font-mono text-on-surface-variant uppercase font-semibold shrink-0">
+                            <span
+                              className="text-[10px] font-mono text-on-surface-variant uppercase font-semibold shrink-0 cursor-pointer hover:text-primary transition-colors"
+                              onClick={() =>
+                                repeatsRefs.current[item.id]?.toggle()
+                              }
+                            >
                               Repeats
                             </span>
                             <RepeatsDropdown
+                              ref={(el) => {
+                                repeatsRefs.current[item.id] = el;
+                              }}
                               value={item.repeats}
                               onChange={(val) =>
                                 handleUpdateItem(index, { repeats: val })
                               }
                               compact={true}
+                              openUpwards={
+                                index >= queue.length - 2 && queue.length > 2
+                              }
+                              onOpenChange={(isOpen) =>
+                                setOpenDropdownId(isOpen ? item.id : null)
+                              }
                             />
                             {isActive && item.repeats > 1 && (
                               <span className="text-[10px] font-mono text-primary font-bold bg-primary/10 px-1 rounded shrink-0">
@@ -1781,7 +1860,7 @@ export const BuilderPage: React.FC = () => {
             Add to Queue
           </h2>
 
-          <div className="bg-surface-container-low border border-outline-variant/30 rounded-xl p-5 flex flex-col gap-5">
+          <div className=" bg-surface-container-low border border-outline-variant/30 rounded-xl p-5 flex flex-col gap-5">
             {/* Unified Chord Search */}
             <div>
               <label className="block text-[10px] font-mono text-on-surface-variant uppercase tracking-wider mb-1.5">

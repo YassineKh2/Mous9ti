@@ -80,6 +80,8 @@ export interface GuitarVoicing {
     toString: number;
     finger: number;
   };
+  category?: "fundamental-open" | "fundamental-barre" | "CAGED" | "movable" | "variation";
+  isFundamental?: boolean;
 }
 
 export interface KeyboardVoicingNote {
