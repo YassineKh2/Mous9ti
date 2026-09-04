@@ -558,6 +558,96 @@ class AudioEngine {
     osc3.stop(startTime + duration);
   }
 
+  // Play a crystal-clear, bright bell alert chime repeated 3 times
+  public playTimerCompletionSound(
+    repeatCount: number = 3,
+    intervalSec: number = 0.65,
+  ) {
+    if (this.isMuted) return;
+    const ctx = this.getContext();
+    if (ctx.state === "suspended") {
+      ctx.resume();
+    }
+
+    const now = ctx.currentTime + 0.015;
+
+    for (let r = 0; r < repeatCount; r++) {
+      const startTime = now + r * intervalSec;
+
+      // Primary clear bell chime tone: C6 (1046.5 Hz)
+      const oscPrimary = ctx.createOscillator();
+      oscPrimary.type = "sine";
+      oscPrimary.frequency.setValueAtTime(1046.5, startTime);
+
+      // Secondary overtone for brightness and clarity: C7 (2093.0 Hz)
+      const oscOctave = ctx.createOscillator();
+      oscOctave.type = "sine";
+      oscOctave.frequency.setValueAtTime(2093.0, startTime);
+
+      // Subtle fifth harmonic for acoustic bell shimmer: G7 (3135.96 Hz)
+      const oscFifth = ctx.createOscillator();
+      oscFifth.type = "sine";
+      oscFifth.frequency.setValueAtTime(3135.96, startTime);
+
+      // Transient attack pulse to ensure crisp initial strike definition
+      const oscTransient = ctx.createOscillator();
+      oscTransient.type = "triangle";
+      oscTransient.frequency.setValueAtTime(2093.0, startTime);
+      oscTransient.frequency.exponentialRampToValueAtTime(
+        1046.5,
+        startTime + 0.025,
+      );
+
+      // Amplitude envelopes
+      const gainPrimary = ctx.createGain();
+      gainPrimary.gain.setValueAtTime(0, startTime);
+      gainPrimary.gain.linearRampToValueAtTime(0.75, startTime + 0.003);
+      gainPrimary.gain.exponentialRampToValueAtTime(0.3, startTime + 0.15);
+      gainPrimary.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.55);
+
+      const gainOctave = ctx.createGain();
+      gainOctave.gain.setValueAtTime(0, startTime);
+      gainOctave.gain.linearRampToValueAtTime(0.35, startTime + 0.003);
+      gainOctave.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.4);
+
+      const gainFifth = ctx.createGain();
+      gainFifth.gain.setValueAtTime(0, startTime);
+      gainFifth.gain.linearRampToValueAtTime(0.18, startTime + 0.003);
+      gainFifth.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.25);
+
+      const gainTransient = ctx.createGain();
+      gainTransient.gain.setValueAtTime(0, startTime);
+      gainTransient.gain.linearRampToValueAtTime(0.35, startTime + 0.002);
+      gainTransient.gain.exponentialRampToValueAtTime(
+        0.0001,
+        startTime + 0.025,
+      );
+
+      oscPrimary.connect(gainPrimary);
+      oscOctave.connect(gainOctave);
+      oscFifth.connect(gainFifth);
+      oscTransient.connect(gainTransient);
+
+      const dest = this.masterGain || ctx.destination;
+      gainPrimary.connect(dest);
+      gainOctave.connect(dest);
+      gainFifth.connect(dest);
+      gainTransient.connect(dest);
+
+      oscPrimary.start(startTime);
+      oscPrimary.stop(startTime + 0.56);
+
+      oscOctave.start(startTime);
+      oscOctave.stop(startTime + 0.41);
+
+      oscFifth.start(startTime);
+      oscFifth.stop(startTime + 0.26);
+
+      oscTransient.start(startTime);
+      oscTransient.stop(startTime + 0.03);
+    }
+  }
+
   // Play a rich synthesized analog poly synth note
   public playSynthNote(
     note: string,

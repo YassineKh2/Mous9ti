@@ -10,6 +10,7 @@ import {
   saveSettings,
 } from "./lib/storage";
 import { audioEngine } from "./lib/audio";
+import { useTimer } from "./lib/useTimer";
 import { Navigation, ActiveTab } from "./components/Navigation";
 import { SettingsModal } from "./components/SettingsModal";
 import { DashboardPage } from "./pages/DashboardPage";
@@ -84,6 +85,34 @@ export function App() {
   const [metronomeIsPlaying, setMetronomeIsPlaying] = useState<boolean>(false);
   const [metronomeBarCycleMode, setMetronomeBarCycleMode] =
     useState<boolean>(false);
+
+  // Practice Timer
+  const timer = useTimer();
+
+  useEffect(() => {
+    timer.setOnComplete(() => {
+      if ("vibrate" in navigator) {
+        navigator.vibrate([200, 450, 200, 450, 200]);
+      }
+
+      if (settings.stopMetronomeOnTimerEnd && audioEngine.isRunning()) {
+        audioEngine.stopMetronome();
+      }
+
+      audioEngine.playTimerCompletionSound(3, 0.65);
+
+      if (
+        "Notification" in window &&
+        Notification.permission === "granted" &&
+        document.hidden
+      ) {
+        new Notification("Practice Timer Finished!", {
+          body: "Your practice session is complete.",
+          icon: "/favicon.ico",
+        });
+      }
+    });
+  }, [settings.stopMetronomeOnTimerEnd, timer]);
 
   useEffect(() => {
     const unsubscribe = audioEngine.onMetronomeStateChange(
@@ -437,7 +466,7 @@ export function App() {
       {
         id: "tab-tools",
         label: "Tools",
-        subtitle: "Metronome, circle, tuner, ear trainer",
+        subtitle: "Timer, metronome, circle, tuner, ear trainer",
         tab: "tools",
         kind: "tab",
       },
@@ -574,6 +603,8 @@ export function App() {
             onEndSession={handleEndSession}
             onLogBpm={handleLogBpm}
             settings={settings}
+            onUpdateSettings={handleUpdateSettings}
+            timer={timer}
             metronomeIsPlaying={metronomeIsPlaying}
             onMetronomePlayingChange={setMetronomeIsPlaying}
             metronomeBarCycleMode={metronomeBarCycleMode}
@@ -612,6 +643,8 @@ export function App() {
             onBpmChange={setMetronomeBpm}
             onLogBpm={handleLogBpm}
             settings={settings}
+            onUpdateSettings={handleUpdateSettings}
+            timer={timer}
             metronomeIsPlaying={metronomeIsPlaying}
             onMetronomePlayingChange={setMetronomeIsPlaying}
             metronomeBarCycleMode={metronomeBarCycleMode}

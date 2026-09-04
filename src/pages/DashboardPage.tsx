@@ -10,6 +10,7 @@ import {
 import { Metronome } from "../components/Metronome";
 import { RandomDrill } from "../components/RandomDrill";
 import { SessionWidget } from "../components/SessionWidget";
+import { TimerWidget } from "../components/TimerWidget";
 import { Fretboard } from "../components/Fretboard";
 import { PianoKeyboard } from "../components/PianoKeyboard";
 import {
@@ -27,6 +28,7 @@ import {
   Search,
   Check,
 } from "lucide-react";
+import { useTimer } from "../lib/useTimer";
 
 interface DashboardPageProps {
   metronomeBpm: number;
@@ -38,6 +40,8 @@ interface DashboardPageProps {
   onEndSession: () => void;
   onLogBpm: (bpm: number) => void;
   settings: AppSettings;
+  onUpdateSettings: (settings: Partial<AppSettings>) => void;
+  timer: ReturnType<typeof useTimer>;
   metronomeIsPlaying?: boolean;
   onMetronomePlayingChange?: (playing: boolean) => void;
   metronomeBarCycleMode?: boolean;
@@ -54,6 +58,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onEndSession,
   onLogBpm,
   settings,
+  onUpdateSettings,
+  timer,
   metronomeIsPlaying,
   onMetronomePlayingChange,
   metronomeBarCycleMode,
@@ -146,8 +152,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Top 3-Column Dashboard Grid */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-5 xl:grid-cols-3 items-stretch">
+      {/* Top Dashboard Grid */}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-5 xl:grid-cols-4 items-stretch">
         {/* Metronome */}
         <Metronome
           bpm={metronomeBpm}
@@ -159,6 +165,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           onIsPlayingChange={onMetronomePlayingChange}
           barCycleMode={metronomeBarCycleMode}
           onBarCycleModeChange={onBarCycleModeChange}
+        />
+
+        {/* Practice Timer */}
+        <TimerWidget
+          timer={timer}
+          settings={settings}
+          onUpdateSettings={onUpdateSettings}
         />
 
         {/* Random Note Drill */}
@@ -268,7 +281,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   setIsScaleMenuOpen((prev) => !prev);
                   setIsRootMenuOpen(false);
                 }}
-                className="group flex h-full w-full min-w-0 items-center justify-between gap-2 rounded-lg border border-outline-variant/30 bg-surface-container-low px-3 py-1 text-left text-xs font-mono leading-none text-on-surface transition-colors hover:bg-surface-container-high focus:outline-none focus:ring-1 focus:ring-primary/40 cursor-pointer md:h-auto md:w-auto md:max-w-[220px]"
+                className="group flex h-full w-full min-w-0 items-center justify-between gap-2 rounded-lg border border-outline-variant/30 bg-surface-container-low px-3 py-1 text-left text-xs font-mono leading-none text-on-surface transition-colors hover:bg-surface-container-high focus:outline-none focus:ring-1 focus:ring-primary/40 cursor-pointer md:h-auto md:w-auto md:max-w-55"
                 title="Click to select another scale"
               >
                 <span className="truncate">
@@ -281,7 +294,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               </button>
 
               {isScaleMenuOpen && (
-                <div className="absolute left-1/2 top-full z-50 mt-2 w-[calc(100vw-1rem)] max-w-[320px] -translate-x-1/2 rounded-xl border border-outline-variant/40 bg-surface p-3 shadow-2xl animate-in fade-in zoom-in-95 duration-150 md:left-0 md:w-[420px] md:max-w-none md:translate-x-0">
+                <div className="absolute left-1/2 top-full z-50 mt-2 w-[calc(100vw-1rem)] max-w-[320px] -translate-x-1/2 rounded-xl border border-outline-variant/40 bg-surface p-3 shadow-2xl animate-in fade-in zoom-in-95 duration-150 md:left-0 md:w-105 md:max-w-none md:translate-x-0">
                   <div className="flex items-center justify-between pb-2 mb-2 border-b border-outline-variant/20">
                     <span className="text-[11px] font-mono font-bold text-on-surface uppercase tracking-wider">
                       Select Scale or Mode

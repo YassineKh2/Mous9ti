@@ -15,6 +15,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   metronomeSound: "click",
   fretboardWood: "ebony",
   autoSaveSession: true,
+  timerPresets: [3, 5, 10, 30],
+  stopMetronomeOnTimerEnd: false,
 };
 
 export function getTodayDateString(): string {

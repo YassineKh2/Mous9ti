@@ -167,6 +167,8 @@ export interface AppSettings {
   metronomeSound: MetronomeSound;
   fretboardWood: "ebony" | "rosewood" | "maple";
   autoSaveSession: boolean;
+  timerPresets: number[]; // in minutes
+  stopMetronomeOnTimerEnd: boolean;
 }
 
 export interface QueueItem {
