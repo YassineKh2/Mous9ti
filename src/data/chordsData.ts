@@ -1,4 +1,9 @@
-import { ChordDefinition, GuitarVoicing, NoteName } from "../types";
+import {
+  ChordDefinition,
+  GuitarVoicing,
+  KeyboardVoicing,
+  NoteName,
+} from "../types";
 import {
   CHROMATIC_SHARPS,
   CHROMATIC_FLATS,
@@ -175,78 +180,281 @@ export function getChordVoicings(
   chordType: string,
 ): GuitarVoicing[] {
   const voicings: GuitarVoicing[] = [];
-  
-  // Normalize chord type for lookup
-  const typeKey = chordType === "m" ? "minor" : (chordType === "m7" ? "min7" : chordType);
 
-  const SHAPE_OFFSETS: Record<string, { e?: (number | null)[], a?: (number | null)[] }> = {
-    "major": { e: [0, 2, 2, 1, 0, 0], a: [null, 0, 2, 2, 2, 0] },
-    "minor": { e: [0, 2, 2, 0, 0, 0], a: [null, 0, 2, 2, 1, 0] },
+  // Normalize chord type for lookup
+  const typeKey =
+    chordType === "m" ? "minor" : chordType === "m7" ? "min7" : chordType;
+
+  const SHAPE_OFFSETS: Record<
+    string,
+    { e?: (number | null)[]; a?: (number | null)[] }
+  > = {
+    major: { e: [0, 2, 2, 1, 0, 0], a: [null, 0, 2, 2, 2, 0] },
+    minor: { e: [0, 2, 2, 0, 0, 0], a: [null, 0, 2, 2, 1, 0] },
     "7": { e: [0, 2, 0, 1, 0, 0], a: [null, 0, 2, 0, 2, 0] },
-    "maj7": { e: [0, null, 1, 1, 0, null], a: [null, 0, 2, 1, 2, 0] },
-    "min7": { e: [0, 2, 0, 0, 0, 0], a: [null, 0, 2, 0, 1, 0] },
-    "dim": { e: [0, null, 2, 0, -1, null], a: [null, 0, 1, 2, 1, null] },
-    "dim7": { e: [0, null, -1, 0, -1, null], a: [null, 0, 1, -1, 1, null] },
-    "m7b5": { e: [0, null, 0, 0, -1, null], a: [null, 0, 1, 0, 1, null] },
-    "aug": { e: [0, null, 2, 1, 1, null], a: [null, 0, -1, -2, -2, null] },
-    "sus2": { e: [0, 2, 4, 4, 0, 0], a: [null, 0, 2, 2, 0, 0] },
-    "sus4": { e: [0, 2, 2, 2, 0, 0], a: [null, 0, 2, 2, 3, 0] },
-    "add9": { e: [0, 2, 4, 1, 0, 0], a: [null, 0, 2, 4, 2, 0] },
+    maj7: { e: [0, null, 1, 1, 0, null], a: [null, 0, 2, 1, 2, 0] },
+    min7: { e: [0, 2, 0, 0, 0, 0], a: [null, 0, 2, 0, 1, 0] },
+    dim: { e: [0, null, 2, 0, -1, null], a: [null, 0, 1, 2, 1, null] },
+    dim7: { e: [0, null, -1, 0, -1, null], a: [null, 0, 1, -1, 1, null] },
+    m7b5: { e: [0, null, 0, 0, -1, null], a: [null, 0, 1, 0, 1, null] },
+    aug: { e: [0, null, 2, 1, 1, null], a: [null, 0, -1, -2, -2, null] },
+    sus2: { e: [0, 2, 4, 4, 0, 0], a: [null, 0, 2, 2, 0, 0] },
+    sus4: { e: [0, 2, 2, 2, 0, 0], a: [null, 0, 2, 2, 3, 0] },
+    add9: { e: [0, 2, 4, 1, 0, 0], a: [null, 0, 2, 4, 2, 0] },
     "9": { e: [0, null, 0, -1, 0, 0], a: [null, 0, -1, 0, 0, null] },
     "11": { e: [0, null, 0, 1, -2, null], a: [null, 0, 0, 0, 0, null] },
     "13": { e: [0, null, 0, 1, 2, null], a: [null, 0, -1, 0, 2, null] },
     "6": { e: [0, null, -1, 1, 0, null], a: [null, 0, 2, -1, 2, null] },
-    "min6": { e: [0, null, -1, 0, 0, null], a: [null, 0, 2, -1, 1, null] },
+    min6: { e: [0, null, -1, 0, 0, null], a: [null, 0, 2, -1, 1, null] },
     "7b9": { e: [0, null, 0, 1, null, 1], a: [null, 0, -1, 0, -1, null] },
-    "7#9": { e: [0, null, 0, 1, null, 3], a: [null, 0, -1, 0, 1, null] }
+    "7#9": { e: [0, null, 0, 1, null, 3], a: [null, 0, -1, 0, 1, null] },
   };
 
   const offsets = SHAPE_OFFSETS[typeKey];
 
   // 1. Handcrafted Open Shapes (highest priority fundamental)
   const openShapes: Record<string, Record<string, Partial<GuitarVoicing>>> = {
-    "C": {
-      "major": { name: "C Open Major", positionLabel: "Open Position", rootString: "Root: 5th String", frets: [null, 3, 2, 0, 1, 0], fingers: [null, 3, 2, null, 1, null], baseFret: 1 },
-      "7": { name: "C7 Open", positionLabel: "Open Position", rootString: "Root: 5th String", frets: [null, 3, 2, 3, 1, 0], fingers: [null, 3, 2, 4, 1, null], baseFret: 1 },
-      "maj7": { name: "Cmaj7 Open", positionLabel: "Open Position", rootString: "Root: 5th String", frets: [null, 3, 2, 0, 0, 0], fingers: [null, 3, 2, null, null, null], baseFret: 1 }
+    C: {
+      major: {
+        name: "C Open Major",
+        positionLabel: "Open Position",
+        rootString: "Root: 5th String",
+        frets: [null, 3, 2, 0, 1, 0],
+        fingers: [null, 3, 2, null, 1, null],
+        baseFret: 1,
+      },
+      "7": {
+        name: "C7 Open",
+        positionLabel: "Open Position",
+        rootString: "Root: 5th String",
+        frets: [null, 3, 2, 3, 1, 0],
+        fingers: [null, 3, 2, 4, 1, null],
+        baseFret: 1,
+      },
+      maj7: {
+        name: "Cmaj7 Open",
+        positionLabel: "Open Position",
+        rootString: "Root: 5th String",
+        frets: [null, 3, 2, 0, 0, 0],
+        fingers: [null, 3, 2, null, null, null],
+        baseFret: 1,
+      },
     },
-    "A": {
-      "major": { name: "A Open Major", positionLabel: "Open Position", rootString: "Root: 5th String", frets: [null, 0, 2, 2, 2, 0], fingers: [null, null, 1, 2, 3, null], baseFret: 1 },
-      "minor": { name: "Am Open Minor", positionLabel: "Open Position", rootString: "Root: 5th String", frets: [null, 0, 2, 2, 1, 0], fingers: [null, null, 2, 3, 1, null], baseFret: 1 },
-      "7": { name: "A7 Open", positionLabel: "Open Position", rootString: "Root: 5th String", frets: [null, 0, 2, 0, 2, 0], fingers: [null, null, 2, null, 3, null], baseFret: 1 },
-      "min7": { name: "Am7 Open", positionLabel: "Open Position", rootString: "Root: 5th String", frets: [null, 0, 2, 0, 1, 0], fingers: [null, null, 2, null, 1, null], baseFret: 1 },
-      "maj7": { name: "Amaj7 Open", positionLabel: "Open Position", rootString: "Root: 5th String", frets: [null, 0, 2, 1, 2, 0], fingers: [null, null, 2, 1, 3, null], baseFret: 1 },
-      "sus2": { name: "Asus2 Open", positionLabel: "Open Position", rootString: "Root: 5th String", frets: [null, 0, 2, 2, 0, 0], fingers: [null, null, 2, 3, null, null], baseFret: 1 },
-      "sus4": { name: "Asus4 Open", positionLabel: "Open Position", rootString: "Root: 5th String", frets: [null, 0, 2, 2, 3, 0], fingers: [null, null, 1, 2, 3, null], baseFret: 1 }
+    A: {
+      major: {
+        name: "A Open Major",
+        positionLabel: "Open Position",
+        rootString: "Root: 5th String",
+        frets: [null, 0, 2, 2, 2, 0],
+        fingers: [null, null, 1, 2, 3, null],
+        baseFret: 1,
+      },
+      minor: {
+        name: "Am Open Minor",
+        positionLabel: "Open Position",
+        rootString: "Root: 5th String",
+        frets: [null, 0, 2, 2, 1, 0],
+        fingers: [null, null, 2, 3, 1, null],
+        baseFret: 1,
+      },
+      "7": {
+        name: "A7 Open",
+        positionLabel: "Open Position",
+        rootString: "Root: 5th String",
+        frets: [null, 0, 2, 0, 2, 0],
+        fingers: [null, null, 2, null, 3, null],
+        baseFret: 1,
+      },
+      min7: {
+        name: "Am7 Open",
+        positionLabel: "Open Position",
+        rootString: "Root: 5th String",
+        frets: [null, 0, 2, 0, 1, 0],
+        fingers: [null, null, 2, null, 1, null],
+        baseFret: 1,
+      },
+      maj7: {
+        name: "Amaj7 Open",
+        positionLabel: "Open Position",
+        rootString: "Root: 5th String",
+        frets: [null, 0, 2, 1, 2, 0],
+        fingers: [null, null, 2, 1, 3, null],
+        baseFret: 1,
+      },
+      sus2: {
+        name: "Asus2 Open",
+        positionLabel: "Open Position",
+        rootString: "Root: 5th String",
+        frets: [null, 0, 2, 2, 0, 0],
+        fingers: [null, null, 2, 3, null, null],
+        baseFret: 1,
+      },
+      sus4: {
+        name: "Asus4 Open",
+        positionLabel: "Open Position",
+        rootString: "Root: 5th String",
+        frets: [null, 0, 2, 2, 3, 0],
+        fingers: [null, null, 1, 2, 3, null],
+        baseFret: 1,
+      },
     },
-    "G": {
-      "major": { name: "G Open Major", positionLabel: "Open Position", rootString: "Root: 6th String", frets: [3, 2, 0, 0, 0, 3], fingers: [2, 1, null, null, null, 3], baseFret: 1 },
-      "7": { name: "G7 Open", positionLabel: "Open Position", rootString: "Root: 6th String", frets: [3, 2, 0, 0, 0, 1], fingers: [3, 2, null, null, null, 1], baseFret: 1 },
-      "maj7": { name: "Gmaj7 Open", positionLabel: "Open Position", rootString: "Root: 6th String", frets: [3, 2, 0, 0, 0, 2], fingers: [3, 2, null, null, null, 1], baseFret: 1 }
+    G: {
+      major: {
+        name: "G Open Major",
+        positionLabel: "Open Position",
+        rootString: "Root: 6th String",
+        frets: [3, 2, 0, 0, 0, 3],
+        fingers: [2, 1, null, null, null, 3],
+        baseFret: 1,
+      },
+      "7": {
+        name: "G7 Open",
+        positionLabel: "Open Position",
+        rootString: "Root: 6th String",
+        frets: [3, 2, 0, 0, 0, 1],
+        fingers: [3, 2, null, null, null, 1],
+        baseFret: 1,
+      },
+      maj7: {
+        name: "Gmaj7 Open",
+        positionLabel: "Open Position",
+        rootString: "Root: 6th String",
+        frets: [3, 2, 0, 0, 0, 2],
+        fingers: [3, 2, null, null, null, 1],
+        baseFret: 1,
+      },
     },
-    "E": {
-      "major": { name: "E Open Major", positionLabel: "Open Position", rootString: "Root: 6th String", frets: [0, 2, 2, 1, 0, 0], fingers: [null, 2, 3, 1, null, null], baseFret: 1 },
-      "minor": { name: "Em Open Minor", positionLabel: "Open Position", rootString: "Root: 6th String", frets: [0, 2, 2, 0, 0, 0], fingers: [null, 2, 3, null, null, null], baseFret: 1 },
-      "7": { name: "E7 Open", positionLabel: "Open Position", rootString: "Root: 6th String", frets: [0, 2, 0, 1, 0, 0], fingers: [null, 2, null, 1, null, null], baseFret: 1 },
-      "min7": { name: "Em7 Open", positionLabel: "Open Position", rootString: "Root: 6th String", frets: [0, 2, 0, 0, 0, 0], fingers: [null, 2, null, null, null, null], baseFret: 1 },
-      "maj7": { name: "Emaj7 Open", positionLabel: "Open Position", rootString: "Root: 6th String", frets: [0, 2, 1, 1, 0, 0], fingers: [null, 3, 1, 2, null, null], baseFret: 1 }
+    E: {
+      major: {
+        name: "E Open Major",
+        positionLabel: "Open Position",
+        rootString: "Root: 6th String",
+        frets: [0, 2, 2, 1, 0, 0],
+        fingers: [null, 2, 3, 1, null, null],
+        baseFret: 1,
+      },
+      minor: {
+        name: "Em Open Minor",
+        positionLabel: "Open Position",
+        rootString: "Root: 6th String",
+        frets: [0, 2, 2, 0, 0, 0],
+        fingers: [null, 2, 3, null, null, null],
+        baseFret: 1,
+      },
+      "7": {
+        name: "E7 Open",
+        positionLabel: "Open Position",
+        rootString: "Root: 6th String",
+        frets: [0, 2, 0, 1, 0, 0],
+        fingers: [null, 2, null, 1, null, null],
+        baseFret: 1,
+      },
+      min7: {
+        name: "Em7 Open",
+        positionLabel: "Open Position",
+        rootString: "Root: 6th String",
+        frets: [0, 2, 0, 0, 0, 0],
+        fingers: [null, 2, null, null, null, null],
+        baseFret: 1,
+      },
+      maj7: {
+        name: "Emaj7 Open",
+        positionLabel: "Open Position",
+        rootString: "Root: 6th String",
+        frets: [0, 2, 1, 1, 0, 0],
+        fingers: [null, 3, 1, 2, null, null],
+        baseFret: 1,
+      },
     },
-    "D": {
-      "major": { name: "D Open Major", positionLabel: "Open Position", rootString: "Root: 4th String", frets: [null, null, 0, 2, 3, 2], fingers: [null, null, null, 1, 3, 2], baseFret: 1 },
-      "minor": { name: "Dm Open Minor", positionLabel: "Open Position", rootString: "Root: 4th String", frets: [null, null, 0, 2, 3, 1], fingers: [null, null, null, 2, 3, 1], baseFret: 1 },
-      "7": { name: "D7 Open", positionLabel: "Open Position", rootString: "Root: 4th String", frets: [null, null, 0, 2, 1, 2], fingers: [null, null, null, 2, 1, 3], baseFret: 1 },
-      "min7": { name: "Dm7 Open", positionLabel: "Open Position", rootString: "Root: 4th String", frets: [null, null, 0, 2, 1, 1], fingers: [null, null, null, 2, 1, 1], baseFret: 1, barre: { fret: 1, fromString: 4, toString: 5, finger: 1 } },
-      "maj7": { name: "Dmaj7 Open", positionLabel: "Open Position", rootString: "Root: 4th String", frets: [null, null, 0, 2, 2, 2], fingers: [null, null, null, 1, 1, 1], baseFret: 1, barre: { fret: 2, fromString: 3, toString: 5, finger: 1 } },
-      "sus2": { name: "Dsus2 Open", positionLabel: "Open Position", rootString: "Root: 4th String", frets: [null, null, 0, 2, 3, 0], fingers: [null, null, null, 1, 3, null], baseFret: 1 },
-      "sus4": { name: "Dsus4 Open", positionLabel: "Open Position", rootString: "Root: 4th String", frets: [null, null, 0, 2, 3, 3], fingers: [null, null, null, 1, 3, 4], baseFret: 1 }
+    D: {
+      major: {
+        name: "D Open Major",
+        positionLabel: "Open Position",
+        rootString: "Root: 4th String",
+        frets: [null, null, 0, 2, 3, 2],
+        fingers: [null, null, null, 1, 3, 2],
+        baseFret: 1,
+      },
+      minor: {
+        name: "Dm Open Minor",
+        positionLabel: "Open Position",
+        rootString: "Root: 4th String",
+        frets: [null, null, 0, 2, 3, 1],
+        fingers: [null, null, null, 2, 3, 1],
+        baseFret: 1,
+      },
+      "7": {
+        name: "D7 Open",
+        positionLabel: "Open Position",
+        rootString: "Root: 4th String",
+        frets: [null, null, 0, 2, 1, 2],
+        fingers: [null, null, null, 2, 1, 3],
+        baseFret: 1,
+      },
+      min7: {
+        name: "Dm7 Open",
+        positionLabel: "Open Position",
+        rootString: "Root: 4th String",
+        frets: [null, null, 0, 2, 1, 1],
+        fingers: [null, null, null, 2, 1, 1],
+        baseFret: 1,
+        barre: { fret: 1, fromString: 4, toString: 5, finger: 1 },
+      },
+      maj7: {
+        name: "Dmaj7 Open",
+        positionLabel: "Open Position",
+        rootString: "Root: 4th String",
+        frets: [null, null, 0, 2, 2, 2],
+        fingers: [null, null, null, 1, 1, 1],
+        baseFret: 1,
+        barre: { fret: 2, fromString: 3, toString: 5, finger: 1 },
+      },
+      sus2: {
+        name: "Dsus2 Open",
+        positionLabel: "Open Position",
+        rootString: "Root: 4th String",
+        frets: [null, null, 0, 2, 3, 0],
+        fingers: [null, null, null, 1, 3, null],
+        baseFret: 1,
+      },
+      sus4: {
+        name: "Dsus4 Open",
+        positionLabel: "Open Position",
+        rootString: "Root: 4th String",
+        frets: [null, null, 0, 2, 3, 3],
+        fingers: [null, null, null, 1, 3, 4],
+        baseFret: 1,
+      },
     },
-    "B": {
-      "7": { name: "B7 Open", positionLabel: "Open Position", rootString: "Root: 5th String", frets: [null, 2, 1, 2, 0, 2], fingers: [null, 2, 1, 3, null, 4], baseFret: 1 }
+    B: {
+      "7": {
+        name: "B7 Open",
+        positionLabel: "Open Position",
+        rootString: "Root: 5th String",
+        frets: [null, 2, 1, 2, 0, 2],
+        fingers: [null, 2, 1, 3, null, 4],
+        baseFret: 1,
+      },
     },
-    "F": {
-      "major": { name: "F Major (Mini Barre)", positionLabel: "First Position", rootString: "Root: 4th String", frets: [null, null, 3, 2, 1, 1], fingers: [null, null, 3, 2, 1, 1], baseFret: 1, barre: { fret: 1, fromString: 4, toString: 5, finger: 1 } },
-      "maj7": { name: "Fmaj7 Open", positionLabel: "Open Position", rootString: "Root: 4th String", frets: [null, null, 3, 2, 1, 0], fingers: [null, null, 3, 2, 1, null], baseFret: 1 }
-    }
+    F: {
+      major: {
+        name: "F Major (Mini Barre)",
+        positionLabel: "First Position",
+        rootString: "Root: 4th String",
+        frets: [null, null, 3, 2, 1, 1],
+        fingers: [null, null, 3, 2, 1, 1],
+        baseFret: 1,
+        barre: { fret: 1, fromString: 4, toString: 5, finger: 1 },
+      },
+      maj7: {
+        name: "Fmaj7 Open",
+        positionLabel: "Open Position",
+        rootString: "Root: 4th String",
+        frets: [null, null, 3, 2, 1, 0],
+        fingers: [null, null, 3, 2, 1, null],
+        baseFret: 1,
+      },
+    },
   };
 
   const rootIdx = NOTE_SEMITONES[root];
@@ -260,18 +468,18 @@ export function getChordVoicings(
     voicings.push({
       ...openShapes[root][typeKey],
       isFundamental: true,
-      category: "fundamental-open"
+      category: "fundamental-open",
     } as GuitarVoicing);
     fundamentalAdded = true;
   } else if (offsets) {
     // 1B. Deduce lowest standard barre shape for roots lacking an explicit open shape
-    const eFret = fretOn6th > 0 ? fretOn6th : 12; 
+    const eFret = fretOn6th > 0 ? fretOn6th : 12;
     const aFret = fretOn5th > 0 ? fretOn5th : 12;
-    
+
     // Attempt E-shape if it's lower, otherwise A-shape
     if (eFret <= aFret && offsets.e && eFret < 12) {
-      const frets = offsets.e.map(o => o === null ? null : fretOn6th + o);
-      if (frets.every(f => f === null || f >= 0)) {
+      const frets = offsets.e.map((o) => (o === null ? null : fretOn6th + o));
+      if (frets.every((f) => f === null || f >= 0)) {
         voicings.push({
           name: `${root}${chordType} (First Position Barre)`,
           positionLabel: "First Position",
@@ -279,18 +487,23 @@ export function getChordVoicings(
           frets: frets,
           fingers: frets.map(() => null),
           baseFret: fretOn6th,
-          barre: (typeKey === "major" || typeKey === "minor" || typeKey === "7" || typeKey === "min7") 
-            ? { fret: fretOn6th, fromString: 0, toString: 5, finger: 1 } : undefined,
+          barre:
+            typeKey === "major" ||
+            typeKey === "minor" ||
+            typeKey === "7" ||
+            typeKey === "min7"
+              ? { fret: fretOn6th, fromString: 0, toString: 5, finger: 1 }
+              : undefined,
           isFundamental: true,
-          category: "fundamental-barre"
+          category: "fundamental-barre",
         });
         fundamentalAdded = true;
       }
-    } 
-    
+    }
+
     if (!fundamentalAdded && offsets.a && aFret < 12) {
-      const frets = offsets.a.map(o => o === null ? null : fretOn5th + o);
-      if (frets.every(f => f === null || f >= 0)) {
+      const frets = offsets.a.map((o) => (o === null ? null : fretOn5th + o));
+      if (frets.every((f) => f === null || f >= 0)) {
         voicings.push({
           name: `${root}${chordType} (First Position Barre)`,
           positionLabel: "First Position",
@@ -298,10 +511,15 @@ export function getChordVoicings(
           frets: frets,
           fingers: frets.map(() => null),
           baseFret: fretOn5th,
-          barre: (typeKey === "major" || typeKey === "minor" || typeKey === "7" || typeKey === "min7") 
-            ? { fret: fretOn5th, fromString: 1, toString: 5, finger: 1 } : undefined,
+          barre:
+            typeKey === "major" ||
+            typeKey === "minor" ||
+            typeKey === "7" ||
+            typeKey === "min7"
+              ? { fret: fretOn5th, fromString: 1, toString: 5, finger: 1 }
+              : undefined,
           isFundamental: true,
-          category: "fundamental-barre"
+          category: "fundamental-barre",
         });
         fundamentalAdded = true;
       }
@@ -309,8 +527,8 @@ export function getChordVoicings(
 
     // Fallback try E again if A failed and E wasn't tried yet
     if (!fundamentalAdded && offsets.e && eFret > aFret && eFret < 12) {
-      const frets = offsets.e.map(o => o === null ? null : fretOn6th + o);
-      if (frets.every(f => f === null || f >= 0)) {
+      const frets = offsets.e.map((o) => (o === null ? null : fretOn6th + o));
+      if (frets.every((f) => f === null || f >= 0)) {
         voicings.push({
           name: `${root}${chordType} (First Position Barre)`,
           positionLabel: "First Position",
@@ -318,10 +536,15 @@ export function getChordVoicings(
           frets: frets,
           fingers: frets.map(() => null),
           baseFret: fretOn6th,
-          barre: (typeKey === "major" || typeKey === "minor" || typeKey === "7" || typeKey === "min7") 
-            ? { fret: fretOn6th, fromString: 0, toString: 5, finger: 1 } : undefined,
+          barre:
+            typeKey === "major" ||
+            typeKey === "minor" ||
+            typeKey === "7" ||
+            typeKey === "min7"
+              ? { fret: fretOn6th, fromString: 0, toString: 5, finger: 1 }
+              : undefined,
           isFundamental: true,
-          category: "fundamental-barre"
+          category: "fundamental-barre",
         });
         fundamentalAdded = true;
       }
@@ -330,10 +553,12 @@ export function getChordVoicings(
 
   // 2. Movable CAGED Variations
   if (offsets) {
-    const hasE = voicings.some(v => v.baseFret === fretOn6th && v.rootString.includes("6th"));
+    const hasE = voicings.some(
+      (v) => v.baseFret === fretOn6th && v.rootString.includes("6th"),
+    );
     if (!hasE && offsets.e && fretOn6th > 0) {
-      const frets = offsets.e.map(o => o === null ? null : fretOn6th + o);
-      if (frets.every(f => f === null || f >= 0)) {
+      const frets = offsets.e.map((o) => (o === null ? null : fretOn6th + o));
+      if (frets.every((f) => f === null || f >= 0)) {
         voicings.push({
           name: `${root}${chordType} (E-Shape)`,
           positionLabel: "Barre 6th String",
@@ -341,18 +566,25 @@ export function getChordVoicings(
           frets: frets,
           fingers: frets.map(() => null),
           baseFret: fretOn6th,
-          barre: (typeKey === "major" || typeKey === "minor" || typeKey === "7" || typeKey === "min7") 
-            ? { fret: fretOn6th, fromString: 0, toString: 5, finger: 1 } : undefined,
+          barre:
+            typeKey === "major" ||
+            typeKey === "minor" ||
+            typeKey === "7" ||
+            typeKey === "min7"
+              ? { fret: fretOn6th, fromString: 0, toString: 5, finger: 1 }
+              : undefined,
           isFundamental: false,
-          category: "CAGED"
+          category: "CAGED",
         });
       }
     }
 
-    const hasA = voicings.some(v => v.baseFret === fretOn5th && v.rootString.includes("5th"));
+    const hasA = voicings.some(
+      (v) => v.baseFret === fretOn5th && v.rootString.includes("5th"),
+    );
     if (!hasA && offsets.a && fretOn5th > 0) {
-      const frets = offsets.a.map(o => o === null ? null : fretOn5th + o);
-      if (frets.every(f => f === null || f >= 0)) {
+      const frets = offsets.a.map((o) => (o === null ? null : fretOn5th + o));
+      if (frets.every((f) => f === null || f >= 0)) {
         voicings.push({
           name: `${root}${chordType} (A-Shape)`,
           positionLabel: "Barre 5th String",
@@ -360,10 +592,15 @@ export function getChordVoicings(
           frets: frets,
           fingers: frets.map(() => null),
           baseFret: fretOn5th,
-          barre: (typeKey === "major" || typeKey === "minor" || typeKey === "7" || typeKey === "min7") 
-            ? { fret: fretOn5th, fromString: 1, toString: 5, finger: 1 } : undefined,
+          barre:
+            typeKey === "major" ||
+            typeKey === "minor" ||
+            typeKey === "7" ||
+            typeKey === "min7"
+              ? { fret: fretOn5th, fromString: 1, toString: 5, finger: 1 }
+              : undefined,
           isFundamental: false,
-          category: "CAGED"
+          category: "CAGED",
         });
       }
     }
@@ -374,14 +611,14 @@ export function getChordVoicings(
     const fretOn4th = (rootIdx - NOTE_SEMITONES["D"] + 12) % 12;
     if (fretOn4th > 0) {
       const offsets4 = {
-        "major": [null, null, 0, 2, 3, 2],
-        "minor": [null, null, 0, 2, 3, 1],
+        major: [null, null, 0, 2, 3, 2],
+        minor: [null, null, 0, 2, 3, 1],
         "7": [null, null, 0, 2, 1, 2],
-        "min7": [null, null, 0, 2, 1, 1]
+        min7: [null, null, 0, 2, 1, 1],
       }[typeKey];
-      
+
       if (offsets4) {
-        const frets = offsets4.map(o => o === null ? null : fretOn4th + o);
+        const frets = offsets4.map((o) => (o === null ? null : fretOn4th + o));
         voicings.push({
           name: `${root}${chordType} (D-Shape)`,
           positionLabel: "Drop 2 / 4th String",
@@ -390,16 +627,16 @@ export function getChordVoicings(
           fingers: frets.map(() => null),
           baseFret: fretOn4th,
           isFundamental: false,
-          category: "variation"
+          category: "variation",
         });
       }
     }
   }
 
   // Fallback for missing fundamental (should rarely happen for standard 19 types, but safety net)
-  if (voicings.length > 0 && !voicings.some(v => v.isFundamental)) {
-     voicings[0].isFundamental = true;
-     voicings[0].category = "fundamental-barre"; // guess
+  if (voicings.length > 0 && !voicings.some((v) => v.isFundamental)) {
+    voicings[0].isFundamental = true;
+    voicings[0].category = "fundamental-barre"; // guess
   }
 
   return voicings;
@@ -421,6 +658,50 @@ export function getChordDefinition(
     return chromatic[(rootIndex + semitone) % 12];
   });
 
+  const keyboardVoicings: KeyboardVoicing[] = chordType.intervals.map(
+    (_, inversionIndex) => {
+      const invertedIntervals = chordType.intervals.map((interval, index) => ({
+        interval: interval + (index < inversionIndex ? 12 : 0),
+        degree: chordType.degrees[index],
+        isRoot: index === 0,
+      }));
+      invertedIntervals.sort((a, b) => a.interval - b.interval);
+
+      const keyboardNotes = invertedIntervals.map(
+        ({ interval, degree, isRoot }) => {
+          const totalSemitones = rootIndex + interval;
+          return {
+            note: chromatic[totalSemitones % 12],
+            octave: 4 + Math.floor(totalSemitones / 12),
+            degree,
+            isRoot,
+          };
+        },
+      );
+      const inversionLabel =
+        inversionIndex === 0
+          ? "Root Position"
+          : `${inversionIndex}${inversionIndex === 1 ? "st" : inversionIndex === 2 ? "nd" : inversionIndex === 3 ? "rd" : "th"} Inversion`;
+
+      return {
+        id: `${root}_${chordType.type}_${inversionIndex}`,
+        name: `${root}${chordType.symbol} ${inversionLabel}`,
+        shortLabel: inversionIndex === 0 ? "Root" : `Inv. ${inversionIndex}`,
+        category: inversionIndex === 0 ? "root" : "inversion",
+        positionLabel: inversionLabel,
+        bassNote: keyboardNotes[0].note,
+        bassOctave: keyboardNotes[0].octave,
+        notes: keyboardNotes,
+        startOctave: 4,
+        octavesCount: Math.max(
+          2,
+          Math.max(...keyboardNotes.map((note) => note.octave)) - 4 + 1,
+        ),
+        description: `${inversionLabel} voicing`,
+      };
+    },
+  );
+
   return {
     id: `${root}_${chordType.type}`,
     name: `${root}${chordType.symbol}`,
@@ -432,5 +713,6 @@ export function getChordDefinition(
     formula: chordType.formula,
     notes,
     voicings: getChordVoicings(root, chordType.type),
+    keyboardVoicings,
   };
 }

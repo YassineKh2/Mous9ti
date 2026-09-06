@@ -11,6 +11,7 @@ interface KeyboardChordDiagramProps {
   instrument?: string;
   isSelected?: boolean;
   compact?: boolean;
+  compactSize?: "default" | "wide";
   onPlay?: () => void;
   onSelect?: () => void;
   className?: string;
@@ -27,10 +28,6 @@ export const KeyboardChordDiagram: React.FC<KeyboardChordDiagramProps> = ({
   onSelect,
   className = "",
 }) => {
-  // Determine keyboard range to render (minOctave to maxOctave)
-  const startOctave = voicing.startOctave;
-  const octavesCount = Math.max(2, voicing.octavesCount);
-
   // Map notes by pitch value: (octave * 12 + semitone) -> note info
   const chordPitchMap = new Map<
     number,
@@ -53,6 +50,12 @@ export const KeyboardChordDiagram: React.FC<KeyboardChordDiagramProps> = ({
       hand: n.hand,
     });
   });
+
+  const chordPitches = voicing.notes.map(
+    (note) => note.octave * 12 + (NOTE_SEMITONES[note.note] ?? 0),
+  );
+  const lowestChordPitch = Math.min(...chordPitches);
+  const highestChordPitch = Math.max(...chordPitches);
 
   // Sound audition handler
   const handlePlaySound = (e: React.MouseEvent) => {
@@ -80,19 +83,34 @@ export const KeyboardChordDiagram: React.FC<KeyboardChordDiagramProps> = ({
     );
   };
 
-  // Keyboard dimensions for SVG
-  const whiteKeyWidth = 22;
-  const whiteKeyHeight = 85;
-  const blackKeyWidth = 13;
-  const blackKeyHeight = 54;
-
-  const totalWhiteKeys = octavesCount * 7;
-  const totalWidth = totalWhiteKeys * whiteKeyWidth;
-  const totalHeight = whiteKeyHeight + 20;
-
   // White key relative semitone offsets from C
   const whiteKeyOffsets = [0, 2, 4, 5, 7, 9, 11];
-  const whiteKeyNames: NoteName[] = ["C", "D", "E", "F", "G", "A", "B"];
+  const allWhiteKeys = Array.from({ length: 11 }, (_, index) => {
+    const octave = Math.floor((lowestChordPitch - 12 + index * 12) / 12);
+    return { octave, offset: 0 };
+  }).flatMap(({ octave }) =>
+    whiteKeyOffsets.map((offset) => ({
+      octave,
+      offset,
+      pitch: octave * 12 + offset,
+    })),
+  );
+  const firstVisibleWhiteIndex =
+    allWhiteKeys.length -
+    1 -
+    [...allWhiteKeys]
+      .reverse()
+      .findIndex((key) => key.pitch <= lowestChordPitch);
+  const lastVisibleWhiteIndex =
+    allWhiteKeys.length -
+    1 -
+    [...allWhiteKeys]
+      .reverse()
+      .findIndex((key) => key.pitch <= highestChordPitch);
+  const chordWhiteKeys = allWhiteKeys.slice(
+    Math.max(0, firstVisibleWhiteIndex - 1),
+    Math.min(allWhiteKeys.length, lastVisibleWhiteIndex + 2),
+  );
 
   // Black keys positions (after which white key index)
   // 0: C# (after C), 1: D# (after D), 3: F# (after F), 4: G# (after G), 5: A# (after A)
@@ -144,199 +162,84 @@ export const KeyboardChordDiagram: React.FC<KeyboardChordDiagramProps> = ({
         </div>
       )}
 
-      {/* Mini Keyboard Diagram SVG Canvas */}
+      {/* Mini Keyboard Diagram */}
       <div
-        className={`w-full flex justify-center overflow-x-auto overflow-y-hidden ${compact ? "h-full" : "py-2"}`}
+        className={`w-full max-w-full overflow-x-auto custom-scrollbar ${compact ? "h-full" : "py-2"}`}
       >
-        <svg
-          viewBox={`0 0 ${totalWidth} ${totalHeight}`}
-          className={`w-full max-w-[280px] overflow-visible select-none drop-shadow-sm ${compact ? "h-full" : "h-auto"}`}
-          preserveAspectRatio="xMidYMid meet"
-        >
-          {/* Defs for gradients & filters */}
-          <defs>
-            <linearGradient id="activeWhiteKeyGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop
-                offset="0%"
-                stopColor="var(--color-primary)"
-                stopOpacity="0.25"
-              />
-              <stop
-                offset="100%"
-                stopColor="var(--color-primary)"
-                stopOpacity="0.85"
-              />
-            </linearGradient>
-            <linearGradient id="activeRootKeyGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop
-                offset="0%"
-                stopColor="var(--color-primary)"
-                stopOpacity="0.4"
-              />
-              <stop
-                offset="100%"
-                stopColor="var(--color-primary)"
-                stopOpacity="1"
-              />
-            </linearGradient>
-          </defs>
-
-          {/* 1. Render White Keys First */}
-          {Array.from({ length: octavesCount }).map((_, octIdx) => {
-            const currentOctave = startOctave + octIdx;
-
-            return whiteKeyOffsets.map((offset, keyIdx) => {
-              const globalKeyIndex = octIdx * 7 + keyIdx;
-              const xPos = globalKeyIndex * whiteKeyWidth;
-              const pitch = currentOctave * 12 + offset;
-              const chordInfo = chordPitchMap.get(pitch);
+        <div className="w-max mx-auto py-2 px-2 flex justify-start sm:justify-center">
+          <div className="flex relative bg-surface-container-highest p-1.5 rounded-b-lg border-t-8 border-outline-variant shadow-2xl">
+            {chordWhiteKeys.map((key, keyIdx) => {
+              const chordInfo = chordPitchMap.get(key.pitch);
               const isChordKey = !!chordInfo;
-              const isRootKey = chordInfo?.isRoot;
+              const isRootKey = !!chordInfo?.isRoot;
+              const hasBlack =
+                keyIdx < chordWhiteKeys.length - 1
+                  ? blackKeyDefs[key.offset]
+                  : undefined;
 
               return (
-                <g key={`white-${currentOctave}-${keyIdx}`}>
-                  {/* Key Body */}
-                  <rect
-                    x={xPos + 0.5}
-                    y={2}
-                    width={whiteKeyWidth - 1}
-                    height={whiteKeyHeight}
-                    rx={3}
-                    ry={3}
-                    fill={
+                <div
+                  key={`white-${key.octave}-${key.offset}`}
+                  className="relative"
+                >
+                  <div
+                    className={`w-11 h-44 rounded-b-md border-r border-l border-b border-outline-variant/30 flex flex-col justify-end pb-3 items-center transition-all ${
                       isRootKey
-                        ? "var(--color-primary)"
+                        ? "bg-primary text-on-primary font-black border-t-4 border-primary shadow-md z-10"
                         : isChordKey
-                          ? "var(--color-inverse-surface)"
-                          : "var(--color-surface-container-highest)"
-                    }
-                    stroke={
-                      isChordKey
-                        ? "var(--color-inverse-surface)"
-                        : "var(--color-outline-variant)"
-                    }
-                    strokeWidth={isChordKey ? 1.5 : 0.8}
-                    className="transition-colors"
-                  />
-
-                  {/* Root / Chord Accent Dot & Degree on Bottom of White Key */}
-                  {isChordKey && (
-                    <g
-                      transform={`translate(${xPos + whiteKeyWidth / 2}, ${whiteKeyHeight - 12})`}
-                    >
-                      <circle
-                        r={isRootKey ? 7.5 : 6.5}
-                        fill={
+                          ? "bg-inverse-surface text-inverse-on-surface font-bold z-10"
+                          : "bg-surface-container-highest text-on-surface-variant/40 hover:bg-surface-bright"
+                    }`}
+                  >
+                    {isChordKey && (
+                      <span className="font-mono text-[10px] font-bold">
+                        {chordInfo.note}
+                      </span>
+                    )}
+                    {isChordKey && (
+                      <span
+                        className={`font-mono text-[8px] font-bold mt-1 ${
                           isRootKey
-                            ? "var(--color-primary)"
-                            : "var(--color-inverse-surface)"
-                        }
-                        stroke={
-                          isRootKey ? "#fff" : "var(--color-inverse-on-surface)"
-                        }
-                        strokeWidth={1.2}
-                      />
-                      <text
-                        y={3}
-                        fill={
-                          isRootKey
-                            ? "var(--color-on-primary)"
-                            : "var(--color-inverse-on-surface)"
-                        }
-                        fontSize={isRootKey ? "8" : "7.5"}
-                        fontWeight="bold"
-                        fontFamily="monospace"
-                        textAnchor="middle"
+                            ? "w-3.5 h-3.5 rounded bg-primary text-on-primary"
+                            : "w-3.5 h-3.5 rounded bg-inverse-surface text-inverse-on-surface border border-outline-variant/40"
+                        } flex items-center justify-center`}
                       >
                         {chordInfo.degree}
-                      </text>
-                    </g>
-                  )}
-
-                  {/* Note Name & Octave (e.g. C3) at very bottom */}
-                  {isChordKey && (
-                    <text
-                      x={xPos + whiteKeyWidth / 2}
-                      y={whiteKeyHeight + 14}
-                      fill="var(--color-on-surface)"
-                      fontSize="9"
-                      fontWeight="bold"
-                      fontFamily="monospace"
-                      textAnchor="middle"
-                    >
-                      {chordInfo.note}
-                    </text>
-                  )}
-                </g>
-              );
-            });
-          })}
-
-          {/* 2. Render Black Keys on Top */}
-          {Array.from({ length: octavesCount }).map((_, octIdx) => {
-            const currentOctave = startOctave + octIdx;
-
-            return Object.entries(blackKeyDefs).map(
-              ([whiteOffsetIdxStr, def]) => {
-                const whiteOffsetIdx = Number(whiteOffsetIdxStr);
-                const globalKeyIndex = octIdx * 7 + whiteOffsetIdx;
-                const xPos =
-                  globalKeyIndex * whiteKeyWidth +
-                  (whiteKeyWidth - blackKeyWidth / 2);
-                const pitch = currentOctave * 12 + def.semi;
-                const chordInfo = chordPitchMap.get(pitch);
-                const isChordKey = !!chordInfo;
-                const isRootKey = chordInfo?.isRoot;
-
-                return (
-                  <g key={`black-${currentOctave}-${def.note}`}>
-                    {/* Black Key Body */}
-                    <rect
-                      x={xPos}
-                      y={2}
-                      width={blackKeyWidth}
-                      height={blackKeyHeight}
-                      rx={2}
-                      ry={2}
-                      fill={
-                        isRootKey
-                          ? "var(--color-primary)"
-                          : isChordKey
-                            ? "#000000"
-                            : "var(--color-surface-container-low)"
-                      }
-                      stroke={isChordKey ? "#27272a" : "transparent"}
-                      strokeWidth={isChordKey ? 1.2 : 0.6}
-                      className="transition-colors"
-                    />
-
-                    {/* Degree Marker on Black Key */}
-                    {isChordKey && (
-                      <g
-                        transform={`translate(${xPos + blackKeyWidth / 2}, ${blackKeyHeight - 9})`}
-                      >
-                        <circle
-                          r={5.5}
-                          fill={isRootKey ? "#fff" : "transparent"}
-                        />
-                        <text
-                          y={2.5}
-                          fill={isRootKey ? "var(--color-primary)" : "#ffffff"}
-                          fontSize="6.5"
-                          fontWeight="bold"
-                          fontFamily="monospace"
-                          textAnchor="middle"
-                        >
-                          {chordInfo.degree}
-                        </text>
-                      </g>
+                      </span>
                     )}
-                  </g>
-                );
-              },
-            );
-          })}
-        </svg>
+                  </div>
+
+                  {hasBlack && (
+                    <div className="absolute top-0 -right-3.5 z-30">
+                      {(() => {
+                        const pitch = key.octave * 12 + hasBlack.semi;
+                        const blackChordInfo = chordPitchMap.get(pitch);
+                        const blackIsRoot = !!blackChordInfo?.isRoot;
+                        return (
+                          <div
+                            className={`w-7 h-28 rounded-b-md flex flex-col justify-end pb-2 items-center transition-all ${
+                              blackIsRoot
+                                ? "bg-primary text-on-primary font-bold shadow-lg ring-1 ring-primary"
+                                : blackChordInfo
+                                  ? "bg-black text-white shadow-[0_4px_8px_rgba(0,0,0,0.8)] border border-zinc-800"
+                                  : "bg-surface-container-low text-on-surface-variant/20 shadow-none border border-transparent hover:bg-surface-container"
+                            }`}
+                          >
+                            {blackChordInfo && (
+                              <span className="font-mono text-[9px] font-bold">
+                                {blackChordInfo.note}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* Spelled Notes & Harmonic Flow */}

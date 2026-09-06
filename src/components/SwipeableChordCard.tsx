@@ -169,6 +169,7 @@ export const SwipeableChordCard: React.FC<SwipeableChordCardProps> = ({
                     root={root}
                     voicing={voicing as any}
                     compact={true}
+                    compactSize="wide"
                   />
                 )}
               </div>

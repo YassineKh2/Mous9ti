@@ -212,9 +212,9 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({
       </div>
 
       {/* SVG Canvas (Arch) */}
-      <div className="absolute bottom-0 left-0 right-0 w-full flex flex-col items-center justify-end pointer-events-none">
+      <div className="absolute inset-0 flex flex-col items-center justify-end pointer-events-none pb-2">
         <svg
-          className="w-full h-auto block"
+          className="w-full h-full max-h-full block"
           viewBox={`0 -40 ${w} ${h + 40}`}
           preserveAspectRatio="xMidYMax meet"
         >

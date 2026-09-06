@@ -2373,7 +2373,7 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ settings }) => {
                       />
                     )}
                     {/* Desktop: hover overlay */}
-                    <div className="absolute inset-0 bg-surface-container-highest/60 backdrop-blur-[2px] opacity-0 group-hover/voicing:opacity-100 transition-opacity rounded-xl hidden lg:flex items-center justify-center pointer-events-none">
+                    <div className="absolute inset-0 z-40 bg-surface-container-highest/60 backdrop-blur-[2px] opacity-0 group-hover/voicing:opacity-100 transition-opacity rounded-xl hidden lg:flex items-center justify-center pointer-events-none">
                       <button
                         onClick={() => handleAddChord(idx)}
                         className="pointer-events-auto flex items-center gap-2 bg-primary text-on-primary font-bold px-4 py-2.5 rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all"
