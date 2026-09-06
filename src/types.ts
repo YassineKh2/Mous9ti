@@ -171,6 +171,29 @@ export interface AppSettings {
   stopMetronomeOnTimerEnd: boolean;
 }
 
+export type DashboardWidgetId =
+  | "metronome"
+  | "timer"
+  | "random-drill"
+  | "session"
+  | "fretboard"
+  | "piano";
+
+export interface DashboardWidgetLayout {
+  id: DashboardWidgetId;
+  title: string;
+}
+
+export interface DashboardRow {
+  id: string;
+  widgets: DashboardWidgetLayout[];
+}
+
+export interface DashboardLayoutData {
+  rows: DashboardRow[];
+  hiddenWidgets: DashboardWidgetLayout[];
+}
+
 export interface QueueItem {
   id: string;
   root: NoteName;

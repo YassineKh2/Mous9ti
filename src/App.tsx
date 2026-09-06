@@ -32,6 +32,9 @@ export function App() {
 
   // Navigation
   const [activeTab, setActiveTab] = useState<ActiveTab>("dashboard");
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(
+    () => localStorage.getItem("Mousi9ti_sidebar_collapsed") === "true",
+  );
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [pendingScaleSearch, setPendingScaleSearch] =
     useState<PendingScaleTarget | null>(null);
@@ -581,6 +584,17 @@ export function App() {
       <Navigation
         activeTab={activeTab}
         onSelectTab={setActiveTab}
+        isSidebarCollapsed={isSidebarCollapsed}
+        onToggleSidebar={() => {
+          setIsSidebarCollapsed((collapsed) => {
+            const nextCollapsed = !collapsed;
+            localStorage.setItem(
+              "Mousi9ti_sidebar_collapsed",
+              String(nextCollapsed),
+            );
+            return nextCollapsed;
+          });
+        }}
         onOpenSettings={() => setIsSettingsOpen(true)}
         streakDays={streak.currentStreak}
         graceActive={streak.graceDaysUsed > 0}
@@ -591,7 +605,9 @@ export function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 lg:pl-72 pt-4 pb-20 lg:pb-0 px-4 lg:px-8 max-w-[1600px] w-full mx-auto">
+      <main
+        className={`flex-1 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-72"} pt-4 pb-20 lg:pb-0 px-4 lg:px-8 max-w-[1600px] w-full mx-auto transition-[padding] duration-200`}
+      >
         {activeTab === "dashboard" && (
           <DashboardPage
             metronomeBpm={metronomeBpm}

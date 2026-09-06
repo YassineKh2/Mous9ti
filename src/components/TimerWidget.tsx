@@ -134,7 +134,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({
       <div className="relative p-4 flex items-center justify-between z-20">
         <div className="flex items-center gap-2">
           <TimerIcon className="w-4 h-4 text-primary" />
-          <h3 className="font-mono text-sm font-bold text-on-surface uppercase tracking-wider">
+          <h3 className="font-mono text-xs font-semibold tracking-[0.2em] text-on-surface uppercase">
             Timer
           </h3>
         </div>
@@ -297,7 +297,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({
         {status === "idle" ? (
           <form
             onSubmit={handleCustomStart}
-            className="font-sans font-medium text-4xl sm:text-5xl leading-none tracking-tighter text-on-surface drop-shadow-md flex flex-nowrap items-center justify-center z-30 pointer-events-auto"
+            className="font-mono font-medium text-4xl sm:text-5xl leading-none tracking-tighter text-on-surface drop-shadow-md flex flex-nowrap items-center justify-center z-30 pointer-events-auto"
             style={{ fontVariantNumeric: "tabular-nums" }}
           >
             <input
@@ -311,7 +311,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({
               className="bg-transparent text-right outline-none w-[1.15em] placeholder-on-surface/20 transition-colors hover:bg-on-surface/5 rounded-xl cursor-text"
               placeholder="00"
             />
-            <span className="opacity-80 mx-1 sm:mx-2 pointer-events-none flex-shrink-0">
+            <span className="relative -top-0.5 opacity-80 mx-1 sm:mx-2 pointer-events-none shrink-0">
               :
             </span>
             <input
@@ -330,7 +330,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({
           </form>
         ) : (
           <div
-            className="font-sans font-medium text-4xl sm:text-5xl leading-none tracking-tighter text-on-surface drop-shadow-md flex flex-nowrap items-center justify-center z-30 pointer-events-none"
+            className="font-mono font-medium text-4xl sm:text-5xl leading-none tracking-tighter text-on-surface drop-shadow-md flex flex-nowrap items-center justify-center z-30 pointer-events-none"
             style={{ fontVariantNumeric: "tabular-nums" }}
           >
             <div className="w-[1.15em] text-right relative flex justify-end">
@@ -347,7 +347,9 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({
                     .toString()
                     .padStart(2, "0")}
             </div>
-            <span className="opacity-80 mx-1 sm:mx-2 flex-shrink-0">:</span>
+            <span className="relative -top-0.5 opacity-80 mx-1 sm:mx-2 shrink-0">
+              :
+            </span>
             <div className="w-[1.15em] text-left">
               {status === "finished"
                 ? (Math.abs(remaining) % 60).toString().padStart(2, "0")

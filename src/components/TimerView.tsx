@@ -296,69 +296,71 @@ export const TimerView: React.FC<TimerViewProps> = ({
                   ? "Complete"
                   : "Timer"}
             </div>
-            {status === "idle" ? (
-              <form
-                onSubmit={handleCustomStart}
-                className="font-sans font-medium text-[clamp(2.75rem,13vw,12rem)] leading-none tracking-tighter text-white drop-shadow-2xl flex flex-nowrap items-center justify-center z-30"
-                style={{ fontVariantNumeric: "tabular-nums" }}
-              >
-                <input
-                  ref={minInputRef}
-                  type="text"
-                  maxLength={2}
-                  value={customMin}
-                  onChange={handleMinChange}
-                  onBlur={() => setCustomMin((prev) => prev.padStart(2, "0"))}
-                  onFocus={(e) => e.target.select()}
-                  className="bg-transparent text-right outline-none w-[1.15em] placeholder-white/20 transition-colors hover:bg-white/5 rounded-3xl cursor-text"
-                  placeholder="00"
-                />
-                <span className="opacity-80 pb-1 sm:pb-2 mx-1 sm:mx-3 pointer-events-none flex-shrink-0">
-                  :
-                </span>
-                <input
-                  ref={secInputRef}
-                  type="text"
-                  maxLength={2}
-                  value={customSec}
-                  onChange={handleSecChange}
-                  onKeyDown={handleSecKeyDown}
-                  onBlur={() => setCustomSec((prev) => prev.padStart(2, "0"))}
-                  onFocus={(e) => e.target.select()}
-                  className="bg-transparent text-left outline-none w-[1.15em] placeholder-white/20 transition-colors hover:bg-white/5 rounded-3xl cursor-text"
-                  placeholder="00"
-                />
-                <button type="submit" className="hidden" />
-              </form>
-            ) : (
-              <div
-                className="font-sans font-medium text-[clamp(2.75rem,13vw,12rem)] leading-none tracking-tighter text-white drop-shadow-2xl pointer-events-none flex flex-nowrap items-center justify-center z-30"
-                style={{ fontVariantNumeric: "tabular-nums" }}
-              >
-                <div className="w-[1.15em] text-right relative flex justify-end">
-                  {status === "finished" && (
-                    <span className="absolute right-full mr-3 sm:mr-6 top-0 bottom-0 flex items-center text-red-400 opacity-90 select-none">
-                      -
-                    </span>
-                  )}
-                  {status === "finished"
-                    ? Math.floor((Math.abs(remaining) % 3600) / 60)
-                        .toString()
-                        .padStart(2, "0")
-                    : Math.floor((remaining % 3600) / 60)
-                        .toString()
-                        .padStart(2, "0")}
+            <div className="h-[clamp(2.75rem,13vw,12rem)] w-full flex items-center justify-center">
+              {status === "idle" ? (
+                <form
+                  onSubmit={handleCustomStart}
+                  className="font-mono font-medium text-[clamp(2.75rem,13vw,12rem)] leading-none tracking-tighter text-white drop-shadow-2xl flex flex-nowrap items-center justify-center z-30"
+                  style={{ fontVariantNumeric: "tabular-nums" }}
+                >
+                  <input
+                    ref={minInputRef}
+                    type="text"
+                    maxLength={2}
+                    value={customMin}
+                    onChange={handleMinChange}
+                    onBlur={() => setCustomMin((prev) => prev.padStart(2, "0"))}
+                    onFocus={(e) => e.target.select()}
+                    className="bg-transparent text-right outline-none w-[1.15em] placeholder-white/20 transition-colors hover:bg-white/5 rounded-3xl cursor-text"
+                    placeholder="00"
+                  />
+                  <span className="relative -top-0.5 opacity-80 pb-1 sm:pb-2 mx-1 sm:mx-3 pointer-events-none shrink-0">
+                    :
+                  </span>
+                  <input
+                    ref={secInputRef}
+                    type="text"
+                    maxLength={2}
+                    value={customSec}
+                    onChange={handleSecChange}
+                    onKeyDown={handleSecKeyDown}
+                    onBlur={() => setCustomSec((prev) => prev.padStart(2, "0"))}
+                    onFocus={(e) => e.target.select()}
+                    className="bg-transparent text-left outline-none w-[1.15em] placeholder-white/20 transition-colors hover:bg-white/5 rounded-3xl cursor-text"
+                    placeholder="00"
+                  />
+                  <button type="submit" className="hidden" />
+                </form>
+              ) : (
+                <div
+                  className="font-mono font-medium text-[clamp(2.75rem,13vw,12rem)] leading-none tracking-tighter text-white drop-shadow-2xl pointer-events-none flex flex-nowrap items-center justify-center z-30"
+                  style={{ fontVariantNumeric: "tabular-nums" }}
+                >
+                  <div className="w-[1.15em] text-right relative flex justify-end">
+                    {status === "finished" && (
+                      <span className="absolute right-full mr-3 sm:mr-6 top-0 bottom-0 flex items-center text-red-400 opacity-90 select-none">
+                        -
+                      </span>
+                    )}
+                    {status === "finished"
+                      ? Math.floor((Math.abs(remaining) % 3600) / 60)
+                          .toString()
+                          .padStart(2, "0")
+                      : Math.floor((remaining % 3600) / 60)
+                          .toString()
+                          .padStart(2, "0")}
+                  </div>
+                  <span className="relative -top-0.5 opacity-80 pb-1 sm:pb-2 mx-1 sm:mx-3 shrink-0">
+                    :
+                  </span>
+                  <div className="w-[1.15em] text-left">
+                    {status === "finished"
+                      ? (Math.abs(remaining) % 60).toString().padStart(2, "0")
+                      : (remaining % 60).toString().padStart(2, "0")}
+                  </div>
                 </div>
-                <span className="opacity-80 pb-1 sm:pb-2 mx-1 sm:mx-3 flex-shrink-0">
-                  :
-                </span>
-                <div className="w-[1.15em] text-left">
-                  {status === "finished"
-                    ? (Math.abs(remaining) % 60).toString().padStart(2, "0")
-                    : (remaining % 60).toString().padStart(2, "0")}
-                </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
 

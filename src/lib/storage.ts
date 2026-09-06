@@ -1,9 +1,18 @@
-import { AppSettings, Session, StreakData } from "../types";
+import {
+  AppSettings,
+  DashboardWidgetLayout,
+  DashboardLayoutData,
+  DashboardRow,
+  Session,
+  StreakData,
+} from "../types";
 
 const STORAGE_KEYS = {
   SESSIONS: "Mousi9ti_sessions_v1",
   STREAK: "Mousi9ti_streak_v1",
   SETTINGS: "Mousi9ti_settings_v1",
+  DASHBOARD_LAYOUT: "Mousi9ti_dashboard_layout_v1",
+  DASHBOARD_LAYOUT_V2: "Mousi9ti_dashboard_layout_v2",
 };
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -18,6 +27,84 @@ const DEFAULT_SETTINGS: AppSettings = {
   timerPresets: [3, 5, 10, 30],
   stopMetronomeOnTimerEnd: false,
 };
+
+const DEFAULT_DASHBOARD_LAYOUT: DashboardLayoutData = {
+  rows: [
+    {
+      id: "row-1",
+      widgets: [
+        { id: "metronome", title: "Metronome" },
+        { id: "timer", title: "Practice Timer" },
+        { id: "random-drill", title: "Random Note Drill" },
+        { id: "session", title: "Practice Streak" },
+      ],
+    },
+    {
+      id: "row-2",
+      widgets: [{ id: "fretboard", title: "Fretboard" }],
+    },
+    {
+      id: "row-3",
+      widgets: [{ id: "piano", title: "Piano" }],
+    },
+  ],
+  hiddenWidgets: [],
+};
+
+export function getSavedDashboardLayout(): DashboardLayoutData {
+  try {
+    const rawV2 = localStorage.getItem(STORAGE_KEYS.DASHBOARD_LAYOUT_V2);
+    if (rawV2) {
+      return JSON.parse(rawV2) as DashboardLayoutData;
+    }
+
+    // Fallback and migrate from V1
+    const rawV1 = localStorage.getItem(STORAGE_KEYS.DASHBOARD_LAYOUT);
+    if (rawV1) {
+      const savedV1 = JSON.parse(rawV1);
+      if (Array.isArray(savedV1)) {
+        const rows: DashboardRow[] = [];
+        const hiddenWidgets: DashboardWidgetLayout[] = [];
+        let currentRow: DashboardWidgetLayout[] = [];
+
+        savedV1.forEach((widget: any) => {
+          const w = { id: widget.id, title: widget.title };
+          if (widget.hidden) {
+            hiddenWidgets.push(w);
+          } else if (widget.size === "wide") {
+            rows.push({ id: `row-${Math.random().toString(36).substring(2, 9)}`, widgets: [w] });
+          } else {
+            currentRow.push(w);
+            if (currentRow.length >= 4) {
+              rows.push({ id: `row-${Math.random().toString(36).substring(2, 9)}`, widgets: currentRow });
+              currentRow = [];
+            }
+          }
+        });
+        if (currentRow.length > 0) {
+          rows.push({ id: `row-${Math.random().toString(36).substring(2, 9)}`, widgets: currentRow });
+        }
+
+        const migrated: DashboardLayoutData = { rows, hiddenWidgets };
+        saveDashboardLayout(migrated);
+        return migrated;
+      }
+    }
+    
+    return DEFAULT_DASHBOARD_LAYOUT;
+  } catch (e) {
+    console.error("Failed to load dashboard layout", e);
+    return DEFAULT_DASHBOARD_LAYOUT;
+  }
+}
+
+export function saveDashboardLayout(layout: DashboardLayoutData): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.DASHBOARD_LAYOUT_V2, JSON.stringify(layout));
+  } catch (e) {
+    console.error("Failed to save dashboard layout", e);
+  }
+}
 
 export function getTodayDateString(): string {
   const d = new Date();

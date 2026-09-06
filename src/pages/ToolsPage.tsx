@@ -44,7 +44,7 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({
 }) => {
   const [activeTool, setActiveTool] = useState<
     "timer" | "metronome" | "circle" | "tuner" | "ear"
-  >("timer");
+  >("circle");
   const [selectedTuning, setSelectedTuning] = useState(GUITAR_TUNINGS[0]);
 
   // Ear training game state
@@ -126,16 +126,6 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({
 
           <div className="flex items-center gap-1.5 bg-surface-container-low p-1 rounded-lg border border-outline-variant/30 flex-wrap">
             <button
-              onClick={() => setActiveTool("timer")}
-              className={`px-3.5 py-1.5 rounded text-xs font-mono transition-all flex items-center gap-1.5 ${
-                activeTool === "timer"
-                  ? "bg-primary text-on-primary font-bold shadow"
-                  : "text-on-surface-variant hover:text-on-surface"
-              }`}
-            >
-              <Clock size={14} /> Practice Timer
-            </button>
-            <button
               onClick={() => setActiveTool("circle")}
               className={`px-3.5 py-1.5 rounded text-xs font-mono transition-all ${
                 activeTool === "circle"
@@ -145,6 +135,17 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({
             >
               Circle of Fifths
             </button>
+            <button
+              onClick={() => setActiveTool("timer")}
+              className={`px-3.5 py-1.5 rounded text-xs font-mono transition-all flex items-center gap-1.5 ${
+                activeTool === "timer"
+                  ? "bg-primary text-on-primary font-bold shadow"
+                  : "text-on-surface-variant hover:text-on-surface"
+              }`}
+            >
+              Practice Timer
+            </button>
+
             <button
               onClick={() => setActiveTool("metronome")}
               className={`px-3.5 py-1.5 rounded text-xs font-mono transition-all ${
