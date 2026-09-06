@@ -81,6 +81,7 @@ class AudioEngine {
       subdivision: this.subdivision,
       soundType: this.soundType,
       currentBeat: this.currentBeat,
+      isMuted: this.isMuted,
     };
   }
 

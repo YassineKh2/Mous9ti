@@ -134,7 +134,7 @@ export const Metronome: React.FC<MetronomeProps> = ({
     [],
   );
 
-  const scheduleBarCycle = useCallback(() => {
+  const scheduleBarCycle = useCallback((resetPosition = true) => {
     if (!barCycleMode || !isPlayingRef.current) return;
 
     const beatsPerBar = parseInt(timeSignature.split("/")[0], 10) || 4;
@@ -143,10 +143,11 @@ export const Metronome: React.FC<MetronomeProps> = ({
     clearBarCycle();
 
     const shouldSoundThisBar = barCycleShouldSoundRef.current;
-    audioEngine.resetMetronomePosition();
-    audioEngine.setMuted(!shouldSoundThisBar);
-
-    barCycleShouldSoundRef.current = !shouldSoundThisBar;
+    if (resetPosition) {
+      audioEngine.resetMetronomePosition();
+      audioEngine.setMuted(!shouldSoundThisBar);
+      barCycleShouldSoundRef.current = !shouldSoundThisBar;
+    }
 
     barCycleTimeoutRef.current = window.setTimeout(() => {
       if (!barCycleMode || !isPlayingRef.current) return;
@@ -164,6 +165,8 @@ export const Metronome: React.FC<MetronomeProps> = ({
   useEffect(() => {
     isPlayingRef.current = isPlaying;
 
+    const engineWasAlreadyRunning = audioEngine.isRunning();
+
     if (!isPlaying) {
       clearBarCycle();
       barCycleShouldSoundRef.current = true;
@@ -173,17 +176,21 @@ export const Metronome: React.FC<MetronomeProps> = ({
     }
 
     if (barCycleMode) {
-      barCycleShouldSoundRef.current = true;
-      audioEngine.setMuted(false);
-      audioEngine.resetMetronomePosition();
-      scheduleBarCycle();
+      if (!engineWasAlreadyRunning) {
+        barCycleShouldSoundRef.current = true;
+        audioEngine.setMuted(false);
+        audioEngine.resetMetronomePosition();
+      }
+      scheduleBarCycle(!engineWasAlreadyRunning);
       return;
     }
 
     clearBarCycle();
     barCycleShouldSoundRef.current = true;
     audioEngine.setMuted(false);
-    audioEngine.resetMetronomePosition();
+    if (!engineWasAlreadyRunning) {
+      audioEngine.resetMetronomePosition();
+    }
   }, [barCycleMode, clearBarCycle, isPlaying, scheduleBarCycle]);
 
   // Hydrate from current engine state and keep UI playback status synced across page switches
@@ -195,6 +202,7 @@ export const Metronome: React.FC<MetronomeProps> = ({
     setSubdivision(engineState.subdivision);
     setSoundType(engineState.soundType);
     setCurrentBeat(engineState.currentBeat);
+    barCycleShouldSoundRef.current = !engineState.isMuted;
 
     if (engineState.bpm !== bpm) {
       onBpmChange(engineState.bpm);
@@ -212,6 +220,7 @@ export const Metronome: React.FC<MetronomeProps> = ({
     setIsHydratedFromEngine(true);
 
     return () => {
+      clearBarCycle();
       audioEngine.setMetronomeBeatCallback(null);
       unsubscribe();
     };
@@ -369,9 +378,9 @@ export const Metronome: React.FC<MetronomeProps> = ({
               key={i}
               className={`flex-1 h-2 rounded-sm transition-all duration-75 ${
                 isAccent
-                  ? "bg-on-surface shadow-[0_0_10px_rgba(229,226,225,0.9)] scale-y-125"
+                  ? "bg-on-surface shadow-[0_0_10px_var(--color-on-surface)] scale-y-125"
                   : isCurrent
-                    ? "bg-primary shadow-[0_0_10px_rgba(173,198,255,0.8)] scale-y-110"
+                    ? "bg-primary shadow-[0_0_10px_var(--color-primary)] scale-y-110"
                     : "bg-outline-variant/20"
               }`}
             />
@@ -475,9 +484,13 @@ export const Metronome: React.FC<MetronomeProps> = ({
                 audioEngine.setMuted(false);
                 audioEngine.resetMetronomePosition();
               } else {
-                barCycleShouldSoundRef.current = true;
-                audioEngine.setMuted(false);
-                audioEngine.resetMetronomePosition();
+                if (isPlaying) {
+                  barCycleShouldSoundRef.current = false;
+                } else {
+                  barCycleShouldSoundRef.current = true;
+                  audioEngine.setMuted(false);
+                  audioEngine.resetMetronomePosition();
+                }
               }
 
               setBarCycleMode(next);

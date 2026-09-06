@@ -296,7 +296,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({
 
       {/* Timer Value */}
       <div
-        className={`absolute inset-0 flex flex-col items-center justify-start pt-14 sm:justify-center sm:pt-0 sm:pb-6 z-10 pointer-events-none ${desktopValuePlacement === "below" ? "lg:justify-end lg:pb-16" : desktopValuePlacement === "above-4" ? "lg:justify-start lg:pt-28" : "lg:justify-start lg:pt-14"}`}
+        className={`absolute inset-0 flex flex-col items-center justify-start pt-14 sm:justify-center sm:pt-0 sm:pb-6 z-10 pointer-events-none ${desktopValuePlacement === "below" ? "lg:justify-end lg:pb-16" : desktopValuePlacement === "above-4" ? "lg:justify-start lg:pt-28" : "lg:justify-start lg:pt-20"}`}
       >
         {status === "idle" ? (
           <form
