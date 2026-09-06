@@ -11,6 +11,8 @@ import {
   Music,
   Search,
   Sliders,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 
 export type ActiveTab =
@@ -34,6 +36,8 @@ export interface GlobalSearchResult {
 interface NavigationProps {
   activeTab: ActiveTab;
   onSelectTab: (tab: ActiveTab) => void;
+  isSidebarCollapsed: boolean;
+  onToggleSidebar: () => void;
   onOpenSettings: () => void;
   streakDays: number;
   graceActive?: boolean;
@@ -46,6 +50,8 @@ interface NavigationProps {
 export const Navigation: React.FC<NavigationProps> = ({
   activeTab,
   onSelectTab,
+  isSidebarCollapsed,
+  onToggleSidebar,
   onOpenSettings,
   streakDays,
   graceActive = false,
@@ -72,79 +78,131 @@ export const Navigation: React.FC<NavigationProps> = ({
   return (
     <>
       {/* Desktop Persistent Left Sidebar */}
-      <aside className="hidden lg:flex fixed left-0 top-0 h-full w-72 bg-surface-container-lowest z-50 flex-col border-r border-outline-variant/30 shadow-2xl">
+      <aside
+        className={`hidden lg:flex fixed left-0 top-0 h-full ${isSidebarCollapsed ? "w-20" : "w-72"} bg-surface-container-lowest z-50 flex-col border-r border-outline-variant/30 shadow-2xl transition-[width] duration-200`}
+      >
         {/* Brand Logo */}
-        <div className="px-8 py-7 flex items-center gap-3 border-b border-outline-variant/30">
-          <img src="Mousi9tiWhite.svg" alt="Mousi9ti Logo"></img>
+        <div
+          className={`${isSidebarCollapsed ? "px-0 justify-center" : "px-8 gap-3"} py-7 flex items-center border-b border-outline-variant/30`}
+        >
+          <img
+            className={
+              isSidebarCollapsed ? "h-16 w-16 object-contain" : "max-w-full"
+            }
+            src={
+              isSidebarCollapsed
+                ? "Mousi9tiWhiteSmall.svg"
+                : "Mousi9tiWhite.svg"
+            }
+            alt="Mousi9ti Logo"
+          />
         </div>
 
         {/* Navigation Links */}
-        <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
+        <nav
+          className={`flex-1 ${isSidebarCollapsed ? "px-2" : "px-4"} py-6 space-y-1.5 overflow-y-auto`}
+        >
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
             return (
               <button
                 key={item.id}
                 onClick={() => onSelectTab(item.id)}
-                className={`w-full flex items-center px-4 py-3 rounded text-left transition-all duration-200 group border-l-2 ${
+                title={isSidebarCollapsed ? item.label : undefined}
+                className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0" : "px-4"} py-3 rounded text-left transition-all duration-200 group border-l-2 ${
                   isActive
                     ? "bg-primary-container text-on-primary-container border-primary font-semibold shadow-sm"
                     : "text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface border-transparent"
                 }`}
               >
                 <span
-                  className={`mr-3.5 transition-colors ${isActive ? "text-on-primary-container" : "text-on-surface-variant group-hover:text-on-surface"}`}
+                  className={`${isSidebarCollapsed ? "" : "mr-3.5"} transition-colors ${isActive ? "text-on-primary-container" : "text-on-surface-variant group-hover:text-on-surface"}`}
                 >
                   {item.icon}
                 </span>
-                <span className="font-mono text-xs tracking-wider">
-                  {item.label}
-                </span>
+                {!isSidebarCollapsed && (
+                  <span className="font-mono text-xs tracking-wider">
+                    {item.label}
+                  </span>
+                )}
               </button>
             );
           })}
         </nav>
 
         {/* Streak & Consistency Footer Widget */}
-        <div className="p-4 border-t border-outline-variant/30 space-y-3">
-          <div className="bg-surface-container-low border border-outline-variant/30 rounded-lg p-3.5 flex flex-col gap-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono tracking-[0.18em] text-on-surface-variant uppercase font-semibold">
-                Practice Streak
-              </span>
-              {graceActive && (
-                <span className="text-[9px] font-mono text-tertiary bg-tertiary/10 px-1.5 py-0.5 rounded border border-tertiary/20">
-                  GRACE ACTIVE
+        <div
+          className={`${isSidebarCollapsed ? "p-2" : "p-4"} border-t border-outline-variant/30 space-y-3`}
+        >
+          <div
+            className={`bg-surface-container-low border border-outline-variant/30 rounded-lg ${isSidebarCollapsed ? "p-1 flex justify-center" : "p-3.5 flex flex-col gap-1.5"}`}
+          >
+            {isSidebarCollapsed ? (
+              <div className="flex items-center gap-1.5 whitespace-nowrap text-primary">
+                <Flame size={16} className="animate-pulse" />
+                <span className="min-w-[3ch] text-center font-mono text-base font-bold tracking-wider">
+                  {streakDays}
                 </span>
-              )}
-            </div>
-            <div className="flex items-center gap-2.5">
-              <div className="w-6 h-6 rounded bg-primary/10 border border-primary/30 flex items-center justify-center text-primary">
-                <Flame size={15} className="animate-pulse" />
               </div>
-              <span className="font-mono text-base font-bold text-on-surface tracking-wider">
-                {streakDays} DAYS
-              </span>
-            </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-mono tracking-[0.18em] text-on-surface-variant uppercase font-semibold">
+                    Practice Streak
+                  </span>
+                  {graceActive && (
+                    <span className="text-[9px] font-mono text-tertiary bg-tertiary/10 px-1.5 py-0.5 rounded border border-tertiary/20">
+                      GRACE ACTIVE
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-6 h-6 rounded bg-primary/10 border border-primary/30 flex items-center justify-center text-primary">
+                    <Flame size={15} className="animate-pulse" />
+                  </div>
+                  <span className="font-mono text-base font-bold text-on-surface tracking-wider">
+                    {streakDays} DAYS
+                  </span>
+                </div>
+              </>
+            )}
           </div>
 
-          <button
-            onClick={onOpenSettings}
-            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded bg-transparent hover:bg-surface-container-low text-on-surface-variant hover:text-on-surface transition-colors border border-transparent hover:border-outline-variant/30"
-          >
-            <div className="flex items-center gap-3">
+          <div className="w-full flex items-center gap-2 px-2 py-2.5 text-on-surface-variant">
+            <button
+              onClick={onOpenSettings}
+              title="Studio Settings"
+              className={`min-w-0 h-9 flex items-center ${isSidebarCollapsed ? "flex-1 justify-center" : "flex-1 justify-start gap-3"} rounded border border-transparent hover:border-outline-variant/30 hover:bg-surface-container-low hover:text-on-surface transition-colors`}
+            >
               <Sliders size={16} />
-              <span className="font-mono text-xs tracking-wider uppercase">
-                Studio Settings
-              </span>
-            </div>
-            <Settings size={14} className="text-on-surface-variant" />
-          </button>
+              {!isSidebarCollapsed && (
+                <span className="font-mono text-xs tracking-wider uppercase">
+                  Studio Settings
+                </span>
+              )}
+            </button>
+            <button
+              onClick={onToggleSidebar}
+              title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              aria-label={
+                isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+              }
+              className={`h-9 flex items-center justify-center rounded border border-transparent hover:border-outline-variant/30 hover:bg-surface-container-low hover:text-on-surface transition-colors ${isSidebarCollapsed ? "flex-1 min-w-0" : "w-9 shrink-0"}`}
+            >
+              {isSidebarCollapsed ? (
+                <PanelLeftOpen size={14} />
+              ) : (
+                <PanelLeftClose size={14} />
+              )}
+            </button>
+          </div>
         </div>
       </aside>
 
       {/* Top Global Header (Sticky on desktop & mobile) */}
-      <header className="sticky top-0 z-40 h-16 bg-surface/90 backdrop-blur-md border-b border-outline-variant/30 px-4 lg:px-8 flex items-center justify-between lg:pl-80">
+      <header
+        className={`sticky top-0 z-40 h-16 bg-surface/90 backdrop-blur-md border-b border-outline-variant/30 px-4 lg:px-8 flex items-center justify-between ${isSidebarCollapsed ? "lg:pl-28" : "lg:pl-80"}`}
+      >
         {/* Search Theory Input */}
         <div className="flex items-center gap-3 w-full max-w-md mr-2">
           <div className="relative w-full">
