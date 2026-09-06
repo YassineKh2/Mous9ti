@@ -640,10 +640,11 @@ export function App() {
           <ChordsPage
             initialChordTarget={pendingChordSearch}
             onInitialChordHandled={() => setPendingChordSearch(null)}
+            settings={settings}
           />
         )}
 
-        {activeTab === "builder" && <BuilderPage />}
+        {activeTab === "builder" && <BuilderPage settings={settings} />}
 
         {activeTab === "exercises" && (
           <ExercisesPage

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { NoteName } from "../types";
+import { AppSettings, NoteName } from "../types";
 import {
   CHROMATIC_SHARPS,
   NOTE_SEMITONES,
@@ -25,18 +25,24 @@ import { audioEngine } from "../lib/audio";
 interface ChordsPageProps {
   initialChordTarget?: { chordType: string; root: NoteName } | null;
   onInitialChordHandled?: () => void;
+  settings: AppSettings;
 }
 
 export const ChordsPage: React.FC<ChordsPageProps> = ({
   initialChordTarget,
   onInitialChordHandled,
+  settings,
 }) => {
   const [selectedRoot, setSelectedRoot] = useState<NoteName>("E");
   const [selectedType, setSelectedType] = useState<string>("min7");
   const [showStaffNotation, setShowStaffNotation] = useState(false);
   const [instrumentView, setInstrumentView] = useState<
     "guitar" | "piano" | "both"
-  >("guitar");
+  >(settings.defaultInstrument);
+
+  useEffect(() => {
+    setInstrumentView(settings.defaultInstrument);
+  }, [settings.defaultInstrument]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedInversion, setSelectedInversion] = useState<number>(0);
 

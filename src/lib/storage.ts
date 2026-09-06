@@ -18,6 +18,7 @@ const STORAGE_KEYS = {
 const DEFAULT_SETTINGS: AppSettings = {
   theme: "dark",
   accentColor: "#3b82f6", // Electric Blue
+  defaultInstrument: "guitar",
   defaultTuning: "E Standard",
   fretCount: 15,
   soundVolume: 1,

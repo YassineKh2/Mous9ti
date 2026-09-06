@@ -4,7 +4,13 @@ import { SwipeableChordCard } from "./SwipeableChordCard";
 import { ChordSearchInput } from "./ChordSearchInput";
 import { NoteName } from "../types";
 
-export const ChordSelectorWidget: React.FC = () => {
+interface ChordSelectorWidgetProps {
+  defaultInstrument: "guitar" | "piano";
+}
+
+export const ChordSelectorWidget: React.FC<ChordSelectorWidgetProps> = ({
+  defaultInstrument,
+}) => {
   const [selectedChords, setSelectedChords] = useState<
     { root: NoteName; type: string }[]
   >([
@@ -13,10 +19,16 @@ export const ChordSelectorWidget: React.FC = () => {
     { root: "A", type: "min" },
     { root: "F", type: "maj" },
   ]);
-  const [instrument, setInstrument] = useState<"guitar" | "piano">("guitar");
+  const [instrument, setInstrument] = useState<"guitar" | "piano">(
+    defaultInstrument,
+  );
   const [isFullWidth, setIsFullWidth] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const widgetRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setInstrument(defaultInstrument);
+  }, [defaultInstrument]);
 
   useEffect(() => {
     const widget = widgetRef.current;

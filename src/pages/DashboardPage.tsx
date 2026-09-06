@@ -457,7 +457,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
   const [instrumentView, setInstrumentView] = useState<
     "guitar" | "piano" | "both"
-  >("guitar");
+  >(settings.defaultInstrument);
+
+  useEffect(() => {
+    setInstrumentView(settings.defaultInstrument);
+  }, [settings.defaultInstrument]);
 
   const resetWidgetLayout = () => {
     setLayout({
@@ -546,7 +550,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </div>
         );
       case "chord-selector":
-        return <ChordSelectorWidget />;
+        return (
+          <ChordSelectorWidget defaultInstrument={settings.defaultInstrument} />
+        );
     }
   };
 

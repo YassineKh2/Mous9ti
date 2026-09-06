@@ -161,6 +161,7 @@ export interface StreakData {
 export interface AppSettings {
   theme: "dark" | "light";
   accentColor: string; // hex
+  defaultInstrument: "guitar" | "piano";
   defaultTuning: string;
   fretCount: number; // 12, 15, 21, 22, 24
   soundVolume: number; // 0-1

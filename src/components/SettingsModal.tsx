@@ -1,5 +1,15 @@
 import React from "react";
-import { X, Volume2, Moon, Sun, Download, Trash2, Sliders } from "lucide-react";
+import {
+  X,
+  Volume2,
+  Moon,
+  Sun,
+  Download,
+  Trash2,
+  Sliders,
+  Guitar,
+  Piano,
+} from "lucide-react";
 import { AppSettings } from "../types";
 import { GUITAR_TUNINGS } from "../data/musicTheory";
 
@@ -100,6 +110,45 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               >
                 <Sun size={13} />
                 <span>Light</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Default Instrument */}
+          <div className="flex items-center justify-between pt-2 border-t border-white/5">
+            <div>
+              <span className="font-mono text-xs font-semibold text-zinc-200 block">
+                Default Instrument
+              </span>
+              <span className="text-[11px] text-zinc-400">
+                Used as the starting instrument across the app
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1 bg-[#1c1b1b] p-1 rounded-lg border border-white/10">
+              <button
+                onClick={() =>
+                  onUpdateSettings({ defaultInstrument: "guitar" })
+                }
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-mono transition-all ${
+                  settings.defaultInstrument === "guitar"
+                    ? "bg-blue-600 text-white font-bold"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                <Guitar size={13} />
+                <span>Guitar</span>
+              </button>
+              <button
+                onClick={() => onUpdateSettings({ defaultInstrument: "piano" })}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-mono transition-all ${
+                  settings.defaultInstrument === "piano"
+                    ? "bg-blue-600 text-white font-bold"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                <Piano size={13} />
+                <span>Piano</span>
               </button>
             </div>
           </div>

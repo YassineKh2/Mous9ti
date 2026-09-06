@@ -41,6 +41,7 @@ import {
   NoteName,
   QueueItem,
   SavedProgression,
+  AppSettings,
 } from "../types";
 import { SONG_PRESETS } from "../data/songPresets";
 import { ChordDiagram } from "../components/ChordDiagram";
@@ -978,7 +979,11 @@ function getKeyboardVoicingCount(root: NoteName, type: string): number {
   return getChordDefinition(root, type).notes.length * 3;
 }
 
-export const BuilderPage: React.FC = () => {
+interface BuilderPageProps {
+  settings: AppSettings;
+}
+
+export const BuilderPage: React.FC<BuilderPageProps> = ({ settings }) => {
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [savedProgressions, setSavedProgressions] = useState<
@@ -1081,7 +1086,9 @@ export const BuilderPage: React.FC = () => {
   const [selectedStyle, setSelectedStyle] = useState<string>("down");
   const [selectedRepeats, setSelectedRepeats] = useState<number>(1);
   const [selectedInstrument, setSelectedInstrument] = useState<string>(
-    "acoustic_guitar_nylon",
+    settings.defaultInstrument === "piano"
+      ? "acoustic_grand_piano"
+      : "acoustic_guitar_nylon",
   );
   const [customSoundfontFile, setCustomSoundfontFile] = useState<File | null>(
     null,
@@ -1091,6 +1098,15 @@ export const BuilderPage: React.FC = () => {
   const [reverbSpace, setReverbSpace] = useState<"room" | "hall" | "ambient">(
     "hall",
   );
+
+  useEffect(() => {
+    setSelectedInstrument(
+      settings.defaultInstrument === "piano"
+        ? "acoustic_grand_piano"
+        : "acoustic_guitar_nylon",
+    );
+    setCustomSoundfontFile(null);
+  }, [settings.defaultInstrument]);
 
   const isKeyboardOrSynth = useMemo(() => {
     return (

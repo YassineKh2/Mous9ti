@@ -68,7 +68,11 @@ export const ScalesPage: React.FC<ScalesPageProps> = ({
   >("octave4");
   const [instrumentView, setInstrumentView] = useState<
     "guitar" | "piano" | "both"
-  >("guitar");
+  >(settings.defaultInstrument);
+
+  useEffect(() => {
+    setInstrumentView(settings.defaultInstrument);
+  }, [settings.defaultInstrument]);
 
   // Scale Playback Direction & Animation State
   const [playDirection, setPlayDirection] =
