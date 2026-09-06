@@ -16,6 +16,27 @@ import {
 } from "../types";
 import { audioEngine } from "../lib/audio";
 
+const MetronomeGlyph: React.FC<{ className?: string }> = ({ className }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+    aria-hidden="true"
+  >
+    <path d="M12 11.4V9.1" />
+    <path d="m12 17 6.59-6.59" />
+    <path d="m15.05 5.7-.218-.691a3 3 0 0 0-5.663 0L4.418 19.695A1 1 0 0 0 5.37 21h13.253a1 1 0 0 0 .951-1.31L18.45 16.2" />
+    <circle cx="20" cy="9" r="2" />
+  </svg>
+);
+
 interface MetronomeProps {
   bpm: number;
   onBpmChange: (newBpm: number) => void;
@@ -296,6 +317,7 @@ export const Metronome: React.FC<MetronomeProps> = ({
       {/* Top Header */}
       <div className="flex flex-col items-start gap-2 pb-3 border-b border-outline-variant/10 md:flex-row md:items-center md:justify-between">
         <div className="flex w-full items-center gap-2 md:w-auto">
+          <MetronomeGlyph className="h-4 w-4 text-primary" />
           <span className="font-mono text-xs font-semibold tracking-[0.2em] text-on-surface uppercase">
             Metronome
           </span>

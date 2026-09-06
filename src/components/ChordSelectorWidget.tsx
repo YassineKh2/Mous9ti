@@ -112,13 +112,6 @@ export const ChordSelectorWidget: React.FC = () => {
           </div>
         )}
       </div>
-
-      {/* If there are more chords than visible, show a tiny indicator */}
-      {selectedChords.length > visibleChords.length && (
-        <div className="mt-4 text-center text-[10px] font-mono text-on-surface-variant">
-          + {selectedChords.length - visibleChords.length} more chords
-        </div>
-      )}
     </div>
   );
 };
