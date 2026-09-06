@@ -41,11 +41,7 @@ const DEFAULT_DASHBOARD_LAYOUT: DashboardLayoutData = {
     },
     {
       id: "row-2",
-      widgets: [{ id: "fretboard", title: "Fretboard" }],
-    },
-    {
-      id: "row-3",
-      widgets: [{ id: "piano", title: "Piano" }],
+      widgets: [{ id: "instruments", title: "Instruments" }],
     },
   ],
   hiddenWidgets: [],
@@ -55,7 +51,67 @@ export function getSavedDashboardLayout(): DashboardLayoutData {
   try {
     const rawV2 = localStorage.getItem(STORAGE_KEYS.DASHBOARD_LAYOUT_V2);
     if (rawV2) {
-      return JSON.parse(rawV2) as DashboardLayoutData;
+      const data = JSON.parse(rawV2) as DashboardLayoutData;
+      // Sanitize/migrate V2 data if it still contains split fretboard or piano
+      let hasLegacyInstruments = false;
+      let hasInstruments = false;
+
+      const newRows: DashboardRow[] = [];
+      const newHiddenWidgets: DashboardWidgetLayout[] = [];
+
+      data.rows?.forEach((row) => {
+        const newWidgets: DashboardWidgetLayout[] = [];
+        row.widgets?.forEach((w: any) => {
+          if (w.id === "fretboard" || w.id === "piano") {
+            hasLegacyInstruments = true;
+            if (!hasInstruments) {
+              newWidgets.push({ id: "instruments", title: "Instruments" });
+              hasInstruments = true;
+            }
+          } else if (w.id === "instruments") {
+            hasInstruments = true;
+            newWidgets.push(w);
+          } else {
+            newWidgets.push(w);
+          }
+        });
+        if (newWidgets.length > 0) {
+          newRows.push({ ...row, widgets: newWidgets });
+        }
+      });
+
+      data.hiddenWidgets?.forEach((w: any) => {
+        if (w.id === "fretboard" || w.id === "piano") {
+          hasLegacyInstruments = true;
+          if (!hasInstruments) {
+            newHiddenWidgets.push({ id: "instruments", title: "Instruments" });
+            hasInstruments = true;
+          }
+        } else if (w.id === "instruments") {
+          hasInstruments = true;
+          newHiddenWidgets.push(w);
+        } else {
+          newHiddenWidgets.push(w);
+        }
+      });
+
+      if (!hasInstruments && hasLegacyInstruments) {
+        newRows.push({
+          id: `row-${Math.random().toString(36).substring(2, 9)}`,
+          widgets: [{ id: "instruments", title: "Instruments" }],
+        });
+      }
+
+      const sanitized: DashboardLayoutData = {
+        rows: newRows,
+        hiddenWidgets: newHiddenWidgets,
+      };
+
+      if (hasLegacyInstruments) {
+        saveDashboardLayout(sanitized);
+      }
+
+      return sanitized;
     }
 
     // Fallback and migrate from V1
@@ -67,11 +123,19 @@ export function getSavedDashboardLayout(): DashboardLayoutData {
         const hiddenWidgets: DashboardWidgetLayout[] = [];
         let currentRow: DashboardWidgetLayout[] = [];
 
+        let addedInstruments = false;
+
         savedV1.forEach((widget: any) => {
-          const w = { id: widget.id, title: widget.title };
-          if (widget.hidden) {
+          let w = { id: widget.id, title: widget.title };
+          if (widget.id === "fretboard" || widget.id === "piano") {
+            if (addedInstruments) return;
+            w = { id: "instruments", title: "Instruments" };
+            addedInstruments = true;
+          }
+
+          if (widget.hidden && w.id !== "instruments") {
             hiddenWidgets.push(w);
-          } else if (widget.size === "wide") {
+          } else if (widget.size === "wide" || w.id === "instruments") {
             rows.push({ id: `row-${Math.random().toString(36).substring(2, 9)}`, widgets: [w] });
           } else {
             currentRow.push(w);

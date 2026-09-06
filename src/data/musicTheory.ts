@@ -387,8 +387,24 @@ export const SCALES_DATABASE: ScaleDefinition[] = [
     },
   },
   {
-    id: "blues",
-    name: "Blues Scale",
+    id: "major_blues",
+    name: "Major Blues Scale",
+    category: "Pentatonic & Blues",
+    intervals: [0, 2, 3, 4, 7, 9],
+    formula: "W H H 1.5 W 1.5",
+    degrees: ["1", "2", "b3", "3", "5", "6"],
+    intervalsNamed: ["R", "M2", "m3", "M3", "P5", "M6"],
+    cagedBoxes: {
+      "Pattern 1 (E-Shape)": { startFretOffset: 3, endFretOffset: 6 },
+      "Pattern 2 (D-Shape)": { startFretOffset: 5, endFretOffset: 9 },
+      "Pattern 3 (C-Shape)": { startFretOffset: 7, endFretOffset: 11 },
+      "Pattern 4 (A-Shape)": { startFretOffset: 10, endFretOffset: 14 },
+      "Pattern 5 (G-Shape)": { startFretOffset: 12, endFretOffset: 16 },
+    },
+  },
+  {
+    id: "minor_blues",
+    name: "Minor Blues Scale",
     category: "Pentatonic & Blues",
     intervals: [0, 3, 5, 6, 7, 10],
     formula: "1.5 W H H 1.5 W",
@@ -560,7 +576,8 @@ export function isFlatKeyContext(
       "phrygian",
       "locrian",
       "pentatonic_minor",
-      "blues",
+      "major_blues",
+      "minor_blues",
     ];
     if (
       flatProneScaleTypes.includes(scale.id) &&

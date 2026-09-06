@@ -38,17 +38,11 @@ import { useTimer } from "../lib/useTimer";
 import { getSavedDashboardLayout, saveDashboardLayout } from "../lib/storage";
 
 const DEFAULT_WIDGET_LAYOUT: DashboardWidgetLayout[] = [
-  { id: "metronome", title: "Metronome", hidden: false, size: "compact" },
-  { id: "timer", title: "Practice Timer", hidden: false, size: "compact" },
-  {
-    id: "random-drill",
-    title: "Random Note Drill",
-    hidden: false,
-    size: "compact",
-  },
-  { id: "session", title: "Practice Streak", hidden: false, size: "compact" },
-  { id: "fretboard", title: "Fretboard", hidden: false, size: "wide" },
-  { id: "piano", title: "Piano", hidden: false, size: "wide" },
+  { id: "metronome", title: "Metronome" },
+  { id: "timer", title: "Practice Timer" },
+  { id: "random-drill", title: "Random Note Drill" },
+  { id: "session", title: "Practice Streak" },
+  { id: "instruments", title: "Instruments" },
 ];
 
 type DashboardDropTarget = {
@@ -120,14 +114,16 @@ const DashboardWidget: React.FC<DashboardWidgetProps> = ({
             if (event.key === "ArrowUp") {
               event.preventDefault();
               onKeyboardMove(widget.id, -1);
-            }
-            if (event.key === "ArrowDown") {
+            } else if (event.key === "ArrowDown") {
               event.preventDefault();
               onKeyboardMove(widget.id, 1);
+            } else if (event.key === "Delete" || event.key === "Backspace") {
+              event.preventDefault();
+              onRemove(widget.id);
             }
           }}
           className="shrink-0 touch-none rounded p-1 text-primary focus:outline-none focus:ring-2 focus:ring-primary/60"
-          title="Drag to reorder, or use arrow keys"
+          title="Drag to reorder, use arrow keys, or press Delete to remove"
           aria-label={`Reorder ${widget.title}`}
         >
           <GripVertical size={16} />
@@ -139,7 +135,7 @@ const DashboardWidget: React.FC<DashboardWidgetProps> = ({
           type="button"
           onPointerDown={(event) => event.stopPropagation()}
           onClick={() => onRemove(widget.id)}
-          className="rounded p-1 text-on-surface-variant hover:bg-error-container hover:text-on-error-container"
+          className="rounded p-1 text-on-surface-variant transition-all hover:bg-error/20 hover:text-error hover:shadow-[0_0_8px_rgba(239,68,68,0.5)] focus:outline-none focus:ring-1 focus:ring-error"
           title={`Remove ${widget.title}`}
           aria-label={`Remove ${widget.title}`}
         >
@@ -444,13 +440,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     setDropTarget(null);
   };
 
+  const [instrumentView, setInstrumentView] = useState<"guitar" | "piano" | "both">("guitar");
+
   const resetWidgetLayout = () => {
     setLayout({
-      version: "v2",
       rows: [
         { id: "row-1", widgets: DEFAULT_WIDGET_LAYOUT.slice(0, 4) },
-        { id: "row-2", widgets: [DEFAULT_WIDGET_LAYOUT[4]] },
-        { id: "row-3", widgets: [DEFAULT_WIDGET_LAYOUT[5]] }
+        { id: "row-2", widgets: [DEFAULT_WIDGET_LAYOUT[4]] }
       ],
       hiddenWidgets: []
     });
@@ -503,30 +499,33 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             highestBpmSession={metronomeBpm}
           />
         );
-      case "fretboard":
+      case "instruments":
         return (
-          <Fretboard
-            tuning={currentTuning}
-            onTuningChange={setCurrentTuning}
-            fretCount={fretCount}
-            onFretCountChange={setFretCount}
-            selectedRoot={selectedRoot}
-            selectedScale={selectedScale}
-            activeRandomNote={showTargetNote ? activeRandomNote : null}
-            displayMode={displayMode}
-            onDisplayModeChange={setDisplayMode}
-          />
-        );
-      case "piano":
-        return (
-          <PianoKeyboard
-            octaves={3}
-            startOctave={3}
-            selectedRoot={selectedRoot}
-            selectedScale={selectedScale}
-            activeRandomNote={showTargetNote ? activeRandomNote : null}
-            displayMode={displayMode}
-          />
+          <div className="flex flex-col gap-4">
+            {(instrumentView === "guitar" || instrumentView === "both") && (
+              <Fretboard
+                tuning={currentTuning}
+                onTuningChange={setCurrentTuning}
+                fretCount={fretCount}
+                onFretCountChange={setFretCount}
+                selectedRoot={selectedRoot}
+                selectedScale={selectedScale}
+                activeRandomNote={showTargetNote ? activeRandomNote : null}
+                displayMode={displayMode}
+                onDisplayModeChange={setDisplayMode}
+              />
+            )}
+            {(instrumentView === "piano" || instrumentView === "both") && (
+              <PianoKeyboard
+                octaves={3}
+                startOctave={3}
+                selectedRoot={selectedRoot}
+                selectedScale={selectedScale}
+                activeRandomNote={showTargetNote ? activeRandomNote : null}
+                displayMode={displayMode}
+              />
+            )}
+          </div>
         );
     }
   };
@@ -550,31 +549,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     onPointerStart: handlePointerStart,
     onKeyboardMove: moveWidgetWithKeyboard,
     onRemove: (id: DashboardWidgetId) => {
-      if (id === "fretboard" || id === "piano") {
-        updateInstrumentWidgets({ hidden: true });
-      } else {
-        updateWidget(id, { hidden: true });
-      }
+      hideWidget(id);
     },
   });
 
   const hiddenWidgets = layout.hiddenWidgets;
-  
-  const isGuitarVisible = layout.rows.some(r => r.widgets.some(w => w.id === "fretboard"));
-  const isPianoVisible = layout.rows.some(r => r.widgets.some(w => w.id === "piano"));
-  const instrumentView = isGuitarVisible && isPianoVisible ? "both" : isGuitarVisible ? "guitar" : isPianoVisible ? "piano" : "none";
 
   const handleInstrumentToggle = (view: "guitar" | "piano" | "both") => {
-    if (view === "guitar") {
-      if (!isGuitarVisible) showWidget("fretboard");
-      if (isPianoVisible) hideWidget("piano");
-    } else if (view === "piano") {
-      if (!isPianoVisible) showWidget("piano");
-      if (isGuitarVisible) hideWidget("fretboard");
-    } else if (view === "both") {
-      if (!isGuitarVisible) showWidget("fretboard");
-      if (!isPianoVisible) showWidget("piano");
-    }
+    setInstrumentView(view);
   };
 
   return (
