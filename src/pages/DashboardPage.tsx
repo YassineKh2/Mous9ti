@@ -654,14 +654,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             </span>
           </div>
 
-          <div className="relative col-span-1 h-10 md:h-auto" ref={rootMenuRef}>
+          <div className="relative col-span-1 h-10 md:h-9" ref={rootMenuRef}>
             <button
               type="button"
               onClick={() => {
                 setIsRootMenuOpen((prev) => !prev);
                 setIsScaleMenuOpen(false);
               }}
-              className="group flex h-full w-full items-center justify-center gap-1 rounded-lg bg-primary px-3 font-mono text-sm font-bold leading-none text-on-primary shadow-md transition-transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary/60 cursor-pointer md:h-auto md:w-auto md:px-2.5 md:py-1"
+              className="group flex h-full w-full items-center justify-center gap-1 rounded-lg bg-primary px-3 font-mono text-sm font-bold leading-none text-on-primary shadow-md transition-transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary/60 cursor-pointer md:w-auto md:px-2.5 md:py-1"
             >
               <span>{selectedRoot}</span>
               <ChevronDown
@@ -704,7 +704,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </div>
 
           <div
-            className="relative col-span-1 h-10 min-w-0 md:col-span-1 md:h-auto"
+            className="relative col-span-1 h-10 min-w-0 md:col-span-1 md:h-9"
             ref={scaleMenuRef}
           >
             <button
@@ -713,7 +713,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 setIsScaleMenuOpen((prev) => !prev);
                 setIsRootMenuOpen(false);
               }}
-              className="group flex h-full w-full min-w-0 items-center justify-between gap-2 rounded-lg border border-outline-variant/30 bg-surface-container-low px-3 py-1 text-left text-xs font-mono leading-none text-on-surface transition-colors hover:bg-surface-container-high focus:outline-none focus:ring-1 focus:ring-primary/40 cursor-pointer md:h-auto md:w-auto md:max-w-55"
+              className="group flex h-full w-full min-w-0 items-center justify-between gap-2 rounded-lg border border-outline-variant/30 bg-surface-container-low px-3 py-1 text-left text-xs font-mono leading-none text-on-surface transition-colors hover:bg-surface-container-high focus:outline-none focus:ring-1 focus:ring-primary/40 cursor-pointer md:w-auto md:max-w-55"
             >
               <span className="truncate">
                 {selectedScale?.name || "None (Show All Notes)"}
@@ -822,14 +822,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         </div>
 
         <div className="flex flex-col gap-2 md:flex-row md:items-center">
-          <div className="flex h-12 w-full min-w-0 items-stretch gap-1.5 overflow-x-auto rounded border border-outline-variant/30 bg-surface-container-low p-1">
+          <div className="flex h-12 w-full min-w-0 items-stretch gap-1.5 overflow-x-auto rounded border border-outline-variant/30 bg-surface-container-low p-1 md:h-9">
             {(["name", "degree", "interval"] as NoteDisplayMode[]).map(
               (mode) => (
                 <button
                   key={mode}
                   type="button"
                   onClick={() => setDisplayMode(mode)}
-                  className={`flex min-w-max flex-1 items-center justify-center rounded px-2.5 text-[10px] font-mono uppercase tracking-wider transition-colors ${
+                  className={`flex min-w-max flex-1 items-center justify-center rounded px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider transition-colors ${
                     displayMode === mode
                       ? "bg-primary text-on-primary font-semibold shadow-sm"
                       : "text-on-surface-variant hover:bg-outline-variant/10 hover:text-on-surface"
@@ -845,24 +845,24 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             )}
           </div>
 
-          <div className="grid grid-cols-3 items-center gap-1 rounded border border-outline-variant/30 bg-surface-container-low p-1 md:flex">
+          <div className="grid h-12 grid-cols-3 items-center gap-1 rounded border border-outline-variant/30 bg-surface-container-low p-1 md:h-9 md:flex">
             <button
               onClick={() => handleInstrumentToggle("guitar")}
-              className={`flex h-10 items-center justify-center gap-1.5 rounded px-2 py-1 text-xs font-mono transition-all md:h-auto md:px-3 ${instrumentView === "guitar" ? "bg-primary text-on-primary font-bold shadow" : "text-on-surface-variant hover:text-on-surface"}`}
+              className={`flex h-full items-center justify-center gap-1.5 rounded px-2 py-1 text-xs font-mono transition-all md:px-3 ${instrumentView === "guitar" ? "bg-primary text-on-primary font-bold shadow" : "text-on-surface-variant hover:text-on-surface"}`}
             >
               <Guitar size={14} />
               <span>Guitar</span>
             </button>
             <button
               onClick={() => handleInstrumentToggle("piano")}
-              className={`flex h-10 items-center justify-center gap-1.5 rounded px-2 py-1 text-xs font-mono transition-all md:h-auto md:px-3 ${instrumentView === "piano" ? "bg-primary text-on-primary font-bold shadow" : "text-on-surface-variant hover:text-on-surface"}`}
+              className={`flex h-full items-center justify-center gap-1.5 rounded px-2 py-1 text-xs font-mono transition-all md:px-3 ${instrumentView === "piano" ? "bg-primary text-on-primary font-bold shadow" : "text-on-surface-variant hover:text-on-surface"}`}
             >
               <Piano size={14} />
               <span>Piano</span>
             </button>
             <button
               onClick={() => handleInstrumentToggle("both")}
-              className={`flex h-10 items-center justify-center gap-1.5 rounded px-2 py-1 text-xs font-mono transition-all md:h-auto md:px-3 ${instrumentView === "both" ? "bg-primary text-on-primary font-bold shadow" : "text-on-surface-variant hover:text-on-surface"}`}
+              className={`flex h-full items-center justify-center gap-1.5 rounded px-2 py-1 text-xs font-mono transition-all md:px-3 ${instrumentView === "both" ? "bg-primary text-on-primary font-bold shadow" : "text-on-surface-variant hover:text-on-surface"}`}
             >
               <Layers size={14} />
               <span>Both</span>
