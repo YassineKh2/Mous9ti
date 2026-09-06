@@ -43,6 +43,10 @@ const DEFAULT_DASHBOARD_LAYOUT: DashboardLayoutData = {
       id: "row-2",
       widgets: [{ id: "instruments", title: "Instruments" }],
     },
+    {
+      id: "row-3",
+      widgets: [{ id: "chord-selector", title: "Chord Selector" }],
+    },
   ],
   hiddenWidgets: [],
 };
@@ -102,12 +106,24 @@ export function getSavedDashboardLayout(): DashboardLayoutData {
         });
       }
 
+      const hasChordSelector =
+        newRows.some((row) =>
+          row.widgets.some((widget) => widget.id === "chord-selector"),
+        ) || newHiddenWidgets.some((widget) => widget.id === "chord-selector");
+
+      if (!hasChordSelector) {
+        newRows.push({
+          id: `row-${Math.random().toString(36).substring(2, 9)}`,
+          widgets: [{ id: "chord-selector", title: "Chord Selector" }],
+        });
+      }
+
       const sanitized: DashboardLayoutData = {
         rows: newRows,
         hiddenWidgets: newHiddenWidgets,
       };
 
-      if (hasLegacyInstruments) {
+      if (hasLegacyInstruments || !hasChordSelector) {
         saveDashboardLayout(sanitized);
       }
 
@@ -136,17 +152,36 @@ export function getSavedDashboardLayout(): DashboardLayoutData {
           if (widget.hidden && w.id !== "instruments") {
             hiddenWidgets.push(w);
           } else if (widget.size === "wide" || w.id === "instruments") {
-            rows.push({ id: `row-${Math.random().toString(36).substring(2, 9)}`, widgets: [w] });
+            rows.push({
+              id: `row-${Math.random().toString(36).substring(2, 9)}`,
+              widgets: [w],
+            });
           } else {
             currentRow.push(w);
             if (currentRow.length >= 4) {
-              rows.push({ id: `row-${Math.random().toString(36).substring(2, 9)}`, widgets: currentRow });
+              rows.push({
+                id: `row-${Math.random().toString(36).substring(2, 9)}`,
+                widgets: currentRow,
+              });
               currentRow = [];
             }
           }
         });
         if (currentRow.length > 0) {
-          rows.push({ id: `row-${Math.random().toString(36).substring(2, 9)}`, widgets: currentRow });
+          rows.push({
+            id: `row-${Math.random().toString(36).substring(2, 9)}`,
+            widgets: currentRow,
+          });
+        }
+
+        const hasChordSelector = rows.some((row) =>
+          row.widgets.some((widget) => widget.id === "chord-selector"),
+        );
+        if (!hasChordSelector) {
+          rows.push({
+            id: `row-${Math.random().toString(36).substring(2, 9)}`,
+            widgets: [{ id: "chord-selector", title: "Chord Selector" }],
+          });
         }
 
         const migrated: DashboardLayoutData = { rows, hiddenWidgets };
@@ -154,7 +189,7 @@ export function getSavedDashboardLayout(): DashboardLayoutData {
         return migrated;
       }
     }
-    
+
     return DEFAULT_DASHBOARD_LAYOUT;
   } catch (e) {
     console.error("Failed to load dashboard layout", e);
@@ -164,7 +199,10 @@ export function getSavedDashboardLayout(): DashboardLayoutData {
 
 export function saveDashboardLayout(layout: DashboardLayoutData): void {
   try {
-    localStorage.setItem(STORAGE_KEYS.DASHBOARD_LAYOUT_V2, JSON.stringify(layout));
+    localStorage.setItem(
+      STORAGE_KEYS.DASHBOARD_LAYOUT_V2,
+      JSON.stringify(layout),
+    );
   } catch (e) {
     console.error("Failed to save dashboard layout", e);
   }

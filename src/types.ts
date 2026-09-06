@@ -176,7 +176,8 @@ export type DashboardWidgetId =
   | "timer"
   | "random-drill"
   | "session"
-  | "instruments";
+  | "instruments"
+  | "chord-selector";
 
 export interface DashboardWidgetLayout {
   id: DashboardWidgetId;

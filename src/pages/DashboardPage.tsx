@@ -8,11 +8,14 @@ import {
   AppSettings,
   DashboardWidgetId,
   DashboardWidgetLayout,
+  DashboardLayoutData,
+  DashboardRow,
 } from "../types";
 import { Metronome } from "../components/Metronome";
 import { RandomDrill } from "../components/RandomDrill";
 import { SessionWidget } from "../components/SessionWidget";
 import { TimerWidget } from "../components/TimerWidget";
+import { ChordSelectorWidget } from "../components/ChordSelectorWidget";
 import { Fretboard } from "../components/Fretboard";
 import { PianoKeyboard } from "../components/PianoKeyboard";
 import {
@@ -43,6 +46,7 @@ const DEFAULT_WIDGET_LAYOUT: DashboardWidgetLayout[] = [
   { id: "random-drill", title: "Random Note Drill" },
   { id: "session", title: "Practice Streak" },
   { id: "instruments", title: "Instruments" },
+  { id: "chord-selector", title: "Chord Selector" },
 ];
 
 type DashboardDropTarget = {
@@ -280,45 +284,47 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const hideWidget = (id: DashboardWidgetId) => {
     setLayout((current) => {
       let targetWidget: DashboardWidgetLayout | null = null;
-      const newRows = current.rows.map(row => {
-        const filtered = row.widgets.filter(w => {
-          if (w.id === id) {
-            targetWidget = w;
-            return false;
-          }
-          return true;
-        });
-        return { ...row, widgets: filtered };
-      }).filter(row => row.widgets.length > 0);
-      
+      const newRows = current.rows
+        .map((row) => {
+          const filtered = row.widgets.filter((w) => {
+            if (w.id === id) {
+              targetWidget = w;
+              return false;
+            }
+            return true;
+          });
+          return { ...row, widgets: filtered };
+        })
+        .filter((row) => row.widgets.length > 0);
+
       if (!targetWidget) return current;
-      
+
       return {
         ...current,
         rows: newRows,
-        hiddenWidgets: [...current.hiddenWidgets, targetWidget]
+        hiddenWidgets: [...current.hiddenWidgets, targetWidget],
       };
     });
   };
 
   const showWidget = (id: DashboardWidgetId) => {
     setLayout((current) => {
-      const widgetIndex = current.hiddenWidgets.findIndex(w => w.id === id);
+      const widgetIndex = current.hiddenWidgets.findIndex((w) => w.id === id);
       if (widgetIndex === -1) return current;
-      
+
       const widget = current.hiddenWidgets[widgetIndex];
       const newHidden = [...current.hiddenWidgets];
       newHidden.splice(widgetIndex, 1);
-      
+
       const newRow: DashboardRow = {
         id: `row-${Math.random().toString(36).substring(2, 9)}`,
-        widgets: [widget]
+        widgets: [widget],
       };
-      
+
       return {
         ...current,
         rows: [...current.rows, newRow],
-        hiddenWidgets: newHidden
+        hiddenWidgets: newHidden,
       };
     });
   };
@@ -352,24 +358,33 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
       if (targetRowIndex === -1) return current;
 
-      const newRows = current.rows.map((row) => ({ ...row, widgets: [...row.widgets] }));
+      const newRows = current.rows.map((row) => ({
+        ...row,
+        widgets: [...row.widgets],
+      }));
 
       const sourceRow = newRows[sourceRowIndex];
-      const draggedIndexInSource = sourceRow.widgets.findIndex((w) => w.id === draggedWidgetId);
+      const draggedIndexInSource = sourceRow.widgets.findIndex(
+        (w) => w.id === draggedWidgetId,
+      );
       sourceRow.widgets.splice(draggedIndexInSource, 1);
 
       const targetRow = newRows[targetRowIndex];
-      const targetWidgetIndex = targetRow.widgets.findIndex((w) => w.id === dropTarget.id);
+      const targetWidgetIndex = targetRow.widgets.findIndex(
+        (w) => w.id === dropTarget.id,
+      );
 
       if (dropTarget.axis === "horizontal") {
-        const insertIndex = targetWidgetIndex + (dropTarget.position === "after" ? 1 : 0);
+        const insertIndex =
+          targetWidgetIndex + (dropTarget.position === "after" ? 1 : 0);
         targetRow.widgets.splice(insertIndex, 0, draggedWidget);
       } else {
         const newRow: DashboardRow = {
           id: `row-${Math.random().toString(36).substring(2, 9)}`,
           widgets: [draggedWidget],
         };
-        const insertRowIndex = targetRowIndex + (dropTarget.position === "after" ? 1 : 0);
+        const insertRowIndex =
+          targetRowIndex + (dropTarget.position === "after" ? 1 : 0);
         newRows.splice(insertRowIndex, 0, newRow);
       }
 
@@ -440,15 +455,18 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     setDropTarget(null);
   };
 
-  const [instrumentView, setInstrumentView] = useState<"guitar" | "piano" | "both">("guitar");
+  const [instrumentView, setInstrumentView] = useState<
+    "guitar" | "piano" | "both"
+  >("guitar");
 
   const resetWidgetLayout = () => {
     setLayout({
       rows: [
         { id: "row-1", widgets: DEFAULT_WIDGET_LAYOUT.slice(0, 4) },
-        { id: "row-2", widgets: [DEFAULT_WIDGET_LAYOUT[4]] }
+        { id: "row-2", widgets: [DEFAULT_WIDGET_LAYOUT[4]] },
+        { id: "row-3", widgets: [DEFAULT_WIDGET_LAYOUT[5]] },
       ],
-      hiddenWidgets: []
+      hiddenWidgets: [],
     });
   };
 
@@ -527,6 +545,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             )}
           </div>
         );
+      case "chord-selector":
+        return <ChordSelectorWidget />;
     }
   };
 
@@ -625,7 +645,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               className="group flex h-full w-full items-center justify-center gap-1 rounded-lg bg-primary px-3 font-mono text-sm font-bold leading-none text-on-primary shadow-md transition-transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary/60 cursor-pointer md:h-auto md:w-auto md:px-2.5 md:py-1"
             >
               <span>{selectedRoot}</span>
-              <ChevronDown size={11} className="opacity-70 group-hover:opacity-100" />
+              <ChevronDown
+                size={11}
+                className="opacity-70 group-hover:opacity-100"
+              />
             </button>
 
             {isRootMenuOpen && (
@@ -634,7 +657,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   <span className="text-[11px] font-mono font-bold text-on-surface uppercase tracking-wider">
                     Select Note
                   </span>
-                  <button type="button" onClick={() => setIsRootMenuOpen(false)} className="text-on-surface-variant hover:text-on-surface p-1 rounded">
+                  <button
+                    type="button"
+                    onClick={() => setIsRootMenuOpen(false)}
+                    className="text-on-surface-variant hover:text-on-surface p-1 rounded"
+                  >
                     <X size={14} />
                   </button>
                 </div>
@@ -657,7 +684,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             )}
           </div>
 
-          <div className="relative col-span-1 h-10 min-w-0 md:col-span-1 md:h-auto" ref={scaleMenuRef}>
+          <div
+            className="relative col-span-1 h-10 min-w-0 md:col-span-1 md:h-auto"
+            ref={scaleMenuRef}
+          >
             <button
               type="button"
               onClick={() => {
@@ -666,21 +696,35 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               }}
               className="group flex h-full w-full min-w-0 items-center justify-between gap-2 rounded-lg border border-outline-variant/30 bg-surface-container-low px-3 py-1 text-left text-xs font-mono leading-none text-on-surface transition-colors hover:bg-surface-container-high focus:outline-none focus:ring-1 focus:ring-primary/40 cursor-pointer md:h-auto md:w-auto md:max-w-55"
             >
-              <span className="truncate">{selectedScale?.name || "None (Show All Notes)"}</span>
-              <ChevronDown size={15} className="shrink-0 text-on-surface-variant group-hover:text-primary" />
+              <span className="truncate">
+                {selectedScale?.name || "None (Show All Notes)"}
+              </span>
+              <ChevronDown
+                size={15}
+                className="shrink-0 text-on-surface-variant group-hover:text-primary"
+              />
             </button>
 
             {isScaleMenuOpen && (
               <div className="absolute left-1/2 top-full z-50 mt-2 w-[calc(100vw-1rem)] max-w-[320px] -translate-x-1/2 rounded-xl border border-outline-variant/40 bg-surface p-3 shadow-2xl animate-in fade-in zoom-in-95 duration-150 md:left-0 md:w-105 md:max-w-none md:translate-x-0">
                 <div className="flex items-center justify-between pb-2 mb-2 border-b border-outline-variant/20">
-                  <span className="text-[11px] font-mono font-bold text-on-surface uppercase tracking-wider">Select Scale or Mode</span>
-                  <button type="button" onClick={() => setIsScaleMenuOpen(false)} className="text-on-surface-variant hover:text-on-surface p-1 rounded">
+                  <span className="text-[11px] font-mono font-bold text-on-surface uppercase tracking-wider">
+                    Select Scale or Mode
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsScaleMenuOpen(false)}
+                    className="text-on-surface-variant hover:text-on-surface p-1 rounded"
+                  >
                     <X size={14} />
                   </button>
                 </div>
 
                 <div className="relative mb-2.5">
-                  <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant" />
+                  <Search
+                    size={14}
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant"
+                  />
                   <input
                     type="text"
                     placeholder="Search scale name..."
@@ -690,7 +734,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     autoFocus
                   />
                   {scaleSearchQuery && (
-                    <button type="button" onClick={() => setScaleSearchQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-on-surface-variant hover:text-on-surface">
+                    <button
+                      type="button"
+                      onClick={() => setScaleSearchQuery("")}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-on-surface-variant hover:text-on-surface"
+                    >
                       <X size={12} />
                     </button>
                   )}
@@ -718,8 +766,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     }}
                     className={`flex w-full items-center justify-between rounded-lg p-2 text-left transition-all ${selectedScale === null ? "border border-primary/40 bg-primary/15 text-primary font-bold" : "text-on-surface hover:bg-surface-container-high"}`}
                   >
-                    <span className="font-mono text-xs font-semibold">None (Show All Notes)</span>
-                    {selectedScale === null && <Check size={15} className="shrink-0 text-primary" />}
+                    <span className="font-mono text-xs font-semibold">
+                      None (Show All Notes)
+                    </span>
+                    {selectedScale === null && (
+                      <Check size={15} className="shrink-0 text-primary" />
+                    )}
                   </button>
                   {filteredScales.map((scale) => (
                     <button
@@ -732,10 +784,16 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                       className={`flex w-full items-center justify-between rounded-lg p-2 text-left transition-all ${selectedScale?.id === scale.id ? "border border-primary/40 bg-primary/15 text-primary font-bold" : "text-on-surface hover:bg-surface-container-high"}`}
                     >
                       <span className="flex min-w-0 flex-col pr-2">
-                        <span className="truncate font-mono text-xs font-semibold">{scale.name}</span>
-                        <span className="truncate text-[10px] font-mono text-on-surface-variant opacity-75">{scale.formula} • {scale.category}</span>
+                        <span className="truncate font-mono text-xs font-semibold">
+                          {scale.name}
+                        </span>
+                        <span className="truncate text-[10px] font-mono text-on-surface-variant opacity-75">
+                          {scale.formula} • {scale.category}
+                        </span>
                       </span>
-                      {selectedScale?.id === scale.id && <Check size={15} className="shrink-0 text-primary" />}
+                      {selectedScale?.id === scale.id && (
+                        <Check size={15} className="shrink-0 text-primary" />
+                      )}
                     </button>
                   ))}
                 </div>
@@ -772,7 +830,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       {/* 2D Layout Rows */}
       <div className="flex flex-col gap-3 md:gap-5">
         {layout.rows.map((row) => (
-          <div key={row.id} className="flex flex-col md:flex-row items-stretch gap-3 md:gap-5 w-full">
+          <div
+            key={row.id}
+            className="flex flex-col md:flex-row items-stretch gap-3 md:gap-5 w-full"
+          >
             {row.widgets.map((widget) => (
               <DashboardWidget key={widget.id} {...widgetProps(widget)}>
                 {renderWidget(widget)}

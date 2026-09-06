@@ -9,9 +9,10 @@ import {
 } from "../data/musicTheory";
 
 interface ChordDiagramProps {
-  chordName: string;
+  chordName?: string;
   voicing: GuitarVoicing;
   root: NoteName;
+  compact?: boolean;
   onPlay?: () => void;
 }
 
@@ -19,6 +20,7 @@ export const ChordDiagram: React.FC<ChordDiagramProps> = ({
   chordName,
   voicing,
   root,
+  compact = false,
   onPlay,
 }) => {
   // SVG Dimensions & Layout
@@ -66,26 +68,33 @@ export const ChordDiagram: React.FC<ChordDiagramProps> = ({
 
   return (
     <div
-      className="group flex cursor-pointer flex-col items-center rounded-xl border border-outline-variant/30 bg-surface-container-low p-4 shadow-lg transition-all hover:border-outline-variant/60 sm:p-6"
+      className={
+        compact
+          ? "flex h-full w-full flex-col items-center justify-center p-2"
+          : "group flex cursor-pointer flex-col items-center rounded-xl border border-outline-variant/30 bg-surface-container-low p-4 shadow-lg transition-all hover:border-outline-variant/60 sm:p-6"
+      }
       onClick={handlePlayChord}
     >
       {/* Chord Card Header */}
-      <div className="w-full flex items-center justify-between pb-4 mb-2">
-        <div className="flex items-center gap-4">
-          <span className="font-mono text-[10px] tracking-widest text-on-surface-variant uppercase font-bold">
-            {voicing.positionLabel || voicing.name}
+      {!compact && (
+        <div className="w-full flex items-center justify-between pb-4 mb-2">
+          <div className="flex items-center gap-4">
+            <span className="font-mono text-[10px] tracking-widest text-on-surface-variant uppercase font-bold">
+              {voicing.positionLabel || voicing.name}
+            </span>
+          </div>
+          <span className="bg-surface-container border border-outline-variant/20 px-2 py-0.5 rounded text-[10px] font-mono text-on-surface">
+            {voicing.rootString || `Root on ${root}`}
           </span>
         </div>
-        <span className="bg-surface-container border border-outline-variant/20 px-2 py-0.5 rounded text-[10px] font-mono text-on-surface">
-          {voicing.rootString || `Root on ${root}`}
-        </span>
-      </div>
+      )}
 
       {/* SVG Diagram Canvas */}
       <svg
-        width={svgWidth}
-        height={svgHeight}
-        className="overflow-visible select-none my-2"
+        viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+        width={compact ? undefined : svgWidth}
+        height={compact ? undefined : svgHeight}
+        className={`overflow-visible select-none my-2 ${compact ? "h-full w-full max-h-full" : ""}`}
       >
         {/* Base Fret Indicator on left if not open */}
         {!isNut && (
@@ -305,28 +314,29 @@ export const ChordDiagram: React.FC<ChordDiagramProps> = ({
         })}
 
         {/* String Names at bottom */}
-        {tuning.strings.map((noteName, i) => (
-          <text
-            key={`str-name-${i}`}
-            x={margin.left + i * stringSpacing}
-            y={margin.top + height + 20}
-            fill={
-              voicing.frets[i] === null
-                ? "var(--color-outline-variant)"
-                : voicing.frets[i] !== null &&
-                    NOTE_SEMITONES[noteName] === NOTE_SEMITONES[root] &&
-                    voicing.frets[i] === 0
-                  ? "var(--color-secondary)"
-                  : "var(--color-on-surface)"
-            }
-            fontSize="10"
-            fontFamily="monospace"
-            textAnchor="middle"
-            fontWeight="bold"
-          >
-            {noteName}
-          </text>
-        ))}
+        {!compact &&
+          tuning.strings.map((noteName, i) => (
+            <text
+              key={`str-name-${i}`}
+              x={margin.left + i * stringSpacing}
+              y={margin.top + height + 20}
+              fill={
+                voicing.frets[i] === null
+                  ? "var(--color-outline-variant)"
+                  : voicing.frets[i] !== null &&
+                      NOTE_SEMITONES[noteName] === NOTE_SEMITONES[root] &&
+                      voicing.frets[i] === 0
+                    ? "var(--color-secondary)"
+                    : "var(--color-on-surface)"
+              }
+              fontSize="10"
+              fontFamily="monospace"
+              textAnchor="middle"
+              fontWeight="bold"
+            >
+              {noteName}
+            </text>
+          ))}
       </svg>
     </div>
   );

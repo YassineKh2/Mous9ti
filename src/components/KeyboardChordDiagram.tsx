@@ -5,11 +5,12 @@ import { audioEngine } from "../lib/audio";
 import { NOTE_SEMITONES } from "../data/musicTheory";
 
 interface KeyboardChordDiagramProps {
-  chordName: string;
+  chordName?: string;
   voicing: KeyboardVoicing;
   root: NoteName;
   instrument?: string;
   isSelected?: boolean;
+  compact?: boolean;
   onPlay?: () => void;
   onSelect?: () => void;
   className?: string;
@@ -21,6 +22,7 @@ export const KeyboardChordDiagram: React.FC<KeyboardChordDiagramProps> = ({
   root,
   instrument,
   isSelected = false,
+  compact = false,
   onPlay,
   onSelect,
   className = "",
@@ -68,7 +70,14 @@ export const KeyboardChordDiagram: React.FC<KeyboardChordDiagramProps> = ({
     const targetInst = instrument || audioEngine.getSelectedInstrument();
     const isSynth = targetInst.includes("synth");
     const stagger = isSynth ? 0.012 : 0.016;
-    audioEngine.playChordArpeggio(notesToPlay, targetInst, stagger, 0, 2.2, true);
+    audioEngine.playChordArpeggio(
+      notesToPlay,
+      targetInst,
+      stagger,
+      0,
+      2.2,
+      true,
+    );
   };
 
   // Keyboard dimensions for SVG
@@ -99,10 +108,12 @@ export const KeyboardChordDiagram: React.FC<KeyboardChordDiagramProps> = ({
 
   return (
     <div
-      className={`bg-surface-container-low border rounded-xl p-4 sm:p-5 flex flex-col justify-between shadow-md transition-all cursor-pointer relative group select-none ${
-        isSelected
+      className={`${compact ? "flex h-full w-full flex-col justify-center" : "bg-surface-container-low border rounded-xl p-4 sm:p-5 flex flex-col justify-between shadow-md transition-all cursor-pointer relative group select-none"} ${
+        !compact && isSelected
           ? "border-primary ring-2 ring-primary/30 bg-primary/5"
-          : "border-outline-variant/30 hover:border-outline-variant/70 hover:shadow-lg"
+          : !compact
+            ? "border-outline-variant/30 hover:border-outline-variant/70 hover:shadow-lg"
+            : ""
       } ${className}`}
       onClick={(e) => {
         if (onSelect) onSelect();
@@ -111,31 +122,35 @@ export const KeyboardChordDiagram: React.FC<KeyboardChordDiagramProps> = ({
       title="Click keyboard diagram to preview chord sound"
     >
       {/* Top Header */}
-      <div className="w-full flex items-center justify-between gap-2 mb-3 pb-2 border-b border-outline-variant/20">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="flex flex-col min-w-0">
-            <span className="font-bold text-xs sm:text-sm text-on-surface truncate">
-              {voicing.name}
-            </span>
-            <span className="text-[10px] font-mono text-on-surface-variant truncate">
-              {voicing.positionLabel}
+      {!compact && (
+        <div className="w-full flex items-center justify-between gap-2 mb-3 pb-2 border-b border-outline-variant/20">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="flex flex-col min-w-0">
+              <span className="font-bold text-xs sm:text-sm text-on-surface truncate">
+                {voicing.name}
+              </span>
+              <span className="text-[10px] font-mono text-on-surface-variant truncate">
+                {voicing.positionLabel}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="text-[10px] font-mono font-bold bg-surface-container border border-outline-variant/30 text-primary px-2 py-0.5 rounded-full">
+              Bass: {voicing.bassNote}
+              {voicing.bassOctave}
             </span>
           </div>
         </div>
-
-        <div className="flex items-center gap-1.5 shrink-0">
-          <span className="text-[10px] font-mono font-bold bg-surface-container border border-outline-variant/30 text-primary px-2 py-0.5 rounded-full">
-            Bass: {voicing.bassNote}
-            {voicing.bassOctave}
-          </span>
-        </div>
-      </div>
+      )}
 
       {/* Mini Keyboard Diagram SVG Canvas */}
-      <div className="w-full flex justify-center py-2 overflow-x-auto overflow-y-hidden">
+      <div
+        className={`w-full flex justify-center overflow-x-auto overflow-y-hidden ${compact ? "h-full" : "py-2"}`}
+      >
         <svg
           viewBox={`0 0 ${totalWidth} ${totalHeight}`}
-          className="w-full max-w-[280px] h-auto overflow-visible select-none drop-shadow-sm"
+          className={`w-full max-w-[280px] overflow-visible select-none drop-shadow-sm ${compact ? "h-full" : "h-auto"}`}
           preserveAspectRatio="xMidYMid meet"
         >
           {/* Defs for gradients & filters */}
@@ -216,7 +231,9 @@ export const KeyboardChordDiagram: React.FC<KeyboardChordDiagramProps> = ({
                             ? "var(--color-primary)"
                             : "var(--color-inverse-surface)"
                         }
-                        stroke={isRootKey ? "#fff" : "var(--color-inverse-on-surface)"}
+                        stroke={
+                          isRootKey ? "#fff" : "var(--color-inverse-on-surface)"
+                        }
                         strokeWidth={1.2}
                       />
                       <text
@@ -304,11 +321,7 @@ export const KeyboardChordDiagram: React.FC<KeyboardChordDiagramProps> = ({
                         />
                         <text
                           y={2.5}
-                          fill={
-                            isRootKey
-                              ? "var(--color-primary)"
-                              : "#ffffff"
-                          }
+                          fill={isRootKey ? "var(--color-primary)" : "#ffffff"}
                           fontSize="6.5"
                           fontWeight="bold"
                           fontFamily="monospace"
@@ -327,31 +340,33 @@ export const KeyboardChordDiagram: React.FC<KeyboardChordDiagramProps> = ({
       </div>
 
       {/* Spelled Notes & Harmonic Flow */}
-      <div className="w-full flex items-center justify-between pt-2 border-t border-outline-variant/15 mt-2">
-        <div className="flex items-center gap-1 overflow-x-auto text-[10px] font-mono text-on-surface-variant font-medium">
-          {voicing.notes.map((n, i) => (
-            <span
-              key={i}
-              className={`px-1.5 py-0.5 rounded ${
-                n.note === root || n.isRoot
-                  ? "bg-primary/15 text-primary font-bold"
-                  : "bg-surface-container text-on-surface"
-              }`}
-            >
-              {n.note}
-              {n.octave}
-            </span>
-          ))}
-        </div>
+      {!compact && (
+        <div className="w-full flex items-center justify-between pt-2 border-t border-outline-variant/15 mt-2">
+          <div className="flex items-center gap-1 overflow-x-auto text-[10px] font-mono text-on-surface-variant font-medium">
+            {voicing.notes.map((n, i) => (
+              <span
+                key={i}
+                className={`px-1.5 py-0.5 rounded ${
+                  n.note === root || n.isRoot
+                    ? "bg-primary/15 text-primary font-bold"
+                    : "bg-surface-container text-on-surface"
+                }`}
+              >
+                {n.note}
+                {n.octave}
+              </span>
+            ))}
+          </div>
 
-        <button
-          type="button"
-          onClick={handlePlaySound}
-          className="text-xs text-primary hover:text-primary/80 font-bold px-2 py-0.5 rounded hover:bg-primary/10 transition-colors flex items-center gap-1 shrink-0"
-        >
-          <span>Audition</span>
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={handlePlaySound}
+            className="text-xs text-primary hover:text-primary/80 font-bold px-2 py-0.5 rounded hover:bg-primary/10 transition-colors flex items-center gap-1 shrink-0"
+          >
+            <span>Audition</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 };
