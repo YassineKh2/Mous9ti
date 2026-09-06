@@ -47,18 +47,18 @@ export const SavedProgressionsModal: React.FC<SavedProgressionsModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="bg-[#141414] border border-white/10 rounded-xl w-full max-w-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[85vh]">
+      <div className="bg-surface border border-outline-variant/30 rounded-xl w-full max-w-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[85vh]">
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-outline-variant/30 shrink-0">
           <div className="flex items-center gap-2.5">
             <Library size={20} className="text-primary" />
-            <h2 className="font-mono text-sm font-bold tracking-wider text-white uppercase">
+            <h2 className="font-mono text-sm font-bold tracking-wider text-on-surface uppercase">
               Saved Progressions
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg hover:bg-white/5 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
+            className="w-8 h-8 rounded-lg hover:bg-on-surface/5 flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors"
           >
             <X size={18} />
           </button>
@@ -67,12 +67,12 @@ export const SavedProgressionsModal: React.FC<SavedProgressionsModalProps> = ({
         {/* Modal Body */}
         <div className="flex-1 p-6 overflow-y-auto">
           {progressions.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-zinc-500">
+            <div className="flex flex-col items-center justify-center py-12 text-on-surface-variant">
               <Library size={48} className="mb-4 opacity-20" />
-              <p className="text-lg font-mono font-bold text-zinc-400 mb-2">
+              <p className="text-lg font-mono font-bold text-on-surface-variant mb-2">
                 No Saved Progressions
               </p>
-              <p className="text-sm font-mono">
+              <p className="text-sm font-mono text-on-surface-variant">
                 Save your chord progressions to load them later.
               </p>
             </div>
@@ -81,7 +81,7 @@ export const SavedProgressionsModal: React.FC<SavedProgressionsModalProps> = ({
               {progressions.map((prog) => (
                 <div
                   key={prog.id}
-                  className="bg-[#1c1b1b] border border-white/10 rounded-xl p-4 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center hover:border-primary/50 transition-colors"
+                  className="bg-surface-container border border-outline-variant/30 rounded-xl p-4 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center hover:border-primary/50 transition-colors"
                 >
                   <div className="flex-1 min-w-0">
                     {editingId === prog.id ? (
@@ -95,7 +95,7 @@ export const SavedProgressionsModal: React.FC<SavedProgressionsModalProps> = ({
                             if (e.key === "Escape") setEditingId(null);
                           }}
                           autoFocus
-                          className="bg-black/50 border border-primary/50 rounded px-2 py-1 text-sm text-white font-bold focus:outline-none w-full max-w-[200px]"
+                          className="bg-surface-container-lowest border border-primary/50 rounded px-2 py-1 text-sm text-on-surface font-bold focus:outline-none w-full max-w-[200px]"
                         />
                         <button
                           onClick={() => handleSaveEdit(prog.id)}
@@ -105,7 +105,7 @@ export const SavedProgressionsModal: React.FC<SavedProgressionsModalProps> = ({
                         </button>
                         <button
                           onClick={() => setEditingId(null)}
-                          className="p-1.5 text-zinc-400 hover:text-white hover:bg-white/10 rounded transition-colors"
+                          className="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-on-surface/10 rounded transition-colors"
                         >
                           <X size={16} />
                         </button>
@@ -113,21 +113,21 @@ export const SavedProgressionsModal: React.FC<SavedProgressionsModalProps> = ({
                     ) : (
                       <div className="flex items-center gap-3 mb-1">
                         <h3
-                          className="text-lg font-bold text-white truncate"
+                          className="text-lg font-bold text-on-surface truncate"
                           title={prog.name}
                         >
                           {prog.name}
                         </h3>
                         <button
                           onClick={() => handleStartEdit(prog.id, prog.name)}
-                          className="text-zinc-500 hover:text-primary transition-colors opacity-0 hover:opacity-100 group-hover:opacity-100"
+                          className="text-on-surface-variant hover:text-primary transition-colors opacity-0 hover:opacity-100 group-hover:opacity-100"
                         >
                           <Edit2 size={14} />
                         </button>
                       </div>
                     )}
 
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-400 font-mono">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-on-surface-variant font-mono">
                       <span className="flex items-center gap-1">
                         <Clock size={12} />
                         {formatDate(prog.updatedAt)}
@@ -164,7 +164,7 @@ export const SavedProgressionsModal: React.FC<SavedProgressionsModalProps> = ({
                           onDelete(prog.id);
                         }
                       }}
-                      className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg transition-colors"
+                      className="p-2 bg-error/10 hover:bg-error/20 text-error border border-error/30 rounded-lg transition-colors"
                       title="Delete Progression"
                     >
                       <Trash2 size={16} />

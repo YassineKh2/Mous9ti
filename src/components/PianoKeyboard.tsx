@@ -70,7 +70,10 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
     return map;
   }, [selectedScale, selectedRoot]);
 
-  const isAllNotesSelected = selectedScale === null || scaleMap.size === 12;
+  const hasChordSelection =
+    chordNotes.length > 0 || (exactVoicing?.length ?? 0) > 0;
+  const isAllNotesSelected =
+    !hasChordSelection && (selectedScale === null || scaleMap.size === 12);
 
   // Focus Range Pitch Limits
   const focusLimits = useMemo(() => {

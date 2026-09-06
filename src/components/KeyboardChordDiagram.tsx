@@ -111,6 +111,30 @@ export const KeyboardChordDiagram: React.FC<KeyboardChordDiagramProps> = ({
     Math.max(0, firstVisibleWhiteIndex - 1),
     Math.min(allWhiteKeys.length, lastVisibleWhiteIndex + 2),
   );
+  const keySize =
+    chordWhiteKeys.length > 28
+      ? {
+          white: "w-5 h-24 pb-1",
+          black: "w-3 h-14 pb-0.5",
+          offset: "-right-1.5",
+        }
+      : chordWhiteKeys.length > 21
+        ? {
+            white: "w-6 h-28 pb-1.5",
+            black: "w-4 h-16 pb-0.5",
+            offset: "-right-2",
+          }
+        : chordWhiteKeys.length > 14
+          ? {
+              white: "w-8 h-32 pb-2",
+              black: "w-5 h-20 pb-1",
+              offset: "-right-2.5",
+            }
+          : {
+              white: "w-11 h-44 pb-3",
+              black: "w-7 h-28 pb-2",
+              offset: "-right-3.5",
+            };
 
   // Black keys positions (after which white key index)
   // 0: C# (after C), 1: D# (after D), 3: F# (after F), 4: G# (after G), 5: A# (after A)
@@ -164,7 +188,18 @@ export const KeyboardChordDiagram: React.FC<KeyboardChordDiagramProps> = ({
 
       {/* Mini Keyboard Diagram */}
       <div
-        className={`w-full max-w-full overflow-x-auto custom-scrollbar ${compact ? "h-full" : "py-2"}`}
+        onPointerDown={(e) => {
+          if (!compact) return;
+
+          const bounds = e.currentTarget.getBoundingClientRect();
+          const scrollbarHeight = 14;
+          const isScrollbarInteraction =
+            e.target === e.currentTarget ||
+            e.clientY >= bounds.bottom - scrollbarHeight;
+
+          if (isScrollbarInteraction) e.stopPropagation();
+        }}
+        className={`w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x ${compact ? "h-full" : "py-2"}`}
       >
         <div className="w-max mx-auto py-2 px-2 flex justify-start sm:justify-center">
           <div className="flex relative bg-surface-container-highest p-1.5 rounded-b-lg border-t-8 border-outline-variant shadow-2xl">
@@ -183,7 +218,7 @@ export const KeyboardChordDiagram: React.FC<KeyboardChordDiagramProps> = ({
                   className="relative"
                 >
                   <div
-                    className={`w-11 h-44 rounded-b-md border-r border-l border-b border-outline-variant/30 flex flex-col justify-end pb-3 items-center transition-all ${
+                    className={`${keySize.white} rounded-b-md border-r border-l border-b border-outline-variant/30 flex flex-col justify-end items-center transition-all ${
                       isRootKey
                         ? "bg-primary text-on-primary font-black border-t-4 border-primary shadow-md z-10"
                         : isChordKey
@@ -210,14 +245,14 @@ export const KeyboardChordDiagram: React.FC<KeyboardChordDiagramProps> = ({
                   </div>
 
                   {hasBlack && (
-                    <div className="absolute top-0 -right-3.5 z-30">
+                    <div className={`absolute top-0 z-30 ${keySize.offset}`}>
                       {(() => {
                         const pitch = key.octave * 12 + hasBlack.semi;
                         const blackChordInfo = chordPitchMap.get(pitch);
                         const blackIsRoot = !!blackChordInfo?.isRoot;
                         return (
                           <div
-                            className={`w-7 h-28 rounded-b-md flex flex-col justify-end pb-2 items-center transition-all ${
+                            className={`${keySize.black} rounded-b-md flex flex-col justify-end items-center transition-all ${
                               blackIsRoot
                                 ? "bg-primary text-on-primary font-bold shadow-lg ring-1 ring-primary"
                                 : blackChordInfo

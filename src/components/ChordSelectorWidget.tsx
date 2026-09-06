@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import { SwipeableChordCard } from "./SwipeableChordCard";
 import { ChordSearchInput } from "./ChordSearchInput";
-import { NoteName } from "../types";
+import { ChordSelection } from "../types";
+import { getSavedChordSelections, saveChordSelections } from "../lib/storage";
 
 interface ChordSelectorWidgetProps {
   defaultInstrument: "guitar" | "piano";
@@ -13,17 +14,23 @@ export const ChordSelectorWidget: React.FC<ChordSelectorWidgetProps> = ({
   defaultInstrument,
   instrumentView,
 }) => {
-  const [selectedChords, setSelectedChords] = useState<
-    { root: NoteName; type: string }[]
-  >([
-    { root: "C", type: "maj" },
-    { root: "G", type: "maj" },
-    { root: "A", type: "min" },
-    { root: "F", type: "maj" },
-  ]);
+  const [selectedChords, setSelectedChords] = useState<ChordSelection[]>(() => {
+    const savedChords = getSavedChordSelections();
+    return savedChords.length > 0
+      ? savedChords
+      : [
+          { root: "C", type: "maj" },
+          { root: "G", type: "maj" },
+          { root: "A", type: "min" },
+        ];
+  });
   const [isFullWidth, setIsFullWidth] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const widgetRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    saveChordSelections(selectedChords);
+  }, [selectedChords]);
 
   useEffect(() => {
     const widget = widgetRef.current;
@@ -38,7 +45,9 @@ export const ChordSelectorWidget: React.FC<ChordSelectorWidgetProps> = ({
   }, []);
 
   const handleRemoveChord = (index: number) => {
-    setSelectedChords(selectedChords.filter((_, i) => i !== index));
+    setSelectedChords((currentChords) =>
+      currentChords.filter((_, i) => i !== index),
+    );
   };
 
   const visibleChords = isFullWidth
@@ -69,9 +78,11 @@ export const ChordSelectorWidget: React.FC<ChordSelectorWidgetProps> = ({
             instrument={chordInstrument}
             onRemove={() => handleRemoveChord(i)}
             onChange={(newRoot, newType) => {
-              const updated = [...selectedChords];
-              updated[i] = { root: newRoot, type: newType };
-              setSelectedChords(updated);
+              setSelectedChords((currentChords) => {
+                const updated = [...currentChords];
+                updated[i] = { root: newRoot, type: newType };
+                return updated;
+              });
             }}
           />
         ))}
@@ -83,7 +94,10 @@ export const ChordSelectorWidget: React.FC<ChordSelectorWidgetProps> = ({
                 <ChordSearchInput
                   autoFocus
                   onSelect={(root, type) => {
-                    setSelectedChords([...selectedChords, { root, type }]);
+                    setSelectedChords((currentChords) => [
+                      ...currentChords,
+                      { root, type },
+                    ]);
                     setIsAdding(false);
                   }}
                   onCancel={() => setIsAdding(false)}

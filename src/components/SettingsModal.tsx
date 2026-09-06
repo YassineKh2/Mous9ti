@@ -34,18 +34,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="bg-[#141414] border border-white/10 rounded-xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div className="bg-surface border border-outline-variant/30 rounded-xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-outline-variant/30">
           <div className="flex items-center gap-2.5">
-            <Sliders size={18} className="text-blue-400" />
-            <h2 className="font-mono text-sm font-bold tracking-wider text-white uppercase">
+            <Sliders size={18} className="text-primary" />
+            <h2 className="font-mono text-sm font-bold tracking-wider text-on-surface uppercase">
               Studio Configuration
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg hover:bg-white/5 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
+            className="w-8 h-8 rounded-lg hover:bg-on-surface/5 flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors"
           >
             <X size={18} />
           </button>
@@ -56,11 +56,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {/* Master Volume */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs font-mono">
-              <span className="text-zinc-300 flex items-center gap-2">
-                <Volume2 size={14} className="text-blue-400" />
+              <span className="text-on-surface-variant flex items-center gap-2">
+                <Volume2 size={14} className="text-primary" />
                 Master Synthesis Volume
               </span>
-              <span className="text-blue-400 font-bold">
+              <span className="text-primary font-bold">
                 {Math.round(settings.soundVolume * 100)}%
               </span>
             </div>
@@ -73,28 +73,28 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               onChange={(e) =>
                 onUpdateSettings({ soundVolume: parseFloat(e.target.value) })
               }
-              className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
+              className="w-full h-1.5 bg-surface-container-highest rounded-lg appearance-none cursor-pointer accent-primary"
             />
           </div>
 
           {/* Theme Toggle */}
-          <div className="flex items-center justify-between pt-2 border-t border-white/5">
+          <div className="flex items-center justify-between pt-2 border-t border-outline-variant/20">
             <div>
-              <span className="font-mono text-xs font-semibold text-zinc-200 block">
+              <span className="font-mono text-xs font-semibold text-on-surface block">
                 Visual Theme
               </span>
-              <span className="text-[11px] text-zinc-400">
+              <span className="text-[11px] text-on-surface-variant">
                 High-contrast dark mode or bright studio mode
               </span>
             </div>
 
-            <div className="flex items-center gap-1 bg-[#1c1b1b] p-1 rounded-lg border border-white/10">
+            <div className="flex items-center gap-1 bg-surface-container p-1 rounded-lg border border-outline-variant/30">
               <button
                 onClick={() => onUpdateSettings({ theme: "dark" })}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-mono transition-all ${
                   settings.theme === "dark"
-                    ? "bg-blue-600 text-white font-bold"
-                    : "text-zinc-400 hover:text-white"
+                    ? "bg-primary text-on-primary font-bold"
+                    : "text-on-surface-variant hover:text-on-surface"
                 }`}
               >
                 <Moon size={13} />
@@ -104,8 +104,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 onClick={() => onUpdateSettings({ theme: "light" })}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-mono transition-all ${
                   settings.theme === "light"
-                    ? "bg-blue-600 text-white font-bold"
-                    : "text-zinc-400 hover:text-white"
+                    ? "bg-primary text-on-primary font-bold"
+                    : "text-on-surface-variant hover:text-on-surface"
                 }`}
               >
                 <Sun size={13} />
@@ -115,25 +115,25 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
 
           {/* Default Instrument */}
-          <div className="flex items-center justify-between pt-2 border-t border-white/5">
+          <div className="flex items-center justify-between pt-2 border-t border-outline-variant/20">
             <div>
-              <span className="font-mono text-xs font-semibold text-zinc-200 block">
+              <span className="font-mono text-xs font-semibold text-on-surface block">
                 Default Instrument
               </span>
-              <span className="text-[11px] text-zinc-400">
+              <span className="text-[11px] text-on-surface-variant">
                 Used as the starting instrument across the app
               </span>
             </div>
 
-            <div className="flex items-center gap-1 bg-[#1c1b1b] p-1 rounded-lg border border-white/10">
+            <div className="flex items-center gap-1 bg-surface-container p-1 rounded-lg border border-outline-variant/30">
               <button
                 onClick={() =>
                   onUpdateSettings({ defaultInstrument: "guitar" })
                 }
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-mono transition-all ${
                   settings.defaultInstrument === "guitar"
-                    ? "bg-blue-600 text-white font-bold"
-                    : "text-zinc-400 hover:text-white"
+                    ? "bg-primary text-on-primary font-bold"
+                    : "text-on-surface-variant hover:text-on-surface"
                 }`}
               >
                 <Guitar size={13} />
@@ -143,8 +143,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 onClick={() => onUpdateSettings({ defaultInstrument: "piano" })}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-mono transition-all ${
                   settings.defaultInstrument === "piano"
-                    ? "bg-blue-600 text-white font-bold"
-                    : "text-zinc-400 hover:text-white"
+                    ? "bg-primary text-on-primary font-bold"
+                    : "text-on-surface-variant hover:text-on-surface"
                 }`}
               >
                 <Piano size={13} />
@@ -154,8 +154,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
 
           {/* Default Guitar Tuning */}
-          <div className="space-y-1.5 pt-2 border-t border-white/5">
-            <label className="font-mono text-xs font-semibold text-zinc-200 block">
+          <div className="space-y-1.5 pt-2 border-t border-outline-variant/20">
+            <label className="font-mono text-xs font-semibold text-on-surface block">
               Default Instrument Tuning
             </label>
             <select
@@ -163,7 +163,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               onChange={(e) =>
                 onUpdateSettings({ defaultTuning: e.target.value })
               }
-              className="w-full bg-[#1c1b1b] border border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200 focus:outline-none focus:border-blue-500"
+              className="w-full bg-surface-container border border-outline-variant/30 rounded-lg px-3 py-2 text-xs font-mono text-on-surface focus:outline-none focus:border-primary"
             >
               {GUITAR_TUNINGS.map((t) => (
                 <option key={t.name} value={t.name}>
@@ -174,8 +174,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
 
           {/* Fret Count */}
-          <div className="space-y-1.5 pt-2 border-t border-white/5">
-            <label className="font-mono text-xs font-semibold text-zinc-200 block">
+          <div className="space-y-1.5 pt-2 border-t border-outline-variant/20">
+            <label className="font-mono text-xs font-semibold text-on-surface block">
               Fretboard Length
             </label>
             <div className="grid grid-cols-5 gap-2">
@@ -185,8 +185,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   onClick={() => onUpdateSettings({ fretCount: cnt })}
                   className={`py-2 rounded font-mono text-xs border transition-all ${
                     settings.fretCount === cnt
-                      ? "bg-blue-600 text-white border-blue-500 font-bold"
-                      : "bg-[#1c1b1b] border-white/10 text-zinc-400 hover:text-white"
+                      ? "bg-primary text-on-primary border-primary font-bold"
+                      : "bg-surface-container border-outline-variant/30 text-on-surface-variant hover:text-on-surface"
                   }`}
                 >
                   {cnt} Frets
@@ -196,8 +196,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
 
           {/* Metronome Sound */}
-          <div className="space-y-1.5 pt-2 border-t border-white/5">
-            <label className="font-mono text-xs font-semibold text-zinc-200 block">
+          <div className="space-y-1.5 pt-2 border-t border-outline-variant/20">
+            <label className="font-mono text-xs font-semibold text-on-surface block">
               Default Metronome Timbre
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -208,8 +208,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     onClick={() => onUpdateSettings({ metronomeSound: sound })}
                     className={`py-2 px-1 rounded font-mono text-[11px] uppercase border transition-all ${
                       settings.metronomeSound === sound
-                        ? "bg-blue-600 text-white border-blue-500 font-bold"
-                        : "bg-[#1c1b1b] border-white/10 text-zinc-400 hover:text-white"
+                        ? "bg-primary text-on-primary border-primary font-bold"
+                        : "bg-surface-container border-outline-variant/30 text-on-surface-variant hover:text-on-surface"
                     }`}
                   >
                     {sound}
@@ -220,15 +220,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
 
           {/* Data Management */}
-          <div className="pt-4 border-t border-white/10 space-y-3">
-            <span className="font-mono text-xs font-semibold text-zinc-300 uppercase tracking-wider block">
+          <div className="pt-4 border-t border-outline-variant/20 space-y-3">
+            <span className="font-mono text-xs font-semibold text-on-surface-variant uppercase tracking-wider block">
               Data & Local Storage
             </span>
 
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={onExportData}
-                className="flex items-center gap-1.5 bg-[#1c1b1b] hover:bg-[#252424] border border-white/10 text-zinc-200 px-3.5 py-2 rounded text-xs font-mono transition-all"
+                className="flex items-center gap-1.5 bg-surface-container hover:bg-surface-container-high border border-outline-variant/30 text-on-surface px-3.5 py-2 rounded text-xs font-mono transition-all"
               >
                 <Download size={14} />
                 <span>Export Sessions (JSON)</span>
@@ -244,7 +244,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     onClearData();
                   }
                 }}
-                className="flex items-center gap-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 px-3.5 py-2 rounded text-xs font-mono transition-all"
+                className="flex items-center gap-1.5 bg-error/10 hover:bg-error/20 border border-error/30 text-error px-3.5 py-2 rounded text-xs font-mono transition-all"
               >
                 <Trash2 size={14} />
                 <span>Reset All Data</span>

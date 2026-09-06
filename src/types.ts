@@ -17,6 +17,11 @@ export type NoteName =
   | "Bb"
   | "B";
 
+export interface ChordSelection {
+  root: NoteName;
+  type: string;
+}
+
 export type NoteDisplayMode = "name" | "degree" | "interval";
 
 export type AccidentalPreference = "sharp" | "flat" | "both";

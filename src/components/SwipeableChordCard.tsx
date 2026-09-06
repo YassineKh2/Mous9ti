@@ -157,7 +157,9 @@ export const SwipeableChordCard: React.FC<SwipeableChordCardProps> = ({
               key={i}
               className="w-full h-full flex-shrink-0 snap-center flex justify-center items-center px-2"
             >
-              <div className="pointer-events-none w-full h-full flex justify-center items-center">
+              <div
+                className={`${instrument === "piano" ? "pointer-events-auto" : "pointer-events-none"} w-full h-full flex justify-center items-center`}
+              >
                 {instrument === "guitar" ? (
                   <ChordDiagram
                     root={root}

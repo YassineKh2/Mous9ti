@@ -289,7 +289,7 @@ export const TimerView: React.FC<TimerViewProps> = ({
           </svg>
 
           <div className="absolute bottom-0 sm:bottom-4 flex flex-col items-center justify-end w-full pointer-events-auto">
-            <div className="text-[11px] sm:text-[14px] font-sans text-[#888] mb-1 sm:mb-2 opacity-90 tracking-widest uppercase">
+            <div className="text-[11px] sm:text-[14px] font-sans text-on-surface-variant mb-1 sm:mb-2 opacity-90 tracking-widest uppercase">
               {status === "running"
                 ? "Flow time"
                 : status === "finished"

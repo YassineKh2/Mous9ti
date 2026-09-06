@@ -5,12 +5,14 @@ import {
   DashboardRow,
   Session,
   StreakData,
+  ChordSelection,
 } from "../types";
 
 const STORAGE_KEYS = {
   SESSIONS: "Mousi9ti_sessions_v1",
   STREAK: "Mousi9ti_streak_v1",
   SETTINGS: "Mousi9ti_settings_v1",
+  CHORD_SELECTIONS: "Mousi9ti_chord_selections_v1",
   DASHBOARD_LAYOUT: "Mousi9ti_dashboard_layout_v1",
   DASHBOARD_LAYOUT_V2: "Mousi9ti_dashboard_layout_v2",
 };
@@ -233,6 +235,26 @@ export function saveSettings(settings: AppSettings): void {
     localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
   } catch (e) {
     console.error("Failed to save settings", e);
+  }
+}
+
+export function getSavedChordSelections(): ChordSelection[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.CHORD_SELECTIONS);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    console.error("Failed to get chord selections", e);
+    return [];
+  }
+}
+
+export function saveChordSelections(chords: ChordSelection[]): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.CHORD_SELECTIONS, JSON.stringify(chords));
+  } catch (e) {
+    console.error("Failed to save chord selections", e);
   }
 }
 
