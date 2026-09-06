@@ -1,15 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Guitar, Piano, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { SwipeableChordCard } from "./SwipeableChordCard";
 import { ChordSearchInput } from "./ChordSearchInput";
 import { NoteName } from "../types";
 
 interface ChordSelectorWidgetProps {
   defaultInstrument: "guitar" | "piano";
+  instrumentView: "guitar" | "piano" | "both";
 }
 
 export const ChordSelectorWidget: React.FC<ChordSelectorWidgetProps> = ({
   defaultInstrument,
+  instrumentView,
 }) => {
   const [selectedChords, setSelectedChords] = useState<
     { root: NoteName; type: string }[]
@@ -19,16 +21,9 @@ export const ChordSelectorWidget: React.FC<ChordSelectorWidgetProps> = ({
     { root: "A", type: "min" },
     { root: "F", type: "maj" },
   ]);
-  const [instrument, setInstrument] = useState<"guitar" | "piano">(
-    defaultInstrument,
-  );
   const [isFullWidth, setIsFullWidth] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const widgetRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setInstrument(defaultInstrument);
-  }, [defaultInstrument]);
 
   useEffect(() => {
     const widget = widgetRef.current;
@@ -49,6 +44,8 @@ export const ChordSelectorWidget: React.FC<ChordSelectorWidgetProps> = ({
   const visibleChords = isFullWidth
     ? selectedChords.slice(0, 3)
     : selectedChords.slice(0, 1);
+  const chordInstrument =
+    instrumentView === "both" ? defaultInstrument : instrumentView;
 
   return (
     <div
@@ -59,26 +56,6 @@ export const ChordSelectorWidget: React.FC<ChordSelectorWidgetProps> = ({
         <h3 className="font-mono text-sm font-bold text-on-surface uppercase tracking-wider flex items-center gap-2">
           Chord Selector
         </h3>
-
-        <div className="flex items-center gap-1.5">
-          {/* Instrument Toggle: "button that has only icons" */}
-          <div className="flex bg-surface-container-low rounded-lg p-1 border border-outline-variant/20 mr-2">
-            <button
-              onClick={() => setInstrument("guitar")}
-              className={`p-1.5 rounded-md transition-colors flex items-center justify-center ${instrument === "guitar" ? "bg-primary text-on-primary" : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest"}`}
-              title="Guitar"
-            >
-              <Guitar size={15} />
-            </button>
-            <button
-              onClick={() => setInstrument("piano")}
-              className={`p-1.5 rounded-md transition-colors flex items-center justify-center ${instrument === "piano" ? "bg-primary text-on-primary" : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest"}`}
-              title="Piano"
-            >
-              <Piano size={15} />
-            </button>
-          </div>
-        </div>
       </div>
 
       <div
@@ -86,10 +63,10 @@ export const ChordSelectorWidget: React.FC<ChordSelectorWidgetProps> = ({
       >
         {visibleChords.map((chord, i) => (
           <SwipeableChordCard
-            key={`${chord.root}-${chord.type}-${i}`}
+            key={`${chord.root}-${chord.type}-${i}-${chordInstrument}`}
             root={chord.root}
             type={chord.type}
-            instrument={instrument}
+            instrument={chordInstrument}
             onRemove={() => handleRemoveChord(i)}
             onChange={(newRoot, newType) => {
               const updated = [...selectedChords];

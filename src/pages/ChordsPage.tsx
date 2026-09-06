@@ -278,7 +278,7 @@ export const ChordsPage: React.FC<ChordsPageProps> = ({
             }`}
           >
             <Guitar size={14} />
-            <span className="hidden sm:inline">GUITAR</span>
+            <span className="hidden sm:inline">Guitar</span>
           </button>
           <button
             onClick={() => setInstrumentView("piano")}
@@ -290,7 +290,7 @@ export const ChordsPage: React.FC<ChordsPageProps> = ({
             }`}
           >
             <Piano size={14} />
-            <span className="hidden sm:inline">PIANO</span>
+            <span className="hidden sm:inline">Piano</span>
           </button>
           <button
             onClick={() => setInstrumentView("both")}
@@ -302,7 +302,7 @@ export const ChordsPage: React.FC<ChordsPageProps> = ({
             }`}
           >
             <Layers size={14} />
-            <span className="hidden sm:inline">BOTH</span>
+            <span className="hidden sm:inline">Both</span>
           </button>
         </div>
       </div>

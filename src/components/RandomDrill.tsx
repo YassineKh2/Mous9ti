@@ -171,8 +171,8 @@ export const RandomDrill: React.FC<RandomDrillProps> = ({
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-2 border-t border-outline-variant/10">
-          <div className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center justify-between pt-2 border-t border-outline-variant/10 gap-2">
+          <div className="flex items-center gap-1.5 flex-1">
             <button
               onClick={() => setAutoAdvance(!autoAdvance)}
               className={`flex min-h-10 items-center gap-1.5 px-2.5 py-1.5 rounded font-mono text-[10px] tracking-wider border transition-all md:min-h-0 ${

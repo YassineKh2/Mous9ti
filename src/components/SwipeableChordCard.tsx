@@ -150,7 +150,7 @@ export const SwipeableChordCard: React.FC<SwipeableChordCardProps> = ({
           onPointerMove={handlePointerMove}
           onPointerCancel={handlePointerUp}
           className="flex h-full overflow-x-auto snap-x snap-mandatory scroll-smooth w-full [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] select-none cursor-grab active:cursor-grabbing"
-          style={{ touchAction: "pan-y" }}
+          style={{ touchAction: "pan-x" }}
         >
           {voicings.map((voicing, i) => (
             <div

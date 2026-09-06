@@ -474,7 +474,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     });
   };
 
-  const renderWidget = (widget: DashboardWidgetLayout): React.ReactNode => {
+  const renderWidget = (
+    widget: DashboardWidgetLayout,
+    rowWidgetCount = 1,
+  ): React.ReactNode => {
     switch (widget.id) {
       case "metronome":
         return (
@@ -496,6 +499,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             timer={timer}
             settings={settings}
             onUpdateSettings={onUpdateSettings}
+            desktopValuePlacement={
+              rowWidgetCount >= 4
+                ? "above-4"
+                : rowWidgetCount === 3
+                  ? "above"
+                  : "below"
+            }
           />
         );
       case "random-drill":
@@ -551,7 +561,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         );
       case "chord-selector":
         return (
-          <ChordSelectorWidget defaultInstrument={settings.defaultInstrument} />
+          <ChordSelectorWidget
+            defaultInstrument={settings.defaultInstrument}
+            instrumentView={instrumentView}
+          />
         );
     }
   };
@@ -637,7 +650,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           <div className="col-span-2 flex items-center gap-2 md:col-span-1">
             <Sparkles size={16} className="text-primary" />
             <span className="font-mono text-xs font-bold text-on-surface uppercase tracking-wider">
-              Scale Overlay:
+              Scale Overlay
             </span>
           </div>
 
@@ -808,28 +821,53 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-3 items-center gap-1 rounded border border-outline-variant/30 bg-surface-container-low p-1 md:flex">
-          <button
-            onClick={() => handleInstrumentToggle("guitar")}
-            className={`flex h-10 items-center justify-center gap-1.5 rounded px-2 py-1 text-xs font-mono transition-all md:h-auto md:px-3 ${instrumentView === "guitar" ? "bg-primary text-on-primary font-bold shadow" : "text-on-surface-variant hover:text-on-surface"}`}
-          >
-            <Guitar size={14} />
-            <span>Guitar</span>
-          </button>
-          <button
-            onClick={() => handleInstrumentToggle("piano")}
-            className={`flex h-10 items-center justify-center gap-1.5 rounded px-2 py-1 text-xs font-mono transition-all md:h-auto md:px-3 ${instrumentView === "piano" ? "bg-primary text-on-primary font-bold shadow" : "text-on-surface-variant hover:text-on-surface"}`}
-          >
-            <Piano size={14} />
-            <span>Piano</span>
-          </button>
-          <button
-            onClick={() => handleInstrumentToggle("both")}
-            className={`flex h-10 items-center justify-center gap-1.5 rounded px-2 py-1 text-xs font-mono transition-all md:h-auto md:px-3 ${instrumentView === "both" ? "bg-primary text-on-primary font-bold shadow" : "text-on-surface-variant hover:text-on-surface"}`}
-          >
-            <Layers size={14} />
-            <span>Both</span>
-          </button>
+        <div className="flex flex-col gap-2 md:flex-row md:items-center">
+          <div className="flex h-12 w-full min-w-0 items-stretch gap-1.5 overflow-x-auto rounded border border-outline-variant/30 bg-surface-container-low p-1">
+            {(["name", "degree", "interval"] as NoteDisplayMode[]).map(
+              (mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => setDisplayMode(mode)}
+                  className={`flex min-w-max flex-1 items-center justify-center rounded px-2.5 text-[10px] font-mono uppercase tracking-wider transition-colors ${
+                    displayMode === mode
+                      ? "bg-primary text-on-primary font-semibold shadow-sm"
+                      : "text-on-surface-variant hover:bg-outline-variant/10 hover:text-on-surface"
+                  }`}
+                >
+                  {mode === "name"
+                    ? "Note Name"
+                    : mode === "degree"
+                      ? "Degrees (1 3 5)"
+                      : "Intervals (R M3)"}
+                </button>
+              ),
+            )}
+          </div>
+
+          <div className="grid grid-cols-3 items-center gap-1 rounded border border-outline-variant/30 bg-surface-container-low p-1 md:flex">
+            <button
+              onClick={() => handleInstrumentToggle("guitar")}
+              className={`flex h-10 items-center justify-center gap-1.5 rounded px-2 py-1 text-xs font-mono transition-all md:h-auto md:px-3 ${instrumentView === "guitar" ? "bg-primary text-on-primary font-bold shadow" : "text-on-surface-variant hover:text-on-surface"}`}
+            >
+              <Guitar size={14} />
+              <span>Guitar</span>
+            </button>
+            <button
+              onClick={() => handleInstrumentToggle("piano")}
+              className={`flex h-10 items-center justify-center gap-1.5 rounded px-2 py-1 text-xs font-mono transition-all md:h-auto md:px-3 ${instrumentView === "piano" ? "bg-primary text-on-primary font-bold shadow" : "text-on-surface-variant hover:text-on-surface"}`}
+            >
+              <Piano size={14} />
+              <span>Piano</span>
+            </button>
+            <button
+              onClick={() => handleInstrumentToggle("both")}
+              className={`flex h-10 items-center justify-center gap-1.5 rounded px-2 py-1 text-xs font-mono transition-all md:h-auto md:px-3 ${instrumentView === "both" ? "bg-primary text-on-primary font-bold shadow" : "text-on-surface-variant hover:text-on-surface"}`}
+            >
+              <Layers size={14} />
+              <span>Both</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -842,7 +880,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           >
             {row.widgets.map((widget) => (
               <DashboardWidget key={widget.id} {...widgetProps(widget)}>
-                {renderWidget(widget)}
+                {renderWidget(widget, row.widgets.length)}
               </DashboardWidget>
             ))}
           </div>

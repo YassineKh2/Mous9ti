@@ -642,6 +642,30 @@ export const ScalesPage: React.FC<ScalesPageProps> = ({
           </div>
 
           <div className="flex items-center justify-between gap-2 flex-nowrap sm:justify-end">
+            {/* Note Label Display Mode */}
+            <div className="flex h-10 min-w-0 flex-1 items-stretch gap-1 overflow-x-auto rounded-lg border border-outline-variant/30 bg-surface-container-low p-1">
+              {(["name", "degree", "interval"] as NoteDisplayMode[]).map(
+                (mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setDisplayMode(mode)}
+                    className={`flex min-w-max flex-1 items-center justify-center rounded px-2 text-[10px] font-mono uppercase tracking-wider transition-colors ${
+                      displayMode === mode
+                        ? "bg-primary text-on-primary font-semibold shadow-sm"
+                        : "text-on-surface-variant hover:bg-outline-variant/10 hover:text-on-surface"
+                    }`}
+                  >
+                    {mode === "name"
+                      ? "Names"
+                      : mode === "degree"
+                        ? "Degrees"
+                        : "Intervals"}
+                  </button>
+                ),
+              )}
+            </div>
+
             {/* Instrument Toggle (Guitar / Piano / Both) */}
             <div className="flex items-center gap-1 bg-surface-container-low p-1 rounded-lg border border-outline-variant/30">
               <button
@@ -656,7 +680,7 @@ export const ScalesPage: React.FC<ScalesPageProps> = ({
                 }`}
               >
                 <Guitar size={14} />
-                <span className="hidden sm:inline">GUITAR</span>
+                <span className="hidden sm:inline">Guitar</span>
               </button>
 
               <button
@@ -671,7 +695,7 @@ export const ScalesPage: React.FC<ScalesPageProps> = ({
                 }`}
               >
                 <Piano size={14} />
-                <span className="hidden sm:inline">PIANO</span>
+                <span className="hidden sm:inline">Piano</span>
               </button>
 
               <button
@@ -686,7 +710,7 @@ export const ScalesPage: React.FC<ScalesPageProps> = ({
                 }`}
               >
                 <Layers size={14} />
-                <span className="hidden sm:inline">BOTH</span>
+                <span className="hidden sm:inline">Both</span>
               </button>
             </div>
 

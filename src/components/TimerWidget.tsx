@@ -18,6 +18,7 @@ interface TimerWidgetProps {
   timer: ReturnType<typeof useTimer>;
   settings?: AppSettings;
   onUpdateSettings?: (settings: Partial<AppSettings>) => void;
+  desktopValuePlacement?: "above" | "above-4" | "below";
 }
 
 const formatTime = (seconds: number) => {
@@ -30,6 +31,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({
   timer,
   settings,
   onUpdateSettings,
+  desktopValuePlacement = "above",
 }) => {
   const { status, remaining, duration, start, pause, resume, reset, cancel } =
     timer;
@@ -129,7 +131,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({
   const currentAngle = startAngle + sweep * progress;
 
   return (
-    <div className="bg-surface-container border border-outline-variant/30 rounded-2xl relative overflow-hidden flex flex-col min-h-[220px] shadow-sm">
+    <div className="bg-surface-container border border-outline-variant/30 rounded-2xl relative overflow-hidden flex flex-col min-h-[260px] sm:min-h-[220px] shadow-sm">
       {/* Header */}
       <div className="relative p-4 flex items-center justify-between z-20">
         <div className="flex items-center gap-2">
@@ -293,7 +295,9 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({
       </div>
 
       {/* Timer Value */}
-      <div className="absolute inset-0 flex flex-col items-center justify-start pt-14 sm:justify-center sm:pt-0 sm:pb-6 z-10 pointer-events-none">
+      <div
+        className={`absolute inset-0 flex flex-col items-center justify-start pt-14 sm:justify-center sm:pt-0 sm:pb-6 z-10 pointer-events-none ${desktopValuePlacement === "below" ? "lg:justify-end lg:pb-16" : desktopValuePlacement === "above-4" ? "lg:justify-start lg:pt-28" : "lg:justify-start lg:pt-14"}`}
+      >
         {status === "idle" ? (
           <form
             onSubmit={handleCustomStart}

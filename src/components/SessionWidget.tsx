@@ -60,10 +60,10 @@ export const SessionWidget: React.FC<SessionWidgetProps> = ({
 
       {/* Stopwatch Time */}
       <div className="flex flex-col items-center justify-center my-2">
-        <span className="font-mono text-4xl font-bold tracking-tight text-on-surface select-none">
+        <span className="font-mono text-4xl sm:text-5xl font-bold tracking-tight text-on-surface select-none">
           {formatTime(activeSessionDuration)}
         </span>
-        <span className="text-[10px] font-mono text-on-surface-variant tracking-wider mt-1">
+        <span className="text-[10px] font-mono text-on-surface-variant tracking-wider mt-1 text-center line-clamp-2">
           FOCUS: <span className="text-primary">{currentScaleName}</span> (Peak{" "}
           {highestBpmSession} BPM)
         </span>
@@ -109,7 +109,7 @@ export const SessionWidget: React.FC<SessionWidgetProps> = ({
       </div>
 
       {/* Session Controls */}
-      <div className="flex items-center justify-between pt-2 border-t border-outline-variant/10 mt-1">
+      <div className="flex flex-wrap items-center justify-between pt-2 border-t border-outline-variant/10 mt-1 gap-2">
         <button
           onClick={onToggleSession}
           className={`flex min-h-10 items-center gap-1.5 px-3 py-1.5 rounded text-xs font-mono tracking-wider border transition-all md:min-h-0 ${

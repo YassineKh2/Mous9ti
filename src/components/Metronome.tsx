@@ -313,10 +313,10 @@ export const Metronome: React.FC<MetronomeProps> = ({
   };
 
   return (
-    <div className="bg-surface-container border border-outline-variant/30 rounded-lg p-4 md:p-5 flex flex-col justify-between relative shadow-xl">
+    <div className="bg-surface-container border border-outline-variant/30 rounded-lg p-4 md:p-5 flex flex-col min-w-0 justify-between relative shadow-xl">
       {/* Top Header */}
-      <div className="flex flex-col items-start gap-2 pb-3 border-b border-outline-variant/10 md:flex-row md:items-center md:justify-between">
-        <div className="flex w-full items-center gap-2 md:w-auto">
+      <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-outline-variant/10">
+        <div className="flex items-center gap-2">
           <MetronomeGlyph className="h-4 w-4 text-primary" />
           <span className="font-mono text-xs font-semibold tracking-[0.2em] text-on-surface uppercase">
             Metronome
@@ -326,11 +326,11 @@ export const Metronome: React.FC<MetronomeProps> = ({
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
           <select
             value={timeSignature}
             onChange={(e) => setTimeSignature(e.target.value as TimeSignature)}
-            className="min-h-10 bg-surface-container-low border border-outline-variant/30 rounded px-2 py-1 text-[11px] font-mono text-on-surface focus:outline-none focus:border-primary/50 cursor-pointer md:min-h-0"
+            className="min-h-10 min-w-0 bg-surface-container-low border border-outline-variant/30 rounded px-2 py-1 text-[11px] font-mono text-on-surface focus:outline-none focus:border-primary/50 cursor-pointer md:min-h-0"
           >
             <option value="2/2">2/2</option>
             <option value="2/4">2/4</option>
@@ -348,7 +348,7 @@ export const Metronome: React.FC<MetronomeProps> = ({
           <select
             value={soundType}
             onChange={(e) => setSoundType(e.target.value as MetronomeSound)}
-            className="min-h-10 min-w-0 flex-1 bg-surface-container-low border border-outline-variant/30 rounded px-2 py-1 text-[11px] font-mono text-on-surface focus:outline-none focus:border-primary/50 cursor-pointer md:min-h-0 md:flex-none md:max-w-none"
+            className="min-h-10 min-w-0 flex-1 bg-surface-container-low border border-outline-variant/30 rounded px-2 py-1 text-[11px] font-mono text-on-surface focus:outline-none focus:border-primary/50 cursor-pointer md:min-h-0"
           >
             <option value="click">Digital Click</option>
             <option value="woodblock">Woodblock</option>
@@ -408,7 +408,7 @@ export const Metronome: React.FC<MetronomeProps> = ({
       )}
 
       {/* Subdivision Selector Buttons */}
-      <div className="flex justify-center gap-1.5 my-2.5">
+      <div className="flex flex-wrap justify-center gap-1.5 my-2.5">
         {[
           { id: "quarter", label: "1/4" },
           { id: "eighth", label: "1/8" },
@@ -444,7 +444,7 @@ export const Metronome: React.FC<MetronomeProps> = ({
           max="300"
           value={bpm}
           onChange={(e) => onBpmChange(Number(e.target.value))}
-          className="flex-1 h-1.5 bg-surface-container-highest rounded-lg appearance-none cursor-pointer accent-primary"
+          className="flex-1 min-w-0 h-1.5 bg-surface-container-highest rounded-lg appearance-none cursor-pointer accent-primary"
         />
 
         <button
@@ -456,8 +456,8 @@ export const Metronome: React.FC<MetronomeProps> = ({
       </div>
 
       {/* Bottom Controls: Tap Tempo, Bar Cycle Toggle & Big Play Button */}
-      <div className="flex justify-between items-center mt-3 pt-2 border-t border-outline-variant/10 gap-2">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-wrap justify-between items-center mt-3 pt-2 border-t border-outline-variant/10 gap-2">
+        <div className="flex flex-wrap items-center gap-2 flex-1">
           <button
             onClick={handleTapTempo}
             className="min-h-10 text-[10px] font-mono tracking-widest text-on-surface-variant border border-outline-variant/30 px-3.5 py-1.5 rounded hover:text-on-surface hover:border-primary/40 hover:bg-primary/5 active:scale-95 transition-all md:min-h-0"

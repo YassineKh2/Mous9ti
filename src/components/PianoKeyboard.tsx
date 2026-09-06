@@ -70,6 +70,8 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
     return map;
   }, [selectedScale, selectedRoot]);
 
+  const isAllNotesSelected = selectedScale === null || scaleMap.size === 12;
+
   // Focus Range Pitch Limits
   const focusLimits = useMemo(() => {
     if (!focusRange) return null;
@@ -186,10 +188,10 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
       {/* Piano Stage */}
       <div
         ref={scrollContainerRef}
-        className="w-full max-w-full overflow-x-auto pb-4 custom-scrollbar"
+        className="w-full max-w-full overflow-x-auto overscroll-x-contain pb-1 sm:pb-4 no-scrollbar touch-pan-x scroll-smooth"
       >
-        <div className="w-max mx-auto py-2 px-2 flex justify-start sm:justify-center">
-          <div className="flex relative bg-surface-container-highest p-1.5 rounded-b-lg border-t-8 border-outline-variant shadow-2xl">
+        <div className="w-max mx-auto px-0.5 py-1.5 sm:px-2 sm:py-2 flex justify-start sm:justify-center">
+          <div className="flex relative bg-surface-container-highest p-1 sm:p-1.5 rounded-b-lg border-t-4 sm:border-t-8 border-outline-variant shadow-2xl">
             {Array.from({ length: octaves }).map((_, octIdx) => {
               const currentOctave = startOctave + octIdx;
 
@@ -268,7 +270,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
                           onClick={() =>
                             handleKeyClick(spelledNote, currentOctave)
                           }
-                          className={`w-11 h-44 rounded-b-md border-r border-l border-b border-outline-variant/30 flex flex-col justify-end pb-3 items-center transition-all ${
+                          className={`w-9 h-36 sm:w-11 sm:h-44 rounded-b-md border-r border-l border-b border-outline-variant/30 flex flex-col justify-end pb-2 sm:pb-3 items-center transition-all ${
                             isDimmed
                               ? "opacity-25 hover:opacity-50 grayscale bg-surface-container-lowest/50 text-on-surface-variant/20 shadow-none border-outline-variant/10 cursor-pointer"
                               : isExactOctavePlaying
@@ -282,8 +284,12 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
                                       : inChord
                                         ? "bg-inverse-surface text-inverse-on-surface font-bold z-10"
                                         : inScale
-                                          ? "bg-inverse-surface text-inverse-on-surface hover:opacity-90 active:opacity-80"
-                                          : "bg-surface-container-highest text-on-surface-variant/40 hover:bg-surface-bright"
+                                          ? isAllNotesSelected
+                                            ? "bg-white text-black hover:bg-white active:bg-white"
+                                            : "bg-inverse-surface text-inverse-on-surface hover:opacity-90 active:opacity-80"
+                                          : isAllNotesSelected
+                                            ? "bg-white text-black hover:bg-white active:bg-white"
+                                            : "bg-surface-container-highest text-on-surface-variant/40 hover:bg-surface-bright"
                           }`}
                         >
                           <span
@@ -300,7 +306,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
 
                         {/* Black Key */}
                         {hasBlack && (
-                          <div className="absolute top-0 -right-3.5 z-30">
+                          <div className="absolute top-0 -right-3 sm:-right-3.5 z-30">
                             {(() => {
                               const bInfo = hasBlack;
                               const bSemitone = bInfo.semitone;
@@ -369,7 +375,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
                                   onClick={() =>
                                     handleKeyClick(bSpelledNote, currentOctave)
                                   }
-                                  className={`w-7 h-28 rounded-b-md flex flex-col justify-end pb-2 items-center transition-all ${
+                                  className={`w-6 h-24 sm:w-7 sm:h-28 rounded-b-md flex flex-col justify-end pb-1.5 sm:pb-2 items-center transition-all ${
                                     bIsDimmed
                                       ? "opacity-20 hover:opacity-40 grayscale bg-surface-container-lowest/50 text-on-surface-variant/20 shadow-none border border-transparent"
                                       : bIsExactOctavePlaying
@@ -384,7 +390,9 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
                                                 ? "bg-black text-white shadow-[0_4px_8px_rgba(0,0,0,0.8)] border border-zinc-800"
                                                 : bInScale
                                                   ? "bg-black text-white shadow-[0_4px_8px_rgba(0,0,0,0.8)] border border-zinc-800"
-                                                  : "bg-surface-container-low text-on-surface-variant/20 shadow-none border border-transparent hover:bg-surface-container"
+                                                  : isAllNotesSelected
+                                                    ? "bg-black text-white shadow-[0_4px_8px_rgba(0,0,0,0.8)] border border-zinc-800"
+                                                    : "bg-surface-container-low text-on-surface-variant/20 shadow-none border border-transparent hover:bg-surface-container"
                                   }`}
                                 >
                                   <span
@@ -459,7 +467,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
                         : undefined
                     }
                     onClick={() => handleKeyClick("C", finalOctave)}
-                    className={`w-11 h-44 rounded-b-md border-r border-l border-b border-outline-variant/30 flex flex-col justify-end pb-3 items-center transition-all ${
+                    className={`w-9 h-36 sm:w-11 sm:h-44 rounded-b-md border-r border-l border-b border-outline-variant/30 flex flex-col justify-end pb-2 sm:pb-3 items-center transition-all ${
                       isDimmed
                         ? "opacity-25 hover:opacity-50 grayscale bg-surface-container-lowest/50 text-on-surface-variant/20 shadow-none border-outline-variant/10 cursor-pointer"
                         : isExactOctavePlaying
@@ -473,8 +481,12 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
                                 : inChord
                                   ? "bg-inverse-surface text-inverse-on-surface font-bold z-10"
                                   : inScale
-                                    ? "bg-inverse-surface text-inverse-on-surface hover:opacity-90 active:opacity-80"
-                                    : "bg-surface-container-highest text-on-surface-variant/40 hover:bg-surface-bright"
+                                    ? isAllNotesSelected
+                                      ? "bg-white text-black hover:bg-white active:bg-white"
+                                      : "bg-inverse-surface text-inverse-on-surface hover:opacity-90 active:opacity-80"
+                                    : isAllNotesSelected
+                                      ? "bg-white text-black hover:bg-white active:bg-white"
+                                      : "bg-surface-container-highest text-on-surface-variant/40 hover:bg-surface-bright"
                     }`}
                   >
                     <span
