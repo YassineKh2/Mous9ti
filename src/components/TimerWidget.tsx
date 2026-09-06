@@ -301,7 +301,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({
         {status === "idle" ? (
           <form
             onSubmit={handleCustomStart}
-            className="font-mono font-medium text-4xl sm:text-5xl leading-none tracking-tighter text-on-surface drop-shadow-md flex flex-nowrap items-center justify-center z-30 pointer-events-auto"
+            className="h-[1em] font-mono font-medium text-4xl sm:text-5xl leading-none tracking-tighter text-on-surface drop-shadow-md flex flex-nowrap items-center justify-center z-30 pointer-events-auto"
             style={{ fontVariantNumeric: "tabular-nums" }}
           >
             <input
@@ -334,7 +334,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({
           </form>
         ) : (
           <div
-            className="font-mono font-medium text-4xl sm:text-5xl leading-none tracking-tighter text-on-surface drop-shadow-md flex flex-nowrap items-center justify-center z-30 pointer-events-none"
+            className="h-[1em] font-mono font-medium text-4xl sm:text-5xl leading-none tracking-tighter text-on-surface drop-shadow-md flex flex-nowrap items-center justify-center z-30 pointer-events-none"
             style={{ fontVariantNumeric: "tabular-nums" }}
           >
             <div className="w-[1.15em] text-right relative flex justify-end">
