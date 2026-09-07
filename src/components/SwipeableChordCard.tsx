@@ -4,7 +4,7 @@ import { getChordDefinition } from "../data/chordsData";
 import { ChordDiagram } from "./ChordDiagram";
 import { KeyboardChordDiagram } from "./KeyboardChordDiagram";
 import { ChordSearchInput } from "./ChordSearchInput";
-import { X, Edit2 } from "lucide-react";
+import { X, Edit2, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface SwipeableChordCardProps {
   root: NoteName;
@@ -180,22 +180,33 @@ export const SwipeableChordCard: React.FC<SwipeableChordCardProps> = ({
         </div>
       </div>
 
-      <div className="flex justify-center items-center gap-1.5 mt-2 h-4">
+      <div className="flex justify-center items-center gap-1.5 mt-2 h-5">
+        <button
+          onClick={() => handleGoToIndex(activeIndex - 1)}
+          disabled={activeIndex === 0}
+          className="md:hidden p-0.5 text-on-surface-variant transition-colors hover:text-on-surface disabled:opacity-30 disabled:pointer-events-none"
+          aria-label="Go to previous voicing"
+        >
+          <ChevronLeft size={14} />
+        </button>
+
         {voicings.map((_, i) => (
           <button
             key={i}
-            onClick={() => {
-              if (scrollRef.current) {
-                scrollRef.current.scrollTo({
-                  left: i * scrollRef.current.clientWidth,
-                  behavior: "smooth",
-                });
-              }
-            }}
+            onClick={() => handleGoToIndex(i)}
             className={`rounded-full transition-all duration-300 ${i === activeIndex ? "w-2 h-2 bg-primary" : "w-1.5 h-1.5 bg-outline-variant/40 hover:bg-outline-variant/70"}`}
             aria-label={`Go to voicing ${i + 1}`}
           />
         ))}
+
+        <button
+          onClick={() => handleGoToIndex(activeIndex + 1)}
+          disabled={activeIndex === voicings.length - 1}
+          className="md:hidden p-0.5 text-on-surface-variant transition-colors hover:text-on-surface disabled:opacity-30 disabled:pointer-events-none"
+          aria-label="Go to next voicing"
+        >
+          <ChevronRight size={14} />
+        </button>
       </div>
     </div>
   );
