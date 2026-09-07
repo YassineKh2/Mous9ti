@@ -48,24 +48,33 @@
   --color-background: #131313;
   --color-on-background: #e5e2e1;
   --color-surface-variant: #353534;
+  --circle-center: #18181b;
+  --circle-center-border: #27272a;
+  --circle-major: #27272a;
+  --circle-minor: #1f1f23;
+  --circle-text: #e4e4e7;
+  --circle-muted: #71717a;
+  --circle-heading: #ffffff;
+  --circle-subtle: #d4d4d8;
+  --circle-strong: #f4f4f5;
 }
 
 @layer base {
   .light {
-    --color-surface: #f8f9fc;
-    --color-surface-dim: #d5d9e2;
-    --color-surface-bright: #f8f9fc;
-    --color-surface-container-lowest: #ffffff;
-    --color-surface-container-low: #f4f6f9;
-    --color-surface-container: #eff2f6;
-    --color-surface-container-high: #e8ecf2;
-    --color-surface-container-highest: #e0e5ed;
-    --color-on-surface: #151618;
-    --color-on-surface-variant: #4b4d53;
+    --color-surface: #f4f6f8;
+    --color-surface-dim: #d8dde3;
+    --color-surface-bright: #f9fafb;
+    --color-surface-container-lowest: #eef1f4;
+    --color-surface-container-low: #f9fafb;
+    --color-surface-container: #f1f3f5;
+    --color-surface-container-high: #e7ebef;
+    --color-surface-container-highest: #dfe4e9;
+    --color-on-surface: #1c2024;
+    --color-on-surface-variant: #4d555e;
     --color-inverse-surface: #2d2e31;
     --color-inverse-on-surface: #f1f1f2;
-    --color-outline: #72757c;
-    --color-outline-variant: #c3c6cd;
+    --color-outline: #66717b;
+    --color-outline-variant: #b9c1c9;
     --color-surface-tint: #1c5fd2;
     --color-primary: #1c5fd2;
     --color-on-primary: #ffffff;
@@ -96,9 +105,18 @@
     --color-tertiary-fixed-dim: #4ce378;
     --color-on-tertiary-fixed: #002108;
     --color-on-tertiary-fixed-variant: #005221;
-    --color-background: #f8f9fc;
-    --color-on-background: #151618;
-    --color-surface-variant: #e0e4eb;
+    --color-background: #f4f6f8;
+    --color-on-background: #1c2024;
+    --color-surface-variant: #dfe4e9;
+    --circle-center: #ffffff;
+    --circle-center-border: #c3cbd3;
+    --circle-major: #e4e9ee;
+    --circle-minor: #f0f3f6;
+    --circle-text: #26313a;
+    --circle-muted: #5c6872;
+    --circle-heading: #1c2024;
+    --circle-subtle: #4d555e;
+    --circle-strong: #26313a;
   }
 }
 

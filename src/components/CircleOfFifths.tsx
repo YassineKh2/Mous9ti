@@ -23,11 +23,11 @@ export const CircleOfFifths: React.FC<CircleOfFifthsProps> = ({
   ); // C Major default
   const diatonicChords = getDiatonicChords(selectedKey.major);
 
-  const size = 480;
+  const size = 640;
   const center = size / 2;
-  const outerRadius = 210;
-  const middleRadius = 145;
-  const innerRadius = 80;
+  const outerRadius = 280;
+  const middleRadius = 193;
+  const innerRadius = 107;
 
   const getDisplayMajor = (major: string) => {
     if (major === "B") return "B/Cb";
@@ -76,14 +76,14 @@ export const CircleOfFifths: React.FC<CircleOfFifthsProps> = ({
   };
 
   return (
-    <div className="w-full bg-surface-container border border-outline-variant/30 rounded-lg p-6 flex flex-col gap-6 shadow-xl">
+    <div className="circle-of-fifths w-full bg-surface-container border border-outline-variant/30 rounded-lg p-6 flex flex-col gap-6 shadow-xl">
       <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-outline-variant/10">
         <div>
-          <h2 className="font-mono text-sm font-bold tracking-[0.2em] text-white uppercase flex items-center gap-2">
+          <h2 className="font-mono text-sm font-bold tracking-[0.2em] text-[color:var(--circle-heading)] uppercase flex items-center gap-2">
             <Sparkles size={16} className="text-primary" />
             Interactive Circle of Fifths
           </h2>
-          <p className="text-xs text-zinc-400 mt-0.5">
+          <p className="text-xs text-[color:var(--circle-subtle)] mt-0.5">
             Harmonic relationships, relative keys, and diatonic chord analysis
           </p>
         </div>
@@ -91,7 +91,7 @@ export const CircleOfFifths: React.FC<CircleOfFifthsProps> = ({
         <div className="flex items-center gap-2 bg-blue-500/10 border border-blue-500/30 px-3 py-1.5 rounded">
           <span className="text-xs font-mono text-blue-300">
             Selected:{" "}
-            <strong className="text-white">
+            <strong className="text-[color:var(--circle-heading)]">
               {getDisplayMajor(selectedKey.major)} Major
             </strong>{" "}
             /{" "}
@@ -104,8 +104,8 @@ export const CircleOfFifths: React.FC<CircleOfFifthsProps> = ({
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
         {/* SVG Interactive Wheel */}
-        <div className="lg:col-span-6 flex justify-center">
-          <div className="relative w-full max-w-[480px]">
+        <div className="lg:col-span-7 flex justify-center">
+          <div className="relative w-full max-w-[640px]">
             <svg
               viewBox={`0 0 ${size} ${size}`}
               className="select-none w-full h-auto"
@@ -115,15 +115,15 @@ export const CircleOfFifths: React.FC<CircleOfFifthsProps> = ({
                 cx={center}
                 cy={center}
                 r={innerRadius}
-                fill="#18181b"
-                stroke="#27272a"
+                fill="var(--circle-center)"
+                stroke="var(--circle-center-border)"
                 strokeWidth="2"
               />
               <text
                 x={center}
                 y={center - 10}
-                fill="#ffffff"
-                fontSize="16"
+                fill="var(--circle-heading)"
+                fontSize="22"
                 fontWeight="bold"
                 fontFamily="monospace"
                 textAnchor="middle"
@@ -134,7 +134,7 @@ export const CircleOfFifths: React.FC<CircleOfFifthsProps> = ({
                 x={center}
                 y={center + 6}
                 fill="#3b82f6"
-                fontSize="11"
+                fontSize="15"
                 fontFamily="monospace"
                 textAnchor="middle"
               >
@@ -144,8 +144,8 @@ export const CircleOfFifths: React.FC<CircleOfFifthsProps> = ({
                 <text
                   x={center}
                   y={center + 20}
-                  fill="#71717a"
-                  fontSize="10"
+                  fill="var(--circle-muted)"
+                  fontSize="13"
                   fontFamily="monospace"
                   textAnchor="middle"
                 >
@@ -207,17 +207,17 @@ export const CircleOfFifths: React.FC<CircleOfFifthsProps> = ({
                     {/* Major Key Wedge */}
                     <path
                       d={outerPath}
-                      fill={isSelected ? "#2563eb" : "#27272a"}
-                      stroke="#18181b"
+                      fill={isSelected ? "#2563eb" : "var(--circle-major)"}
+                      stroke="var(--circle-center)"
                       strokeWidth="2"
                       className="transition-colors hover:fill-blue-500/70"
                     />
                     <text
                       x={tx}
                       y={ty + 1}
-                      fill={isSelected ? "#ffffff" : "#e4e4e7"}
+                      fill={isSelected ? "#ffffff" : "var(--circle-text)"}
                       fontSize={
-                        getDisplayMajor(item.major).includes("/") ? "12" : "14"
+                        getDisplayMajor(item.major).includes("/") ? "15" : "18"
                       }
                       fontWeight="bold"
                       fontFamily="monospace"
@@ -229,15 +229,15 @@ export const CircleOfFifths: React.FC<CircleOfFifthsProps> = ({
                       <text
                         x={tx}
                         y={ty + 15}
-                        fill={isSelected ? "#bfdbfe" : "#71717a"}
+                        fill={isSelected ? "#bfdbfe" : "var(--circle-muted)"}
                         fontSize={
                           getDisplaySignature(
                             item.major,
                             item.signatureCount,
                             item.signatureType,
                           ).includes("/")
-                            ? "7"
-                            : "9"
+                            ? "9"
+                            : "12"
                         }
                         fontFamily="monospace"
                         textAnchor="middle"
@@ -253,17 +253,17 @@ export const CircleOfFifths: React.FC<CircleOfFifthsProps> = ({
                     {/* Relative Minor Wedge */}
                     <path
                       d={innerPath}
-                      fill={isSelected ? "#1d4ed8" : "#1f1f23"}
-                      stroke="#18181b"
+                      fill={isSelected ? "#1d4ed8" : "var(--circle-minor)"}
+                      stroke="var(--circle-center)"
                       strokeWidth="2"
                       className="transition-colors hover:fill-blue-600/70"
                     />
                     <text
                       x={mtx}
                       y={mty + 3}
-                      fill={isSelected ? "#93c5fd" : "#a1a1aa"}
+                      fill={isSelected ? "#93c5fd" : "var(--circle-muted)"}
                       fontSize={
-                        getDisplayMinor(item.minor).includes("/") ? "8" : "9"
+                        getDisplayMinor(item.minor).includes("/") ? "10" : "12"
                       }
                       fontFamily="monospace"
                       textAnchor="middle"
@@ -278,9 +278,9 @@ export const CircleOfFifths: React.FC<CircleOfFifthsProps> = ({
         </div>
 
         {/* Diatonic Chords & Progression Analysis */}
-        <div className="lg:col-span-6 flex flex-col gap-4">
+        <div className="lg:col-span-5 flex flex-col gap-4">
           <div className="bg-surface-container-low border border-outline-variant/30 rounded-lg p-4">
-            <h3 className="font-mono text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-3">
+            <h3 className="font-mono text-xs font-semibold text-[color:var(--circle-subtle)] uppercase tracking-wider mb-3">
               Diatonic Harmony ({getDisplayMajor(selectedKey.major)} Major)
             </h3>
 
@@ -292,13 +292,13 @@ export const CircleOfFifths: React.FC<CircleOfFifthsProps> = ({
                   onClick={() => playDiatonicChord(chord)}
                   className="bg-surface-container border border-outline-variant/30 hover:border-blue-500/40 rounded p-2 flex flex-col items-center cursor-pointer group transition-all"
                 >
-                  <span className="text-[10px] font-mono text-zinc-500 group-hover:text-blue-400">
+                  <span className="text-[10px] font-mono text-[color:var(--circle-muted)] group-hover:text-blue-400">
                     {chord.numeral}
                   </span>
-                  <span className="font-mono text-sm font-bold text-zinc-100 group-hover:text-white">
+                  <span className="font-mono text-sm font-bold text-[color:var(--circle-strong)] group-hover:text-white">
                     {chord.name}
                   </span>
-                  <span className="text-[9px] font-mono text-zinc-500 mt-1">
+                  <span className="text-[9px] font-mono text-[color:var(--circle-muted)] mt-1">
                     {chord.type}
                   </span>
                 </div>
@@ -308,7 +308,7 @@ export const CircleOfFifths: React.FC<CircleOfFifthsProps> = ({
 
           {/* Popular Chord Progressions */}
           <div className="bg-surface-container-low border border-outline-variant/30 rounded-lg p-4">
-            <h3 className="font-mono text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-3">
+            <h3 className="font-mono text-xs font-semibold text-[color:var(--circle-subtle)] uppercase tracking-wider mb-3">
               Common Progressions (Click to Audition)
             </h3>
 
@@ -336,7 +336,7 @@ export const CircleOfFifths: React.FC<CircleOfFifthsProps> = ({
                     className="flex items-center justify-between bg-surface-container hover:bg-surface-container-high border border-outline-variant/20 hover:border-blue-500/30 p-2.5 rounded cursor-pointer transition-colors"
                   >
                     <div className="flex flex-col">
-                      <span className="font-mono text-xs font-semibold text-zinc-200">
+                      <span className="font-mono text-xs font-semibold text-[color:var(--circle-strong)]">
                         {prog.name}
                       </span>
                       <span className="font-mono text-[11px] text-blue-400 mt-0.5">
