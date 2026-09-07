@@ -112,19 +112,10 @@ export const Metronome: React.FC<MetronomeProps> = ({
 
   // Tap tempo state
   const tapTimesRef = useRef<number[]>([]);
-  const barCycleTimeoutRef = useRef<number | null>(null);
   const isPlayingRef = useRef<boolean>(false);
-  const barCycleShouldSoundRef = useRef<boolean>(true);
 
   // Metronome run duration tracker for auto-saving (>30s)
   const startTimeRef = useRef<number | null>(null);
-
-  const clearBarCycle = useCallback(() => {
-    if (barCycleTimeoutRef.current !== null) {
-      window.clearTimeout(barCycleTimeoutRef.current);
-      barCycleTimeoutRef.current = null;
-    }
-  }, []);
 
   const handleBeatCallback = useCallback(
     (beat: number, isAccent: boolean, _isSub: boolean) => {
@@ -133,27 +124,6 @@ export const Metronome: React.FC<MetronomeProps> = ({
     },
     [],
   );
-
-  const scheduleBarCycle = useCallback((resetPosition = true) => {
-    if (!barCycleMode || !isPlayingRef.current) return;
-
-    const beatsPerBar = parseInt(timeSignature.split("/")[0], 10) || 4;
-    const barDurationMs = (beatsPerBar * 60 * 1000) / bpm;
-
-    clearBarCycle();
-
-    const shouldSoundThisBar = barCycleShouldSoundRef.current;
-    if (resetPosition) {
-      audioEngine.resetMetronomePosition();
-      audioEngine.setMuted(!shouldSoundThisBar);
-      barCycleShouldSoundRef.current = !shouldSoundThisBar;
-    }
-
-    barCycleTimeoutRef.current = window.setTimeout(() => {
-      if (!barCycleMode || !isPlayingRef.current) return;
-      scheduleBarCycle();
-    }, barDurationMs);
-  }, [barCycleMode, bpm, clearBarCycle, timeSignature]);
 
   // Sync sound type from settings when it changes
   useEffect(() => {
@@ -165,33 +135,21 @@ export const Metronome: React.FC<MetronomeProps> = ({
   useEffect(() => {
     isPlayingRef.current = isPlaying;
 
-    const engineWasAlreadyRunning = audioEngine.isRunning();
-
     if (!isPlaying) {
-      clearBarCycle();
-      barCycleShouldSoundRef.current = true;
       audioEngine.setMuted(false);
       audioEngine.resetMetronomePosition();
       return;
     }
 
     if (barCycleMode) {
-      if (!engineWasAlreadyRunning) {
-        barCycleShouldSoundRef.current = true;
-        audioEngine.setMuted(false);
-        audioEngine.resetMetronomePosition();
-      }
-      scheduleBarCycle(!engineWasAlreadyRunning);
       return;
     }
 
-    clearBarCycle();
-    barCycleShouldSoundRef.current = true;
     audioEngine.setMuted(false);
-    if (!engineWasAlreadyRunning) {
+    if (!audioEngine.isRunning()) {
       audioEngine.resetMetronomePosition();
     }
-  }, [barCycleMode, clearBarCycle, isPlaying, scheduleBarCycle]);
+  }, [barCycleMode, isPlaying]);
 
   // Hydrate from current engine state and keep UI playback status synced across page switches
   useEffect(() => {
@@ -202,7 +160,7 @@ export const Metronome: React.FC<MetronomeProps> = ({
     setSubdivision(engineState.subdivision);
     setSoundType(engineState.soundType);
     setCurrentBeat(engineState.currentBeat);
-    barCycleShouldSoundRef.current = !engineState.isMuted;
+    audioEngine.setMetronomeBarCycle(barCycleMode);
 
     if (engineState.bpm !== bpm) {
       onBpmChange(engineState.bpm);
@@ -220,19 +178,16 @@ export const Metronome: React.FC<MetronomeProps> = ({
     setIsHydratedFromEngine(true);
 
     return () => {
-      clearBarCycle();
       audioEngine.setMetronomeBeatCallback(null);
       unsubscribe();
     };
-  }, [onBpmChange, handleBeatCallback, setIsPlayingState]);
+  }, [barCycleMode, onBpmChange, handleBeatCallback, setIsPlayingState]);
 
   // Time signature beats
   const beatsInBar = parseInt(timeSignature.split("/")[0], 10) || 4;
 
   const togglePlay = useCallback(() => {
     if (isPlaying) {
-      clearBarCycle();
-      barCycleShouldSoundRef.current = true;
       audioEngine.setMuted(false);
       audioEngine.resetMetronomePosition();
       audioEngine.stopMetronome();
@@ -247,11 +202,6 @@ export const Metronome: React.FC<MetronomeProps> = ({
       startTimeRef.current = null;
     } else {
       startTimeRef.current = Date.now();
-      if (barCycleMode) {
-        barCycleShouldSoundRef.current = true;
-        audioEngine.setMuted(false);
-        audioEngine.resetMetronomePosition();
-      }
       audioEngine.startMetronome(
         bpm,
         timeSignature,
@@ -260,9 +210,6 @@ export const Metronome: React.FC<MetronomeProps> = ({
         handleBeatCallback,
       );
       setIsPlayingState(true);
-      if (barCycleMode) {
-        scheduleBarCycle();
-      }
     }
   }, [
     isPlaying,
@@ -273,8 +220,6 @@ export const Metronome: React.FC<MetronomeProps> = ({
     handleBeatCallback,
     onLogBpmToSession,
     barCycleMode,
-    clearBarCycle,
-    scheduleBarCycle,
   ]);
 
   // Update metronome if playing and params change
@@ -477,22 +422,8 @@ export const Metronome: React.FC<MetronomeProps> = ({
           <button
             onClick={() => {
               const next = !barCycleMode;
-
-              if (!next) {
-                clearBarCycle();
-                barCycleShouldSoundRef.current = true;
-                audioEngine.setMuted(false);
-                audioEngine.resetMetronomePosition();
-              } else {
-                if (isPlaying) {
-                  barCycleShouldSoundRef.current = false;
-                } else {
-                  barCycleShouldSoundRef.current = true;
-                  audioEngine.setMuted(false);
-                  audioEngine.resetMetronomePosition();
-                }
-              }
-
+              audioEngine.setMetronomeBarCycle(next);
+              audioEngine.resetMetronomePosition();
               setBarCycleMode(next);
             }}
             className={`inline-flex min-h-10 items-center gap-1.5 px-2.5 py-1.5 rounded text-[10px] font-mono tracking-widest transition-all md:min-h-0 ${

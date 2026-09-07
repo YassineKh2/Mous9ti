@@ -169,7 +169,7 @@ export const TimerView: React.FC<TimerViewProps> = ({
           y2={y2}
           stroke="currentColor"
           strokeWidth={isMajor ? 2 : 1}
-          className="text-white"
+          className="text-on-surface"
           style={{ opacity: opacity * 0.4 }}
         />,
       );
@@ -250,7 +250,7 @@ export const TimerView: React.FC<TimerViewProps> = ({
             <path
               d={`M 0 ${h} A ${r} ${r} 0 0 1 ${w} ${h}`}
               fill="transparent"
-              stroke="#181818"
+              stroke="var(--color-surface-container-highest)"
               strokeWidth={strokeWidth}
               strokeLinecap="butt"
             />
@@ -300,7 +300,7 @@ export const TimerView: React.FC<TimerViewProps> = ({
               {status === "idle" ? (
                 <form
                   onSubmit={handleCustomStart}
-                  className="font-mono font-medium text-[clamp(2.75rem,13vw,12rem)] leading-none tracking-tighter text-white drop-shadow-2xl flex flex-nowrap items-center justify-center z-30"
+                  className="font-mono font-medium text-[clamp(2.75rem,13vw,12rem)] leading-none tracking-tighter text-on-surface drop-shadow-2xl flex flex-nowrap items-center justify-center z-30"
                   style={{ fontVariantNumeric: "tabular-nums" }}
                 >
                   <input
@@ -311,7 +311,7 @@ export const TimerView: React.FC<TimerViewProps> = ({
                     onChange={handleMinChange}
                     onBlur={() => setCustomMin((prev) => prev.padStart(2, "0"))}
                     onFocus={(e) => e.target.select()}
-                    className="bg-transparent text-right outline-none w-[1.15em] placeholder-white/20 transition-colors hover:bg-white/5 rounded-3xl cursor-text"
+                    className="bg-transparent text-right outline-none w-[1.15em] placeholder-on-surface/20 transition-colors hover:bg-on-surface/5 rounded-3xl cursor-text"
                     placeholder="00"
                   />
                   <span className="relative -top-0.5 opacity-80 pb-1 sm:pb-2 mx-1 sm:mx-3 pointer-events-none shrink-0">
@@ -326,14 +326,14 @@ export const TimerView: React.FC<TimerViewProps> = ({
                     onKeyDown={handleSecKeyDown}
                     onBlur={() => setCustomSec((prev) => prev.padStart(2, "0"))}
                     onFocus={(e) => e.target.select()}
-                    className="bg-transparent text-left outline-none w-[1.15em] placeholder-white/20 transition-colors hover:bg-white/5 rounded-3xl cursor-text"
+                    className="bg-transparent text-left outline-none w-[1.15em] placeholder-on-surface/20 transition-colors hover:bg-on-surface/5 rounded-3xl cursor-text"
                     placeholder="00"
                   />
                   <button type="submit" className="hidden" />
                 </form>
               ) : (
                 <div
-                  className="font-mono font-medium text-[clamp(2.75rem,13vw,12rem)] leading-none tracking-tighter text-white drop-shadow-2xl pointer-events-none flex flex-nowrap items-center justify-center z-30"
+                  className="font-mono font-medium text-[clamp(2.75rem,13vw,12rem)] leading-none tracking-tighter text-on-surface drop-shadow-2xl pointer-events-none flex flex-nowrap items-center justify-center z-30"
                   style={{ fontVariantNumeric: "tabular-nums" }}
                 >
                   <div className="w-[1.15em] text-right relative flex justify-end">
@@ -389,7 +389,7 @@ export const TimerView: React.FC<TimerViewProps> = ({
             <>
               <button
                 onClick={status === "running" ? pause : resume}
-                className="p-3 sm:px-5 sm:py-2.5 bg-white/10 hover:bg-white/20 rounded-full text-white backdrop-blur-md text-sm font-mono flex items-center justify-center gap-2 transition-colors border border-white/10 cursor-pointer shadow-lg"
+                className="p-3 sm:px-5 sm:py-2.5 bg-on-surface/10 hover:bg-on-surface/20 rounded-full text-on-surface backdrop-blur-md text-sm font-mono flex items-center justify-center gap-2 transition-colors border border-on-surface/10 cursor-pointer shadow-lg"
                 title={status === "running" ? "Pause" : "Resume"}
               >
                 {status === "running" ? (
@@ -463,7 +463,7 @@ export const TimerView: React.FC<TimerViewProps> = ({
                       className={`px-6 py-3 border rounded-xl text-lg font-mono font-bold transition-all active:scale-95 shadow-sm ${
                         isEditing
                           ? "bg-surface-container-high border-outline-variant/30 text-on-surface-variant cursor-default"
-                          : "bg-surface-container hover:bg-surface-container-highest border-outline-variant/30 hover:border-outline-variant/50 text-on-surface hover:text-white shadow-lg"
+                          : "bg-surface-container hover:bg-surface-container-highest border-outline-variant/30 hover:border-outline-variant/50 text-on-surface shadow-lg"
                       }`}
                     >
                       {preset}m

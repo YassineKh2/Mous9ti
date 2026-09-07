@@ -84,16 +84,16 @@ const DashboardWidget: React.FC<DashboardWidgetProps> = ({
     className={`relative flex min-w-0 flex-1 flex-col transition-[transform,opacity] duration-200 ease-out ${editMode ? "rounded-xl" : ""} ${isDragging ? "scale-[1.02] opacity-60 shadow-2xl" : ""}`}
   >
     {insertionPosition === "before" && insertionAxis === "vertical" && (
-      <span className="pointer-events-none absolute -top-3 left-1 right-1 z-10 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(173,198,255,0.65)]" />
+      <span className="pointer-events-none absolute -top-3 left-1 right-1 z-10 h-1.5 rounded-full bg-primary shadow-[0_0_8px_var(--color-primary)]" />
     )}
     {insertionPosition === "after" && insertionAxis === "vertical" && (
-      <span className="pointer-events-none absolute -bottom-3 left-1 right-1 z-10 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(173,198,255,0.65)]" />
+      <span className="pointer-events-none absolute -bottom-3 left-1 right-1 z-10 h-1.5 rounded-full bg-primary shadow-[0_0_8px_var(--color-primary)]" />
     )}
     {insertionPosition === "before" && insertionAxis === "horizontal" && (
-      <span className="pointer-events-none absolute -left-3 top-1 bottom-1 z-10 w-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(173,198,255,0.65)]" />
+      <span className="pointer-events-none absolute -left-3 top-1 bottom-1 z-10 w-1.5 rounded-full bg-primary shadow-[0_0_8px_var(--color-primary)]" />
     )}
     {insertionPosition === "after" && insertionAxis === "horizontal" && (
-      <span className="pointer-events-none absolute -right-3 top-1 bottom-1 z-10 w-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(173,198,255,0.65)]" />
+      <span className="pointer-events-none absolute -right-3 top-1 bottom-1 z-10 w-1.5 rounded-full bg-primary shadow-[0_0_8px_var(--color-primary)]" />
     )}
     {editMode && (
       <div className="pointer-events-none absolute inset-0 z-10 rounded-xl border-2 border-dashed border-primary/50 bg-primary/5" />
@@ -139,7 +139,7 @@ const DashboardWidget: React.FC<DashboardWidgetProps> = ({
           type="button"
           onPointerDown={(event) => event.stopPropagation()}
           onClick={() => onRemove(widget.id)}
-          className="rounded p-1 text-on-surface-variant transition-all hover:bg-error/20 hover:text-error hover:shadow-[0_0_8px_rgba(239,68,68,0.5)] focus:outline-none focus:ring-1 focus:ring-error"
+          className="rounded p-1 text-on-surface-variant transition-all hover:bg-error/20 hover:text-error hover:shadow-[0_0_8px_var(--color-error)] focus:outline-none focus:ring-1 focus:ring-error"
           title={`Remove ${widget.title}`}
           aria-label={`Remove ${widget.title}`}
         >

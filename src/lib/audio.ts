@@ -50,6 +50,9 @@ class AudioEngine {
   private onBeatCallback: BeatCallback | null = null;
   private metronomeStateListeners: Set<(isPlaying: boolean) => void> =
     new Set();
+  private metronomeBarCycleEnabled = false;
+  private metronomeBarCycleShouldSound = true;
+  private metronomeBarCycleStarted = false;
 
   constructor() {
     // AudioContext will be lazily initialized upon first user gesture
@@ -188,6 +191,25 @@ class AudioEngine {
 
   public setMuted(muted: boolean) {
     this.isMuted = muted;
+  }
+
+  public setMetronomeBarCycle(enabled: boolean) {
+    if (!enabled) {
+      this.metronomeBarCycleEnabled = false;
+      this.metronomeBarCycleShouldSound = true;
+      this.metronomeBarCycleStarted = false;
+      this.setMuted(false);
+      return;
+    }
+
+    if (this.metronomeBarCycleEnabled) {
+      return;
+    }
+
+    this.metronomeBarCycleEnabled = true;
+    this.metronomeBarCycleShouldSound = true;
+    this.metronomeBarCycleStarted = false;
+    this.setMuted(false);
   }
 
   // Reverb Controls
@@ -1036,7 +1058,7 @@ class AudioEngine {
 
   private advanceSubdivision() {
     const subsPerBeat = this.getSubdivisionsPerBeat();
-    const secondsPerBeat = 60.0 / this.bpm;
+    const secondsPerBeat = (60.0 / this.bpm) * (4 / this.beatUnit);
     const secondsPerSub = secondsPerBeat / subsPerBeat;
 
     this.nextNoteTime += secondsPerSub;
@@ -1058,6 +1080,20 @@ class AudioEngine {
       const isBeatStart = this.currentSubdivisionIndex === 0;
       const isAccent = isBeatStart && this.currentBeat === 0;
       const isSub = !isBeatStart;
+
+      if (
+        this.metronomeBarCycleEnabled &&
+        isBeatStart &&
+        this.currentBeat === 0
+      ) {
+        if (this.metronomeBarCycleStarted) {
+          this.metronomeBarCycleShouldSound =
+            !this.metronomeBarCycleShouldSound;
+        } else {
+          this.metronomeBarCycleStarted = true;
+        }
+        this.setMuted(!this.metronomeBarCycleShouldSound);
+      }
 
       this.scheduleMetronomeTick(this.nextNoteTime, isAccent, isSub);
 
@@ -1107,6 +1143,9 @@ class AudioEngine {
     this.isMetronomePlaying = true;
     this.currentBeat = 0;
     this.currentSubdivisionIndex = 0;
+    this.metronomeBarCycleShouldSound = true;
+    this.metronomeBarCycleStarted = false;
+    this.setMuted(false);
     this.nextNoteTime = ctx.currentTime + 0.05;
     this.notifyMetronomeStateListeners();
 
@@ -1125,12 +1164,16 @@ class AudioEngine {
     const parts = timeSignature.split("/");
     this.beatsPerBar = parseInt(parts[0], 10) || 4;
     this.beatUnit = parseInt(parts[1], 10) || 4;
+    this.currentBeat %= this.beatsPerBar;
   }
 
   public resetMetronomePosition() {
     const ctx = this.getContext();
     this.currentBeat = 0;
     this.currentSubdivisionIndex = 0;
+    this.metronomeBarCycleShouldSound = true;
+    this.metronomeBarCycleStarted = false;
+    this.setMuted(false);
     this.nextNoteTime = ctx.currentTime + 0.05;
   }
 
@@ -1140,6 +1183,9 @@ class AudioEngine {
       clearTimeout(this.metronomeTimerId);
       this.metronomeTimerId = null;
     }
+    this.metronomeBarCycleStarted = false;
+    this.metronomeBarCycleShouldSound = true;
+    this.setMuted(false);
     this.notifyMetronomeStateListeners();
   }
 

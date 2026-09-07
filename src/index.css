@@ -51,6 +51,58 @@
 }
 
 @layer base {
+  .light {
+    --color-surface: #f8f9fc;
+    --color-surface-dim: #d5d9e2;
+    --color-surface-bright: #f8f9fc;
+    --color-surface-container-lowest: #ffffff;
+    --color-surface-container-low: #f4f6f9;
+    --color-surface-container: #eff2f6;
+    --color-surface-container-high: #e8ecf2;
+    --color-surface-container-highest: #e0e5ed;
+    --color-on-surface: #151618;
+    --color-on-surface-variant: #4b4d53;
+    --color-inverse-surface: #2d2e31;
+    --color-inverse-on-surface: #f1f1f2;
+    --color-outline: #72757c;
+    --color-outline-variant: #c3c6cd;
+    --color-surface-tint: #1c5fd2;
+    --color-primary: #1c5fd2;
+    --color-on-primary: #ffffff;
+    --color-primary-container: #d8e4ff;
+    --color-on-primary-container: #001944;
+    --color-inverse-primary: #adc6ff;
+    --color-secondary: #a30018;
+    --color-on-secondary: #ffffff;
+    --color-secondary-container: #ffdad6;
+    --color-on-secondary-container: #410003;
+    --color-tertiary: #006b2e;
+    --color-on-tertiary: #ffffff;
+    --color-tertiary-container: #6dfd90;
+    --color-on-tertiary-container: #002108;
+    --color-error: #ba1a1a;
+    --color-on-error: #ffffff;
+    --color-error-container: #ffdad6;
+    --color-on-error-container: #410002;
+    --color-primary-fixed: #d8e4ff;
+    --color-primary-fixed-dim: #adc6ff;
+    --color-on-primary-fixed: #001944;
+    --color-on-primary-fixed-variant: #004495;
+    --color-secondary-fixed: #ffdad6;
+    --color-secondary-fixed-dim: #ffb3ad;
+    --color-on-secondary-fixed: #410003;
+    --color-on-secondary-fixed-variant: #930013;
+    --color-tertiary-fixed: #6dfd90;
+    --color-tertiary-fixed-dim: #4ce378;
+    --color-on-tertiary-fixed: #002108;
+    --color-on-tertiary-fixed-variant: #005221;
+    --color-background: #f8f9fc;
+    --color-on-background: #151618;
+    --color-surface-variant: #e0e4eb;
+  }
+}
+
+@layer base {
   body {
     font-family:
       "Inter",
@@ -85,6 +137,13 @@
 }
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(140, 144, 159, 0.45);
+}
+
+.light ::-webkit-scrollbar-thumb {
+  background: rgba(100, 104, 119, 0.25);
+}
+.light ::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 104, 119, 0.45);
 }
 
 /* Hide scrollbar utility */

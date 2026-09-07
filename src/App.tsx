@@ -582,6 +582,7 @@ export function App() {
     <div className="min-h-screen bg-background text-on-background flex flex-col antialiased selection:bg-primary/30 selection:text-on-surface">
       {/* Navigation Layout */}
       <Navigation
+        theme={settings.theme}
         activeTab={activeTab}
         onSelectTab={setActiveTab}
         isSidebarCollapsed={isSidebarCollapsed}

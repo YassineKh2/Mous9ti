@@ -34,6 +34,7 @@ export interface GlobalSearchResult {
 }
 
 interface NavigationProps {
+  theme: "dark" | "light";
   activeTab: ActiveTab;
   onSelectTab: (tab: ActiveTab) => void;
   isSidebarCollapsed: boolean;
@@ -48,6 +49,7 @@ interface NavigationProps {
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
+  theme,
   activeTab,
   onSelectTab,
   isSidebarCollapsed,
@@ -90,9 +92,13 @@ export const Navigation: React.FC<NavigationProps> = ({
               isSidebarCollapsed ? "h-16 w-16 object-contain" : "max-w-full"
             }
             src={
-              isSidebarCollapsed
-                ? "Mousi9tiWhiteSmall.svg"
-                : "Mousi9tiWhite.svg"
+              theme === "light"
+                ? isSidebarCollapsed
+                  ? "Mousi9tiSmall.svg"
+                  : "Mousi9ti.svg"
+                : isSidebarCollapsed
+                  ? "Mousi9tiWhiteSmall.svg"
+                  : "Mousi9tiWhite.svg"
             }
             alt="Mousi9ti Logo"
           />
