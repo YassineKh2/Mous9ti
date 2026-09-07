@@ -59,7 +59,7 @@ export const ChordSelectorWidget: React.FC<ChordSelectorWidgetProps> = ({
   return (
     <div
       ref={widgetRef}
-      className="flex h-full flex-col rounded-2xl border border-outline-variant/30 bg-surface-container p-5 shadow-sm"
+      className="light-shadow-widget flex h-full flex-col rounded-2xl border border-outline-variant/30 bg-surface-container p-5 shadow-sm"
     >
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-mono text-sm font-bold text-on-surface uppercase tracking-wider flex items-center gap-2">

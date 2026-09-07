@@ -57,6 +57,8 @@
   --circle-heading: #ffffff;
   --circle-subtle: #d4d4d8;
   --circle-strong: #f4f4f5;
+  --timer-arch-start: #4d8eff;
+  --timer-arch-mid: #d8e2ff;
 }
 
 @layer base {
@@ -117,7 +119,20 @@
     --circle-heading: #1c2024;
     --circle-subtle: #4d555e;
     --circle-strong: #26313a;
+    --timer-arch-start: #1c5fd2;
+    --timer-arch-mid: #1c5fd2;
   }
+}
+
+.light .timer-widget,
+.light .light-shadow-widget {
+  box-shadow:
+    0 20px 25px -5px rgb(0 0 0 / 0.1),
+    0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+.light .timer-arch-path {
+  filter: url(#lightWidgetGlow);
 }
 
 @layer base {

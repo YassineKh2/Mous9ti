@@ -131,7 +131,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({
   const currentAngle = startAngle + sweep * progress;
 
   return (
-    <div className="bg-surface-container border border-outline-variant/30 rounded-2xl relative overflow-hidden flex flex-col min-h-[260px] sm:min-h-[220px] shadow-sm">
+    <div className="timer-widget bg-surface-container border border-outline-variant/30 rounded-2xl relative overflow-hidden flex flex-col min-h-[260px] sm:min-h-[220px] shadow-sm">
       {/* Header */}
       <div className="relative p-4 flex items-center justify-between z-20">
         <div className="flex items-center gap-2">
@@ -224,17 +224,17 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({
             <linearGradient id="widgetGlow" x1="0" y1="0" x2="1" y2="0">
               <stop
                 offset="0%"
-                stopColor="var(--color-primary-container, #4d8eff)"
+                stopColor="var(--timer-arch-start, #4d8eff)"
                 stopOpacity="1"
               />
               <stop
                 offset="50%"
-                stopColor="var(--color-primary-fixed, #d8e2ff)"
+                stopColor="var(--timer-arch-mid, #d8e2ff)"
                 stopOpacity="1"
               />
               <stop
                 offset="100%"
-                stopColor="var(--color-primary-container, #4d8eff)"
+                stopColor="var(--timer-arch-start, #4d8eff)"
                 stopOpacity="1"
               />
             </linearGradient>
@@ -246,6 +246,16 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({
               height="140%"
             >
               <feGaussianBlur stdDeviation="16" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+            <filter
+              id="lightWidgetGlow"
+              x="-20%"
+              y="-20%"
+              width="140%"
+              height="140%"
+            >
+              <feGaussianBlur stdDeviation="8" result="blur" />
               <feComposite in="SourceGraphic" in2="blur" operator="over" />
             </filter>
           </defs>
@@ -267,6 +277,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({
             stroke="url(#widgetGlow)"
             strokeWidth={strokeWidth}
             strokeLinecap="butt"
+            className="timer-arch-path"
             filter="url(#heavyWidgetGlow)"
             pathLength={1000}
             strokeDasharray={1000}
