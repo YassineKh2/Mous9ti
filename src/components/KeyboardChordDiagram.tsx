@@ -202,7 +202,7 @@ export const KeyboardChordDiagram: React.FC<KeyboardChordDiagramProps> = ({
         className={`w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x ${compact ? "h-full" : "py-2"}`}
       >
         <div className="w-max mx-auto py-2 px-2 flex justify-start sm:justify-center">
-          <div className="flex relative bg-surface-container-highest p-1.5 rounded-b-lg border-t-8 border-outline-variant shadow-2xl">
+          <div className="piano-keyboard flex relative bg-surface-container-highest p-1.5 rounded-b-lg border-t-8 border-outline-variant shadow-2xl">
             {chordWhiteKeys.map((key, keyIdx) => {
               const chordInfo = chordPitchMap.get(key.pitch);
               const isChordKey = !!chordInfo;
@@ -222,8 +222,8 @@ export const KeyboardChordDiagram: React.FC<KeyboardChordDiagramProps> = ({
                       isRootKey
                         ? "bg-primary text-on-primary font-black border-t-4 border-primary shadow-md z-10"
                         : isChordKey
-                          ? "bg-inverse-surface text-inverse-on-surface font-bold z-10"
-                          : "bg-surface-container-highest text-on-surface-variant/40 hover:bg-surface-bright"
+                          ? "piano-chord-key bg-inverse-surface text-inverse-on-surface font-bold z-10"
+                          : "piano-inactive-key piano-white-inactive-key bg-surface-container-highest text-on-surface-variant/40 hover:bg-surface-bright"
                     }`}
                   >
                     {isChordKey && (
@@ -257,7 +257,7 @@ export const KeyboardChordDiagram: React.FC<KeyboardChordDiagramProps> = ({
                                 ? "bg-primary text-on-primary font-bold shadow-lg ring-1 ring-primary"
                                 : blackChordInfo
                                   ? "bg-black text-white shadow-[0_4px_8px_rgba(0,0,0,0.8)] border border-zinc-800"
-                                  : "bg-surface-container-low text-on-surface-variant/20 shadow-none border border-transparent hover:bg-surface-container"
+                                  : "piano-black-inactive-key bg-surface-container-low text-on-surface-variant/20 shadow-none border border-transparent hover:bg-surface-container"
                             }`}
                           >
                             {blackChordInfo && (

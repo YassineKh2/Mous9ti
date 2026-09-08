@@ -194,7 +194,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
         className="w-full max-w-full overflow-x-auto overscroll-x-contain pb-1 sm:pb-4 no-scrollbar touch-pan-x scroll-smooth"
       >
         <div className="w-max mx-auto px-0.5 py-1.5 sm:px-2 sm:py-2 flex justify-start sm:justify-center">
-          <div className="flex relative bg-surface-container-highest p-1 sm:p-1.5 rounded-b-lg border-t-4 sm:border-t-8 border-outline-variant shadow-2xl">
+          <div className="piano-keyboard flex relative bg-surface-container-highest p-1 sm:p-1.5 rounded-b-lg border-t-4 sm:border-t-8 border-outline-variant shadow-2xl">
             {Array.from({ length: octaves }).map((_, octIdx) => {
               const currentOctave = startOctave + octIdx;
 
@@ -285,14 +285,16 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
                                     : isRoot
                                       ? "bg-primary text-on-primary font-black border-t-4 border-primary shadow-md z-10"
                                       : inChord
-                                        ? "bg-inverse-surface text-inverse-on-surface font-bold z-10"
+                                        ? "piano-chord-key bg-inverse-surface text-inverse-on-surface font-bold z-10"
                                         : inScale
                                           ? isAllNotesSelected
                                             ? "bg-white text-black hover:bg-white active:bg-white"
-                                            : "bg-inverse-surface text-inverse-on-surface hover:opacity-90 active:opacity-80"
+                                            : hasChordSelection
+                                              ? "piano-chord-inactive-key bg-white text-black hover:bg-white active:bg-white"
+                                              : "bg-white text-black hover:bg-white active:bg-white"
                                           : isAllNotesSelected
                                             ? "bg-white text-black hover:bg-white active:bg-white"
-                                            : "bg-surface-container-highest text-on-surface-variant/40 hover:bg-surface-bright"
+                                            : `${hasChordSelection ? "piano-chord-inactive-key" : "piano-inactive-key"} bg-surface-container-highest text-on-surface-variant/40 hover:bg-surface-bright`
                           }`}
                         >
                           <span
@@ -482,14 +484,16 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
                               : isRoot
                                 ? "bg-primary text-on-primary font-black border-t-4 border-primary shadow-md z-10"
                                 : inChord
-                                  ? "bg-inverse-surface text-inverse-on-surface font-bold z-10"
+                                  ? "piano-chord-key bg-inverse-surface text-inverse-on-surface font-bold z-10"
                                   : inScale
                                     ? isAllNotesSelected
                                       ? "bg-white text-black hover:bg-white active:bg-white"
-                                      : "bg-inverse-surface text-inverse-on-surface hover:opacity-90 active:opacity-80"
+                                      : hasChordSelection
+                                        ? "piano-chord-inactive-key bg-white text-black hover:bg-white active:bg-white"
+                                        : "bg-white text-black hover:bg-white active:bg-white"
                                     : isAllNotesSelected
                                       ? "bg-white text-black hover:bg-white active:bg-white"
-                                      : "bg-surface-container-highest text-on-surface-variant/40 hover:bg-surface-bright"
+                                      : `${hasChordSelection ? "piano-chord-inactive-key" : "piano-inactive-key"} bg-surface-container-highest text-on-surface-variant/40 hover:bg-surface-bright`
                     }`}
                   >
                     <span

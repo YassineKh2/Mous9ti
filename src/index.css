@@ -135,6 +135,31 @@
   filter: url(#lightWidgetGlow);
 }
 
+.light .piano-keyboard {
+  --color-surface-bright: #3a3939;
+  --color-surface-container-low: #1c1b1b;
+  --color-surface-container: #201f1f;
+  --color-surface-container-high: #2a2a2a;
+  --color-surface-container-highest: #353534;
+  --color-surface-container-lowest: #0e0e0e;
+  --color-on-surface-variant: #c2c6d6;
+  --color-outline-variant: #424754;
+  --color-primary: #adc6ff;
+  --color-on-primary: #002e6a;
+  --color-secondary: #ffb3ad;
+  --color-on-secondary: #68000a;
+}
+
+.light .piano-keyboard .piano-chord-key {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+.light .piano-keyboard .piano-chord-inactive-key {
+  background-color: var(--color-surface-container-highest);
+  color: var(--color-on-surface-variant);
+}
+
 @layer base {
   body {
     font-family:

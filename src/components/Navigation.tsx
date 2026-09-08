@@ -167,7 +167,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                     <Flame size={15} className="animate-pulse" />
                   </div>
                   <span className="font-mono text-base font-bold text-on-surface tracking-wider">
-                    {streakDays} DAYS
+                    {streakDays} DAY{streakDays > 1 && "S"}
                   </span>
                 </div>
               </>
