@@ -14,6 +14,8 @@ interface ChordDiagramProps {
   root: NoteName;
   compact?: boolean;
   onPlay?: () => void;
+  noBackground?: boolean;
+  scale?: number;
 }
 
 export const ChordDiagram: React.FC<ChordDiagramProps> = ({
@@ -22,6 +24,8 @@ export const ChordDiagram: React.FC<ChordDiagramProps> = ({
   root,
   compact = false,
   onPlay,
+  noBackground = false,
+  scale = 1,
 }) => {
   // SVG Dimensions & Layout
   const svgWidth = 240;
@@ -66,14 +70,23 @@ export const ChordDiagram: React.FC<ChordDiagramProps> = ({
     audioEngine.playChordArpeggio(notesToPlay, "guitar", 0.05);
   };
 
+  const barreEntries = voicing.barres && voicing.barres.length > 0 ? voicing.barres : voicing.barre ? [voicing.barre] : [];
+
   return (
     <div
       className={
         compact
           ? "flex h-full w-full flex-col items-center justify-center p-2"
-          : "group flex cursor-pointer flex-col items-center rounded-xl border border-outline-variant/30 bg-surface-container-low p-4 shadow-lg transition-all hover:border-outline-variant/60 sm:p-6"
+          : noBackground
+            ? "group flex cursor-pointer flex-col items-center p-0 shadow-none"
+            : "group flex cursor-pointer flex-col items-center rounded-xl border border-outline-variant/30 bg-surface-container-low p-4 shadow-lg transition-all hover:border-outline-variant/60 sm:p-6"
       }
       onClick={handlePlayChord}
+      style={
+        scale !== 1
+          ? { transform: `scale(${scale})`, transformOrigin: "center center" }
+          : undefined
+      }
     >
       {/* Chord Card Header */}
       {!compact && (
@@ -166,40 +179,39 @@ export const ChordDiagram: React.FC<ChordDiagramProps> = ({
           );
         })}
 
-        {/* Barre line if present */}
-        {voicing.barre &&
-          voicing.barre.fret > 0 &&
-          (() => {
-            const relFret = voicing.barre.fret - baseFret + 1;
-            const fromX =
-              margin.left + voicing.barre.fromString * stringSpacing;
-            const toX = margin.left + voicing.barre.toString * stringSpacing;
-            const y = margin.top + (relFret - 0.5) * fretSpacing;
+        {/* Barre lines if present */}
+        {barreEntries.map((barre, index) => {
+          if (!barre || barre.fret <= 0) return null;
 
-            return (
-              <g key="barre">
-                <rect
-                  x={Math.min(fromX, toX) - 6}
-                  y={y - 6}
-                  width={Math.abs(toX - fromX) + 12}
-                  height={12}
-                  rx={6}
-                  fill="var(--color-on-surface)"
-                />
-                <text
-                  x={Math.min(fromX, toX) - 16}
-                  y={y + 3.5}
-                  fill="var(--color-on-surface)"
-                  fontSize="10"
-                  fontFamily="sans-serif"
-                  textAnchor="middle"
-                  fontWeight="bold"
-                >
-                  {voicing.barre.finger}
-                </text>
-              </g>
-            );
-          })()}
+          const relFret = barre.fret - baseFret + 1;
+          const fromX = margin.left + barre.fromString * stringSpacing;
+          const toX = margin.left + barre.toString * stringSpacing;
+          const y = margin.top + (relFret - 0.5) * fretSpacing;
+
+          return (
+            <g key={`barre-${barre.fret}-${index}`}>
+              <rect
+                x={Math.min(fromX, toX) - 6}
+                y={y - 6}
+                width={Math.abs(toX - fromX) + 12}
+                height={12}
+                rx={6}
+                fill="var(--color-on-surface)"
+              />
+              <text
+                x={Math.min(fromX, toX) - 16}
+                y={y + 3.5}
+                fill="var(--color-on-surface)"
+                fontSize="10"
+                fontFamily="sans-serif"
+                textAnchor="middle"
+                fontWeight="bold"
+              >
+                {barre.finger}
+              </text>
+            </g>
+          );
+        })}
 
         {/* Finger Dots, Open 'O' and Muted 'X' indicators */}
         {voicing.frets.map((fret, stringIdx) => {
@@ -253,12 +265,13 @@ export const ChordDiagram: React.FC<ChordDiagramProps> = ({
 
             // Skip drawing individual dot if it is covered by the barre
             const isCoveredByBarre =
-              voicing.barre &&
-              voicing.barre.fret === fret &&
-              stringIdx >=
-                Math.min(voicing.barre.fromString, voicing.barre.toString) &&
-              stringIdx <=
-                Math.max(voicing.barre.fromString, voicing.barre.toString);
+              barreEntries.some(
+                (barre) =>
+                  barre &&
+                  barre.fret === fret &&
+                  stringIdx >= Math.min(barre.fromString, barre.toString) &&
+                  stringIdx <= Math.max(barre.fromString, barre.toString),
+              );
 
             if (isCoveredByBarre) {
               // We might still want to highlight if it's a root note under the barre,

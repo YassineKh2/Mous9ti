@@ -1,0 +1,681 @@
+import React, { useEffect, useState } from "react";
+import { Save, Trash2, X } from "lucide-react";
+import { ChordDiagram } from "./ChordDiagram";
+import { CHROMATIC_SHARPS } from "../data/musicTheory";
+import {
+  CHORD_TYPES_CATALOG,
+  CustomChord,
+  deleteCustomChord,
+  getCustomChords,
+  saveCustomChord,
+} from "../data/chordsData";
+import { GuitarVoicing, NoteName } from "../types";
+
+export const CustomChordEditor: React.FC = () => {
+  const [customChords, setCustomChords] = useState<CustomChord[]>([]);
+
+  const [root, setRoot] = useState<NoteName>("C");
+  const [chordType, setChordType] = useState<string>("major");
+
+  const [name, setName] = useState("Custom Chord");
+  const [positionLabel, setPositionLabel] = useState("Custom Position");
+  const [rootString, setRootString] = useState("Root: 6th String");
+  const [baseFret, setBaseFret] = useState<number | "">(1);
+
+  const [frets, setFrets] = useState<(number | null)[]>([
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+  ]);
+  const [fingers, setFingers] = useState<(number | null)[]>([
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+  ]);
+
+  const [barres, setBarres] = useState<
+    { fret: number; fromString: number; toString: number; finger: number }[]
+  >([]);
+
+  const [dragStart, setDragStart] = useState<{ s: number; f: number } | null>(
+    null,
+  );
+  const [dragCurrent, setDragCurrent] = useState<{ s: number; f: number } | null>(
+    null,
+  );
+  const [isDragging, setIsDragging] = useState(false);
+
+  useEffect(() => {
+    setCustomChords(getCustomChords());
+  }, []);
+
+  const handleStringClick = (stringIdx: number) => {
+    const newFrets = [...frets];
+    if (newFrets[stringIdx] === null) {
+      newFrets[stringIdx] = 0;
+    } else if (newFrets[stringIdx] === 0) {
+      newFrets[stringIdx] = null;
+    } else {
+      newFrets[stringIdx] = null;
+    }
+    setFrets(newFrets);
+
+    if (newFrets[stringIdx] === null || newFrets[stringIdx] === 0) {
+      const newFingers = [...fingers];
+      newFingers[stringIdx] = null;
+      setFingers(newFingers);
+    }
+  };
+
+  const handleFretClick = (stringIdx: number, f: number) => {
+    const absFret = f + (baseFret || 1) - 1;
+    const newFrets = [...frets];
+    if (newFrets[stringIdx] === absFret) {
+      newFrets[stringIdx] = null;
+    } else {
+      newFrets[stringIdx] = absFret;
+    }
+    setFrets(newFrets);
+
+    const newFingers = [...fingers];
+    if (newFrets[stringIdx] !== null && newFingers[stringIdx] === null) {
+      newFingers[stringIdx] = 1;
+    }
+    if (newFrets[stringIdx] === null) {
+      newFingers[stringIdx] = null;
+    }
+    setFingers(newFingers);
+  };
+
+  const cycleFinger = (stringIdx: number) => {
+    if (frets[stringIdx] === null || frets[stringIdx] === 0) return;
+    const current = fingers[stringIdx];
+
+    if (current === 5) {
+      const newFrets = [...frets];
+      newFrets[stringIdx] = null;
+      setFrets(newFrets);
+
+      const newFingers = [...fingers];
+      newFingers[stringIdx] = null;
+      setFingers(newFingers);
+    } else {
+      const newFingers = [...fingers];
+      if (current === null) newFingers[stringIdx] = 1;
+      else if (current === 1) newFingers[stringIdx] = 2;
+      else if (current === 2) newFingers[stringIdx] = 3;
+      else if (current === 3) newFingers[stringIdx] = 4;
+      else if (current === 4) newFingers[stringIdx] = 5;
+      setFingers(newFingers);
+    }
+  };
+
+  const removeBarre = (fret: number) => {
+    const targetBarre = barres.find((barre) => barre.fret === fret);
+    if (!targetBarre) return;
+
+    setBarres((prev) => prev.filter((barre) => barre.fret !== fret));
+    setFrets((prev) => {
+      const next = [...prev];
+      for (
+        let stringIdx = targetBarre.fromString;
+        stringIdx <= targetBarre.toString;
+        stringIdx += 1
+      ) {
+        if (next[stringIdx] === fret) {
+          next[stringIdx] = null;
+        }
+      }
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    const handleGlobalUp = () => {
+      if (dragStart) {
+        if (isDragging && dragCurrent) {
+          const minS = Math.min(dragStart.s, dragCurrent.s);
+          const maxS = Math.max(dragStart.s, dragCurrent.s);
+
+          setBarres((prev) => {
+            const newBarres = prev.filter((b) => b.fret !== dragStart.f);
+            newBarres.push({
+              fret: dragStart.f,
+              fromString: minS,
+              toString: maxS,
+              finger: 1,
+            });
+            return newBarres;
+          });
+
+          setFrets((prev) => {
+            const nf = [...prev];
+            for (let i = minS; i <= maxS; i += 1) {
+              if (nf[i] === null || nf[i] === 0 || nf[i] < dragStart.f) {
+                nf[i] = dragStart.f;
+              }
+            }
+            return nf;
+          });
+        }
+        setDragStart(null);
+        setDragCurrent(null);
+        setIsDragging(false);
+      }
+    };
+
+    window.addEventListener("pointerup", handleGlobalUp);
+    return () => window.removeEventListener("pointerup", handleGlobalUp);
+  }, [dragCurrent, dragStart, isDragging]);
+
+  const handlePointerDown = (s: number, f: number, e: React.PointerEvent) => {
+    e.currentTarget.releasePointerCapture(e.pointerId);
+    const absFret = f + (baseFret || 1) - 1;
+    setDragStart({ s, f: absFret });
+    setDragCurrent({ s, f: absFret });
+    setIsDragging(false);
+  };
+
+  const handlePointerEnter = (s: number, f: number) => {
+    const absFret = f + (baseFret || 1) - 1;
+    if (dragStart && dragStart.f === absFret) {
+      setDragCurrent({ s, f: absFret });
+      if (s !== dragStart.s) {
+        setIsDragging(true);
+      }
+    }
+  };
+
+  const handlePointerUp = (s: number, f: number) => {
+    const absFret = f + (baseFret || 1) - 1;
+    if (dragStart) {
+      if (isDragging && dragCurrent) {
+        const minS = Math.min(dragStart.s, dragCurrent.s);
+        const maxS = Math.max(dragStart.s, dragCurrent.s);
+        setBarres((prev) => {
+          const newBarres = prev.filter((b) => b.fret !== dragStart.f);
+          newBarres.push({
+            fret: dragStart.f,
+            fromString: minS,
+            toString: maxS,
+            finger: 1,
+          });
+          return newBarres;
+        });
+        setFrets((prev) => {
+          const nf = [...prev];
+          for (let i = minS; i <= maxS; i += 1) {
+            if (nf[i] === null || nf[i] === 0 || nf[i] < dragStart.f) {
+              nf[i] = dragStart.f;
+            }
+          }
+          return nf;
+        });
+      } else {
+        handleFretClick(s, f);
+      }
+    }
+    setDragStart(null);
+    setDragCurrent(null);
+    setIsDragging(false);
+  };
+
+  const toggleBarreRow = (f: number) => {
+    const absFret = f + (baseFret || 1) - 1;
+    const existingBarre = barres.find((b) => b.fret === absFret);
+
+    if (existingBarre) {
+      setBarres((prev) => prev.filter((b) => b.fret !== absFret));
+      setFrets((prev) => {
+        const nf = [...prev];
+        for (
+          let i = existingBarre.fromString;
+          i <= existingBarre.toString;
+          i += 1
+        ) {
+          if (nf[i] === absFret) nf[i] = null;
+        }
+        return nf;
+      });
+    } else {
+      let minStr = 0;
+      let maxStr = 5;
+      const activeStrings = [0, 1, 2, 3, 4, 5].filter(
+        (s) => frets[s] !== null && frets[s] !== 0 && frets[s]! >= absFret,
+      );
+
+      if (activeStrings.length > 0) {
+        minStr = Math.min(...activeStrings);
+        maxStr = Math.max(...activeStrings);
+      }
+
+      setBarres((prev) => [...prev, { fret: absFret, fromString: minStr, toString: maxStr, finger: 1 }]);
+
+      setFrets((prev) => {
+        const nf = [...prev];
+        for (let i = minStr; i <= maxStr; i += 1) {
+          if (nf[i] === null || nf[i] === 0 || nf[i] < absFret) {
+            nf[i] = absFret;
+          }
+        }
+        return nf;
+      });
+    }
+  };
+
+  const cycleBarreFinger = (fret: number) => {
+    setBarres((prev) =>
+      prev.map((barre) => {
+        if (barre.fret !== fret) return barre;
+        const nextFinger = barre.finger >= 4 ? 1 : barre.finger + 1;
+        return { ...barre, finger: nextFinger };
+      }),
+    );
+  };
+
+  const handleSave = () => {
+    const voicing: GuitarVoicing = {
+      name,
+      positionLabel,
+      rootString,
+      baseFret: baseFret === "" ? 1 : baseFret,
+      frets,
+      fingers,
+      barres,
+    };
+
+    const newChord: CustomChord = {
+      id: `custom-${Date.now()}`,
+      root,
+      chordType,
+      voicing,
+    };
+
+    saveCustomChord(newChord);
+    setCustomChords(getCustomChords());
+  };
+
+  const handleDelete = (id: string) => {
+    deleteCustomChord(id);
+    setCustomChords(getCustomChords());
+  };
+
+  return (
+    <div className="flex flex-col gap-6 max-w-7xl mx-auto pb-12 animate-fade-in">
+      <div className="flex justify-between items-center bg-surface-container border border-outline-variant/30 p-6 rounded-lg shadow-sm">
+        <div>
+          <h1 className="text-2xl font-black text-on-surface">Chord Editor</h1>
+          <p className="text-sm text-on-surface-variant mt-1">
+            Design, preview, and save custom guitar chord voicings.
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+        <div className="xl:col-span-7 bg-surface-container border border-outline-variant/30 rounded-lg p-6 lg:p-10 flex flex-col items-center shadow-sm">
+          <div className="w-full max-w-[400px]">
+            <h2 className="text-xl font-bold mb-1">Interactive Designer</h2>
+            <p className="text-xs text-on-surface-variant mb-8">
+              Click top buttons to toggle Mute (X) / Open (O). Click the fretboard to place fingers. <strong>Drag across a fret to create a barre.</strong> Click placed fingers or the barre to change their number (cycles 1-T, then removes).
+            </p>
+          </div>
+
+          <div className="relative w-[360px] h-[480px] select-none mx-auto mb-4 touch-none">
+            <div className="absolute inset-0 top-[60px] border-[3px] border-outline-variant/60 bg-surface-container-highest rounded-b-md shadow-inner" />
+
+            <div className={`absolute left-0 right-0 top-[60px] h-3 ${(baseFret || 1) === 1 ? "bg-on-surface" : "bg-outline-variant/80"} z-10`} />
+
+            {[1, 2, 3, 4].map((f) => (
+              <div
+                key={`fret-line-${f}`}
+                className="absolute left-0 right-0 h-1 bg-outline-variant/80 shadow-sm"
+                style={{ top: `${60 + f * 80}px` }}
+              />
+            ))}
+
+            {[0, 1, 2, 3, 4, 5].map((s) => (
+              <div
+                key={`string-${s}`}
+                className="absolute top-[60px] bottom-0 bg-on-surface-variant/40 shadow-sm"
+                style={{
+                  left: `${40 + s * 56}px`,
+                  width: `${4 + (5 - s) * 0.6}px`,
+                  transform: "translateX(-50%)",
+                }}
+              />
+            ))}
+
+            {['E', 'A', 'D', 'G', 'B', 'e'].map((label, s) => (
+              <div
+                key={`label-${s}`}
+                className="absolute -bottom-8 w-10 text-center text-xs font-bold text-on-surface-variant/50"
+                style={{ left: `${40 + s * 56}px`, transform: "translateX(-50%)" }}
+              >
+                {label}
+              </div>
+            ))}
+
+            {[1, 2, 3, 4, 5].map((f) => {
+              const actualFret = f + (baseFret || 1) - 1;
+              const hasDot = [3, 5, 7, 9, 15, 17, 19].includes(actualFret);
+              if (!hasDot) return null;
+              return (
+                <div
+                  key={`marker-${f}`}
+                  className="absolute w-4 h-4 rounded-full bg-outline-variant/40"
+                  style={{
+                    top: `${60 + (f - 1) * 80 + 40}px`,
+                    left: "180px",
+                    transform: "translate(-50%, -50%)",
+                  }}
+                />
+              );
+            })}
+
+            {[0, 1, 2, 3, 4, 5].map((s) => (
+              <button
+                key={`mute-${s}`}
+                onClick={() => handleStringClick(s)}
+                className="absolute top-0 w-10 h-10 rounded-md flex items-center justify-center font-bold text-lg bg-surface-container-highest hover:bg-outline-variant/40 border border-outline-variant/50 transition-colors z-20 shadow-sm"
+                style={{ left: `${40 + s * 56}px`, transform: "translateX(-50%)" }}
+              >
+                {frets[s] === null ? (
+                  <X size={20} className="text-error" />
+                ) : frets[s] === 0 ? (
+                  <span className="text-primary">O</span>
+                ) : (
+                  ""
+                )}
+              </button>
+            ))}
+
+            {[1, 2, 3, 4, 5].map((f) => (
+              <React.Fragment key={`zone-row-${f}`}>
+                <div
+                  onClick={() => toggleBarreRow(f)}
+                  className={`absolute -left-12 w-10 flex items-center justify-center cursor-pointer text-xs font-bold rounded hover:bg-outline-variant/20 transition-colors z-20 ${barres.some((b) => b.fret === f + (baseFret || 1) - 1)
+                    ? "text-primary bg-primary/10"
+                    : "text-on-surface-variant/40"}`}
+                  style={{ top: `${60 + (f - 1) * 80 + 20}px`, height: "40px" }}
+                >
+                  {barres.some((b) => b.fret === f + (baseFret || 1) - 1) ? "-Bar" : "+Bar"}
+                </div>
+
+                <div
+                  className="absolute -right-8 w-6 flex items-center text-xs font-bold text-on-surface-variant/40 pointer-events-none"
+                  style={{ top: `${60 + (f - 1) * 80}px`, height: "80px" }}
+                >
+                  {f + (baseFret || 1) - 1}fr
+                </div>
+
+                {[0, 1, 2, 3, 4, 5].map((s) => {
+                  const absFret = f + (baseFret || 1) - 1;
+                  const isPlaced = frets[s] === absFret;
+                  const isBarreCovered = barres.some(
+                    (b) => b.fret === absFret && s >= b.fromString && s <= b.toString,
+                  );
+
+                  return (
+                    <div
+                      key={`zone-${f}-${s}`}
+                      onPointerDown={(e) => handlePointerDown(s, f, e)}
+                      onPointerEnter={() => handlePointerEnter(s, f)}
+                      onPointerUp={() => handlePointerUp(s, f)}
+                      className="absolute z-20 flex items-center justify-center group cursor-pointer touch-none"
+                      style={{
+                        left: `${40 + s * 56 - 28}px`,
+                        top: `${60 + (f - 1) * 80}px`,
+                        width: "56px",
+                        height: "80px",
+                      }}
+                    >
+                      {!isPlaced && !isBarreCovered && (
+                        <div className="w-12 h-12 rounded-full bg-on-surface opacity-0 group-hover:opacity-10 pointer-events-none transition-opacity" />
+                      )}
+
+                      {isPlaced && !isBarreCovered && (
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            cycleFinger(s);
+                          }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onPointerUp={(e) => e.stopPropagation()}
+                          className="w-10 h-10 rounded-full bg-secondary text-on-secondary font-bold flex items-center justify-center text-lg shadow-lg hover:scale-110 transition-transform"
+                        >
+                          {fingers[s] === 5 ? "T" : fingers[s] || ""}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </React.Fragment>
+            ))}
+
+            {dragStart && dragCurrent && isDragging && (
+              <div
+                className="absolute z-20 bg-primary/30 border-2 border-primary border-dashed flex items-center justify-center shadow-md pointer-events-none"
+                style={{
+                  top: `${60 + (dragStart.f - (baseFret || 1)) * 80 + 20}px`,
+                  height: "40px",
+                  borderRadius: "20px",
+                  left: `${40 + Math.min(dragStart.s, dragCurrent.s) * 56 - 20}px`,
+                  width: `${(Math.max(dragStart.s, dragCurrent.s) - Math.min(dragStart.s, dragCurrent.s)) * 56 + 40}px`,
+                }}
+              />
+            )}
+
+            {barres.map((barre, i) => (
+              <div
+                key={`barre-overlay-${i}`}
+                className="absolute z-30 bg-primary/90 text-on-primary flex items-center justify-center font-bold text-lg shadow-xl cursor-pointer hover:bg-primary transition-colors group"
+                style={{
+                  top: `${60 + (barre.fret - (baseFret || 1)) * 80 + 20}px`,
+                  height: "40px",
+                  borderRadius: "20px",
+                  left: `${40 + barre.fromString * 56 - 20}px`,
+                  width: `${(barre.toString - barre.fromString) * 56 + 40}px`,
+                }}
+                onClick={() => cycleBarreFinger(barre.fret)}
+                onPointerDown={(e) => e.stopPropagation()}
+                onPointerUp={(e) => e.stopPropagation()}
+              >
+                {barre.finger || 1}
+                <div
+                  className="absolute -top-1 -right-1 w-5 h-5 bg-error text-on-error rounded-full flex items-center justify-center text-[12px] shadow-sm z-30 opacity-0 group-hover:opacity-100 hover:scale-125 transition-all cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeBarre(barre.fret);
+                  }}
+                >
+                  <X size={12} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="xl:col-span-5 flex flex-col gap-6">
+          <div className="bg-surface-container border border-outline-variant/30 rounded-lg p-6 shadow-sm">
+            <h2 className="text-lg font-bold mb-4">Chord Identity</h2>
+
+            <div className="flex gap-4 mb-4">
+              <div className="flex-1">
+                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Root Note</label>
+                <select
+                  value={root}
+                  onChange={(e) => setRoot(e.target.value as NoteName)}
+                  className="w-full bg-surface-container-highest border border-outline-variant/50 rounded px-3 py-2 text-on-surface outline-none focus:border-primary font-bold"
+                >
+                  {CHROMATIC_SHARPS.map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Chord Type</label>
+                <select
+                  value={chordType}
+                  onChange={(e) => setChordType(e.target.value)}
+                  className="w-full bg-surface-container-highest border border-outline-variant/50 rounded px-3 py-2 text-on-surface outline-none focus:border-primary font-bold"
+                >
+                  {CHORD_TYPES_CATALOG.map((t) => (
+                    <option key={t.type} value={t.type}>
+                      {t.name} ({t.symbol})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Display Name</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. C Major (Open)"
+                className="w-full bg-surface-container-highest border border-outline-variant/50 rounded px-3 py-2 text-on-surface outline-none focus:border-primary font-bold"
+              />
+            </div>
+
+            <div className="flex gap-4 mb-4">
+              <div className="flex-1">
+                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Position Label</label>
+                <input
+                  type="text"
+                  value={positionLabel}
+                  onChange={(e) => setPositionLabel(e.target.value)}
+                  placeholder="e.g. Open Position"
+                  className="w-full bg-surface-container-highest border border-outline-variant/50 rounded px-3 py-2 text-on-surface outline-none focus:border-primary text-sm"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Root String</label>
+                <select
+                  value={rootString}
+                  onChange={(e) => setRootString(e.target.value)}
+                  className="w-full bg-surface-container-highest border border-outline-variant/50 rounded px-3 py-2 text-on-surface outline-none focus:border-primary text-sm"
+                >
+                  <option value="Root: 6th String">Root: 6th String</option>
+                  <option value="Root: 5th String">Root: 5th String</option>
+                  <option value="Root: 4th String">Root: 4th String</option>
+                  <option value="Root: 3rd String">Root: 3rd String</option>
+                  <option value="Root: 2nd String">Root: 2nd String</option>
+                  <option value="Root: 1st String">Root: 1st String</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Starting (Base) Fret</label>
+              <input
+                type="number"
+                min="1"
+                max="28"
+                value={baseFret}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "") {
+                    setBaseFret("");
+                  } else {
+                    let num = Number.parseInt(val, 10);
+                    if (num > 28) num = 28;
+                    if (num < 1 && val !== "0") num = 1;
+
+                    const oldBase = baseFret || 1;
+                    const diff = num - oldBase;
+
+                    if (diff !== 0) {
+                      setFrets((prev) => prev.map((f) => (f === null || f === 0 ? f : f + diff)));
+                      setBarres((prev) => prev.map((b) => ({ ...b, fret: b.fret + diff })));
+                    }
+
+                    setBaseFret(num);
+                  }
+                }}
+                onBlur={() => {
+                  if (baseFret === "" || Number(baseFret) < 1) setBaseFret(1);
+                }}
+                className="w-full bg-surface-container-highest border border-outline-variant/50 rounded px-3 py-2 text-on-surface outline-none focus:border-primary font-mono"
+              />
+            </div>
+          </div>
+
+          <div className="bg-surface-container border border-outline-variant/30 rounded-lg p-6 shadow-sm flex flex-col items-center">
+            <h2 className="text-lg font-bold mb-4 w-full text-left">Live Preview</h2>
+
+            <div className="flex justify-center items-center my-6 py-6 w-full h-[400px] overflow-hidden">
+              <ChordDiagram
+                noBackground={true}
+                scale={1.4}
+                root={root}
+                chordName={`${root} ${CHORD_TYPES_CATALOG.find((c) => c.type === chordType)?.symbol || ""}`}
+                voicing={{
+                  name,
+                  positionLabel,
+                  rootString,
+                  baseFret: baseFret === "" ? 1 : baseFret,
+                  frets,
+                  fingers,
+                  barres,
+                }}
+              />
+            </div>
+
+            <button
+              onClick={handleSave}
+              className="flex items-center justify-center gap-2 w-full py-3.5 bg-primary text-on-primary rounded font-black hover:scale-[1.02] transition-transform shadow-md text-lg"
+            >
+              <Save size={20} />
+              SAVE TO LIBRARY
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-surface-container border border-outline-variant/30 rounded-lg p-6 shadow-sm mt-2">
+        <h2 className="text-lg font-bold mb-4">Saved Custom Chords</h2>
+        {customChords.length === 0 ? (
+          <div className="py-8 text-center text-on-surface-variant bg-surface-container-lowest rounded border border-dashed border-outline-variant/50">
+            No custom chords saved yet.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {customChords.map((chord) => (
+              <div
+                key={chord.id}
+                className="bg-surface-container-lowest border border-outline-variant/30 p-4 rounded flex justify-between items-start hover:border-primary/50 transition-colors"
+              >
+                <div>
+                  <h3 className="font-bold text-primary">
+                    {chord.root} {CHORD_TYPES_CATALOG.find((t) => t.type === chord.chordType)?.name || chord.chordType}
+                  </h3>
+                  <p className="text-sm font-semibold">{chord.voicing.name}</p>
+                  <p className="text-xs text-on-surface-variant mt-1">
+                    {chord.voicing.positionLabel} • {chord.voicing.rootString}
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleDelete(chord.id)}
+                  className="p-2 text-on-surface-variant hover:text-error hover:bg-error/10 rounded transition-colors"
+                  title="Delete Custom Chord"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};

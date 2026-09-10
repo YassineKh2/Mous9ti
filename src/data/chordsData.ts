@@ -642,6 +642,57 @@ export function getChordVoicings(
   return voicings;
 }
 
+export interface CustomChord {
+  id: string;
+  root: NoteName;
+  chordType: string;
+  voicing: GuitarVoicing;
+}
+
+const CUSTOM_CHORDS_KEY = "Mousi9ti_custom_chords_v1";
+
+export function getCustomChords(): CustomChord[] {
+  if (typeof localStorage === "undefined") {
+    return [];
+  }
+
+  try {
+    const raw = localStorage.getItem(CUSTOM_CHORDS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as CustomChord[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.error("Failed to load custom chords", error);
+    return [];
+  }
+}
+
+export function saveCustomChord(chord: CustomChord): void {
+  if (typeof localStorage === "undefined") return;
+
+  try {
+    const existing = getCustomChords();
+    const updated = [...existing, chord];
+    localStorage.setItem(CUSTOM_CHORDS_KEY, JSON.stringify(updated));
+  } catch (error) {
+    console.error("Failed to save custom chord", error);
+  }
+}
+
+export function deleteCustomChord(id: string): void {
+  if (typeof localStorage === "undefined") return;
+
+  try {
+    const existing = getCustomChords();
+    localStorage.setItem(
+      CUSTOM_CHORDS_KEY,
+      JSON.stringify(existing.filter((chord) => chord.id !== id)),
+    );
+  } catch (error) {
+    console.error("Failed to delete custom chord", error);
+  }
+}
+
 export function getChordDefinition(
   root: NoteName,
   typeKey: string,

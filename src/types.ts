@@ -85,6 +85,12 @@ export interface GuitarVoicing {
     toString: number;
     finger: number;
   };
+  barres?: Array<{
+    fret: number;
+    fromString: number;
+    toString: number;
+    finger: number;
+  }>;
   category?:
     | "fundamental-open"
     | "fundamental-barre"

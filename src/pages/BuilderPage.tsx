@@ -37,6 +37,7 @@ import {
 } from "../data/musicTheory";
 import { CHORD_TYPES_CATALOG, getChordDefinition } from "../data/chordsData";
 import {
+  GuitarVoicing,
   KeyboardVoicing,
   NoteName,
   QueueItem,
@@ -2340,7 +2341,7 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ settings }) => {
               </div>
 
               <div className="flex flex-col gap-4 max-h-[420px] overflow-y-auto pr-1 pb-1">
-                {(isKeyboardOrSynth
+                {((isKeyboardOrSynth
                   ? Array.from({
                       length: getKeyboardVoicingCount(
                         selectedRoot,
@@ -2348,7 +2349,7 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ settings }) => {
                       ),
                     })
                   : getChordDefinition(selectedRoot, selectedType).voicings
-                ).map((voicing, idx) => (
+                ) as GuitarVoicing[]).map((voicing, idx) => (
                   <div key={idx} className="relative group/voicing">
                     {isKeyboardOrSynth ? (
                       <KeyboardChordDiagram

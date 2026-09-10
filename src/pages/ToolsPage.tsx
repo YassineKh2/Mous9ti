@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { CircleOfFifths } from "../components/CircleOfFifths";
+import { CustomChordEditor } from "../components/CustomChordEditor";
 import { Metronome } from "../components/Metronome";
 import { TimerView } from "../components/TimerView";
 import { GUITAR_TUNINGS } from "../data/musicTheory";
@@ -43,7 +44,7 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({
   onBarCycleModeChange,
 }) => {
   const [activeTool, setActiveTool] = useState<
-    "timer" | "metronome" | "circle" | "tuner" | "ear"
+    "timer" | "metronome" | "circle" | "tuner" | "ear" | "custom-chord"
   >("circle");
   const [selectedTuning, setSelectedTuning] = useState(GUITAR_TUNINGS[0]);
 
@@ -179,6 +180,16 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({
             >
               Interval Ear Trainer
             </button>
+            <button
+              onClick={() => setActiveTool("custom-chord")}
+              className={`px-3.5 py-1.5 rounded text-xs font-mono transition-all ${
+                activeTool === "custom-chord"
+                  ? "bg-primary text-on-primary font-bold shadow"
+                  : "text-on-surface-variant hover:text-on-surface"
+              }`}
+            >
+              Custom Chord Builder
+            </button>
           </div>
         </div>
       </div>
@@ -238,6 +249,9 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({
 
       {/* Circle of Fifths Tool */}
       {activeTool === "circle" && <CircleOfFifths />}
+
+      {/* Custom Chord Builder */}
+      {activeTool === "custom-chord" && <CustomChordEditor />}
 
       {/* Pitch Reference Tuner */}
       {activeTool === "tuner" && (
