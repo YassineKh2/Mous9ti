@@ -62,30 +62,31 @@ function getSidebarItemClass(i: number, stepIndex: number): string {
   return "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface";
 }
 
-function getStepIcon(id: string): React.ReactNode {
+function getStepIcon(id: string, size = 34): React.ReactNode {
+  const S = size;
   const map: Record<string, React.ReactNode> = {
-    welcome:          <BookOpen size={34} />,
-    sidebar:          <LayoutDashboard size={34} />,
-    metronome:        <Timer size={34} />,
-    timer:            <Clock size={34} />,
-    drill:            <Guitar size={34} />,
-    session:          <Play size={34} />,
-    streak:           <Flame size={34} />,
-    "go-scales":      <Music size={34} />,
-    "scales-panel":   <Music2 size={34} />,
-    "go-chords":      <Layers size={34} />,
-    "chords-filters": <Layers size={34} />,
-    "go-builder":     <Settings2 size={34} />,
-    "builder-controls": <Settings2 size={34} />,
-    "builder-queue":  <Settings2 size={34} />,
-    "go-tools":       <Compass size={34} />,
-    "tools-tabs":     <Compass size={34} />,
-    "go-stats":       <BarChart3 size={34} />,
-    "stats-metrics":  <BarChart3 size={34} />,
-    search:           <Search size={34} />,
-    done:             <Trophy size={34} />,
+    welcome:            <BookOpen size={S} />,
+    sidebar:            <LayoutDashboard size={S} />,
+    metronome:          <Timer size={S} />,
+    timer:              <Clock size={S} />,
+    drill:              <Guitar size={S} />,
+    session:            <Play size={S} />,
+    streak:             <Flame size={S} />,
+    "go-scales":        <Music size={S} />,
+    "scales-panel":     <Music2 size={S} />,
+    "go-chords":        <Layers size={S} />,
+    "chords-filters":   <Layers size={S} />,
+    "go-builder":       <Settings2 size={S} />,
+    "builder-controls": <Settings2 size={S} />,
+    "builder-queue":    <Settings2 size={S} />,
+    "go-tools":         <Compass size={S} />,
+    "tools-tabs":       <Compass size={S} />,
+    "go-stats":         <BarChart3 size={S} />,
+    "stats-metrics":    <BarChart3 size={S} />,
+    search:             <Search size={S} />,
+    done:               <Trophy size={S} />,
   };
-  return map[id] ?? <BookOpen size={34} />;
+  return map[id] ?? <BookOpen size={S} />;
 }
 
 // ─── Module-level Effect Helpers ─────────────────────────────────────────────
@@ -133,13 +134,12 @@ function attachClickAdvance(
 function makeKeyHandler(
   isFirst: boolean,
   isLast: boolean,
-  awaitAction: boolean | undefined,
   onClose: () => void,
   setStep: React.Dispatch<React.SetStateAction<number>>,
 ): EventListener {
   return ((e: KeyboardEvent) => {
     if (e.key === "Escape") { onClose(); return; }
-    if (e.key === "ArrowRight" && !isLast && !awaitAction) setStep((i) => i + 1);
+    if (e.key === "ArrowRight" && !isLast) setStep((i) => i + 1);
     if (e.key === "ArrowLeft" && !isFirst) setStep((i) => i - 1);
   }) as EventListener;
 }
@@ -177,29 +177,108 @@ const TourSpotlight: React.FC<TourSpotlightProps> = ({ spot }) => {
 
 interface RevealOverlayProps {
   spot: SpotGeometry | null;
+  step: TourStep;
+  stepIndex: number;
   onBack: () => void;
   onSkip: () => void;
 }
 
-const RevealOverlay: React.FC<RevealOverlayProps> = ({ spot, onBack, onSkip }) => (
-  <>
-    <TourSpotlight spot={spot} />
-    <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 260 }} className="flex items-center gap-2">
-      <button
-        onClick={onSkip}
-        className="px-3 py-2 rounded-lg font-mono text-[11px] text-on-surface-variant hover:text-on-surface border border-outline-variant/40 bg-surface/90 backdrop-blur-sm transition-colors"
+const RevealOverlay: React.FC<RevealOverlayProps> = ({ spot, step, stepIndex, onBack, onSkip }) => {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [arrowPath, setArrowPath] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!spot || !cardRef.current) { setArrowPath(null); return; }
+    const id = setTimeout(() => {
+      if (!cardRef.current) return;
+      const r = cardRef.current.getBoundingClientRect();
+      const cx = r.left;
+      const cy = r.top + r.height / 2;
+      const sx = spot.left + spot.width / 2;
+      const sy = spot.top + spot.height / 2;
+      const cpx = (cx + sx) / 2;
+      const cpy = Math.min(cy, sy) - 70;
+      setArrowPath(`M ${cx} ${cy} Q ${cpx} ${cpy} ${sx} ${sy}`);
+    }, 60);
+    return () => clearTimeout(id);
+  }, [spot, stepIndex]);
+
+  return (
+    <>
+      <TourSpotlight spot={spot} />
+
+      {/* Dashed curved arrow from card → spotlight */}
+      {arrowPath && (
+        <svg
+          aria-hidden="true"
+          style={{ position: "fixed", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 255 }}
+        >
+          <defs>
+            <marker id="tour-arrow" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
+              <circle cx="3.5" cy="3.5" r="2.5" fill="var(--color-primary)" opacity="0.75" />
+            </marker>
+          </defs>
+          <path
+            d={arrowPath}
+            stroke="var(--color-primary)"
+            strokeWidth="1.5"
+            strokeDasharray="5 4"
+            fill="none"
+            opacity={0.6}
+            markerEnd="url(#tour-arrow)"
+          />
+        </svg>
+      )}
+
+      {/* Mini floating card — top-right corner */}
+      <div
+        ref={cardRef}
+        style={{ position: "fixed", top: 24, right: 24, width: 276, zIndex: 260 }}
+        className="bg-surface border border-outline-variant/40 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.55)] overflow-hidden"
       >
-        Skip →
-      </button>
-      <button
-        onClick={onBack}
-        className="flex items-center gap-1.5 px-3 py-2 rounded-lg font-mono text-[11px] font-semibold bg-surface/90 backdrop-blur-sm border border-outline-variant/50 text-on-surface hover:bg-surface-container transition-colors"
-      >
-        <ArrowLeft size={12} /> Back to guide
-      </button>
-    </div>
-  </>
-);
+        {/* Card header */}
+        <div className="px-4 pt-4 pb-2 flex items-start gap-3">
+          <div className="w-8 h-8 rounded-xl bg-primary/12 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+            {getStepIcon(step.id, 16)}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-mono text-[9px] text-on-surface-variant/50 uppercase tracking-wider mb-0.5">
+              Step {stepIndex + 1} of {STEPS.length}
+            </p>
+            <p className="font-mono text-[12px] font-bold text-on-surface leading-snug">{step.title}</p>
+          </div>
+        </div>
+
+        {/* Description */}
+        <div className="px-4 pb-2">
+          <p className="font-mono text-[11px] text-on-surface-variant leading-relaxed">{step.description}</p>
+        </div>
+
+        {/* Hint */}
+        <div className="px-4 pb-3 flex items-center gap-1.5">
+          <MousePointerClick size={10} className="text-primary/60 shrink-0" />
+          <span className="font-mono text-[10px] text-on-surface-variant/50">You can interact with the highlighted element</span>
+        </div>
+
+        {/* Footer */}
+        <div className="px-3 py-2.5 border-t border-outline-variant/20 flex items-center gap-2">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg font-mono text-[11px] border border-outline-variant/30 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
+          >
+            <ArrowLeft size={10} /> Back
+          </button>
+          <button
+            onClick={onSkip}
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-[11px] font-semibold bg-primary text-on-primary hover:brightness-110 transition-all"
+          >
+            Next <ArrowRight size={10} />
+          </button>
+        </div>
+      </div>
+    </>
+  );
+};
 
 // ─── Step Sidebar (left panel) ────────────────────────────────────────────────
 
@@ -288,10 +367,11 @@ interface TourContentProps {
   onClose: () => void;
   onNext: () => void;
   onPrev: () => void;
+  onShowMe: () => void;
 }
 
 const TourContent: React.FC<TourContentProps> = ({
-  step, stepIndex, isFirst, isLast, onClose, onNext, onPrev,
+  step, stepIndex, isFirst, isLast, onClose, onNext, onPrev, onShowMe,
 }) => (
   <div className="flex flex-col flex-1 min-w-0 h-full">
     {/* Header */}
@@ -344,6 +424,16 @@ const TourContent: React.FC<TourContentProps> = ({
             </div>
           )}
 
+          {/* Show me — primary CTA for awaitAction steps, inside content */}
+          {step.awaitAction && (
+            <button
+              onClick={onShowMe}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-mono text-sm font-bold bg-primary text-on-primary hover:brightness-110 active:scale-95 transition-all shadow-md"
+            >
+              <MousePointerClick size={16} /> Show me
+            </button>
+          )}
+
         </motion.div>
       </AnimatePresence>
     </div>
@@ -363,20 +453,25 @@ const TourContent: React.FC<TourContentProps> = ({
         Navigate with ← → keys
       </span>
 
-      <TourActionButton isLast={isLast} onClick={onNext} />
+      <TourNextButton isLast={isLast} stepIndex={stepIndex} onClick={onNext} />
     </div>
   </div>
 );
 
-// Extracted to avoid nested ternary
-const TourActionButton: React.FC<{ isLast: boolean; onClick: () => void }> = ({ isLast, onClick }) => (
-  <button
-    onClick={onClick}
-    className="flex items-center gap-1.5 px-5 py-2 rounded-lg font-mono text-xs font-semibold bg-primary text-on-primary hover:brightness-110 active:scale-95 transition-all shadow-sm"
-  >
-    {isLast ? <><CheckCircle2 size={13} /> Done</> : <>Next <ArrowRight size={12} /></>}
-  </button>
-);
+const TourNextButton: React.FC<{ isLast: boolean; stepIndex: number; onClick: () => void }> = ({ isLast, stepIndex, onClick }) => {
+  const nextTitle = !isLast ? STEPS[stepIndex + 1]?.title : undefined;
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-1.5 px-4 py-2 rounded-lg font-mono text-xs font-semibold bg-primary text-on-primary hover:brightness-110 active:scale-95 transition-all shadow-sm max-w-[220px] truncate"
+    >
+      {isLast
+        ? <><CheckCircle2 size={13} /> Done</>
+        : <><span className="truncate">Next: {nextTitle}</span> <ArrowRight size={12} className="shrink-0" /></>
+      }
+    </button>
+  );
+};
 
 // ─── Custom Hook ──────────────────────────────────────────────────────────────
 
@@ -427,7 +522,7 @@ function useTourLogic(
   }, [stepIndex, step.awaitAction, step.targetSelector]);
 
   useEffect(
-    () => addListener(window, "keydown", makeKeyHandler(isFirst, isLast, step.awaitAction, onClose, setStepIndex)),
+    () => addListener(window, "keydown", makeKeyHandler(isFirst, isLast, onClose, setStepIndex)),
     [isFirst, isLast, onClose, step.awaitAction],
   );
 
@@ -465,14 +560,10 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({ onClose, onTabChange, 
   const { step, stepIndex, isFirst, isLast, cardRef, targetRect, handleNext, handlePrev, setStepIndex } =
     useTourLogic(onClose, onTabChange, initialStep, onStepChange);
 
-  // revealMode: hide the modal and show the spotlight for awaitAction steps.
-  // Auto-enter reveal mode immediately for awaitAction steps so the user sees
-  // the spotlight without needing to click "Show me" first.
-  const [revealMode, setRevealMode] = useState(() => !!STEPS[initialStep]?.awaitAction);
+  // revealMode: hide the modal and show the spotlight for awaitAction steps
+  const [revealMode, setRevealMode] = useState(false);
 
-  useEffect(() => {
-    setRevealMode(!!step.awaitAction);
-  }, [stepIndex, step.awaitAction]);
+  useEffect(() => { setRevealMode(false); }, [stepIndex]);
 
   const spot = targetRect
     ? { top: targetRect.top - SP_PAD, left: targetRect.left - SP_PAD, width: targetRect.width + SP_PAD * 2, height: targetRect.height + SP_PAD * 2 }
@@ -488,6 +579,8 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({ onClose, onTabChange, 
       <>
         <RevealOverlay
           spot={spot}
+          step={step}
+          stepIndex={stepIndex}
           onBack={() => setRevealMode(false)}
           onSkip={handleNext}
         />
@@ -542,6 +635,7 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({ onClose, onTabChange, 
             onClose={onClose}
             onNext={handleNext}
             onPrev={handlePrev}
+            onShowMe={() => setRevealMode(true)}
           />
         </motion.div>
       </div>
