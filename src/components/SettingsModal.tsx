@@ -9,6 +9,7 @@ import {
   Sliders,
   Guitar,
   Piano,
+  Compass,
 } from "lucide-react";
 import { AppSettings } from "../types";
 import { GUITAR_TUNINGS } from "../data/musicTheory";
@@ -20,6 +21,7 @@ interface SettingsModalProps {
   onUpdateSettings: (newSettings: Partial<AppSettings>) => void;
   onExportData: () => void;
   onClearData: () => void;
+  onRestartTour: () => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -29,6 +31,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onUpdateSettings,
   onExportData,
   onClearData,
+  onRestartTour,
 }) => {
   if (!isOpen) return null;
 
@@ -226,6 +229,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </span>
 
             <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => { onRestartTour(); onClose(); }}
+                className="flex items-center gap-1.5 bg-surface-container hover:bg-surface-container-high border border-outline-variant/30 text-on-surface px-3.5 py-2 rounded text-xs font-mono transition-all"
+              >
+                <Compass size={14} />
+                <span>Restart Tour</span>
+              </button>
               <button
                 onClick={onExportData}
                 className="flex items-center gap-1.5 bg-surface-container hover:bg-surface-container-high border border-outline-variant/30 text-on-surface px-3.5 py-2 rounded text-xs font-mono transition-all"
