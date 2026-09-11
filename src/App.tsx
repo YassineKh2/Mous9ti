@@ -11,7 +11,7 @@ import {
 } from "./lib/storage";
 import { audioEngine } from "./lib/audio";
 import { useTimer } from "./lib/useTimer";
-import { Navigation, ActiveTab } from "./components/Navigation";
+import { Navigation, ActiveTab, GlobalSearchResult } from "./components/Navigation";
 import { SettingsModal } from "./components/SettingsModal";
 import { DashboardPage } from "./pages/DashboardPage";
 import { ScalesPage } from "./pages/ScalesPage";
@@ -23,12 +23,39 @@ import { StatsPage } from "./pages/StatsPage";
 import { ALL_ROOT_NOTES, SCALES_DATABASE } from "./data/musicTheory";
 import { CHORD_TYPES_CATALOG } from "./data/chordsData";
 import { EXERCISES_DATABASE } from "./data/exercisesData";
-import { GlobalSearchResult } from "./components/Navigation";
 import { GlobalSessionToast } from "./components/GlobalSessionToast";
+import { TourOverlay } from "./components/TourOverlay";
 
 export function App() {
   type PendingScaleTarget = { scaleId: string; root: NoteName };
   type PendingChordTarget = { chordType: string; root: NoteName };
+
+  // Onboarding tour
+  const [isTourOpen, setIsTourOpen] = useState<boolean>(
+    () => localStorage.getItem("Mousi9ti_tour_done") !== "true",
+  );
+  // Kept in App so it survives TourOverlay unmount/remount — no reload needed to resume
+  const [tourStep, setTourStep] = useState<number>(() => {
+    const n = Number.parseInt(localStorage.getItem("Mousi9ti_tour_step") ?? "0", 10);
+    return Number.isFinite(n) && n >= 0 ? n : 0;
+  });
+
+  const handleCloseTour = () => {
+    localStorage.setItem("Mousi9ti_tour_done", "true");
+    setIsTourOpen(false);
+  };
+
+  const handleTourStepChange = (step: number) => {
+    setTourStep(step);
+    localStorage.setItem("Mousi9ti_tour_step", String(step));
+  };
+
+  const handleRestartTour = () => {
+    localStorage.removeItem("Mousi9ti_tour_done");
+    localStorage.removeItem("Mousi9ti_tour_step");
+    setTourStep(0);
+    setIsTourOpen(true);
+  };
 
   // Navigation
   const [activeTab, setActiveTab] = useState<ActiveTab>("dashboard");
@@ -597,6 +624,10 @@ export function App() {
           });
         }}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onStartTour={() => {
+          localStorage.removeItem("Mousi9ti_tour_done");
+          setIsTourOpen(true); // keeps tourStep — resumes where user left off
+        }}
         streakDays={streak.currentStreak}
         graceActive={streak.graceDaysUsed > 0}
         searchQuery={searchQuery}
@@ -683,7 +714,18 @@ export function App() {
         onUpdateSettings={handleUpdateSettings}
         onExportData={handleExportData}
         onClearData={handleClearData}
+        onRestartTour={handleRestartTour}
       />
+
+      {/* Onboarding Tour */}
+      {isTourOpen && (
+        <TourOverlay
+          onClose={handleCloseTour}
+          onTabChange={setActiveTab}
+          initialStep={tourStep}
+          onStepChange={handleTourStepChange}
+        />
+      )}
 
       {/* Global Persistent Timer Toast */}
       {activeTab !== "dashboard" && (
