@@ -46,9 +46,10 @@ export const CustomChordEditor: React.FC = () => {
   const [dragStart, setDragStart] = useState<{ s: number; f: number } | null>(
     null,
   );
-  const [dragCurrent, setDragCurrent] = useState<{ s: number; f: number } | null>(
-    null,
-  );
+  const [dragCurrent, setDragCurrent] = useState<{
+    s: number;
+    f: number;
+  } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
@@ -255,7 +256,10 @@ export const CustomChordEditor: React.FC = () => {
         maxStr = Math.max(...activeStrings);
       }
 
-      setBarres((prev) => [...prev, { fret: absFret, fromString: minStr, toString: maxStr, finger: 1 }]);
+      setBarres((prev) => [
+        ...prev,
+        { fret: absFret, fromString: minStr, toString: maxStr, finger: 1 },
+      ]);
 
       setFrets((prev) => {
         const nf = [...prev];
@@ -322,14 +326,20 @@ export const CustomChordEditor: React.FC = () => {
           <div className="w-full max-w-[400px]">
             <h2 className="text-xl font-bold mb-1">Interactive Designer</h2>
             <p className="text-xs text-on-surface-variant mb-8">
-              Click top buttons to toggle Mute (X) / Open (O). Click the fretboard to place fingers. <strong>Drag across a fret to create a barre.</strong> Click placed fingers or the barre to change their number (cycles 1-T, then removes).
+              Click top buttons to toggle Mute (X) / Open (O). Click the
+              fretboard to place fingers.{" "}
+              <strong>Drag across a fret to create a barre.</strong> Click
+              placed fingers or the barre to change their number (cycles 1-T,
+              then removes).
             </p>
           </div>
 
           <div className="relative w-[360px] h-[480px] select-none mx-auto mb-4 touch-none">
             <div className="absolute inset-0 top-[60px] border-[3px] border-outline-variant/60 bg-surface-container-highest rounded-b-md shadow-inner" />
 
-            <div className={`absolute left-0 right-0 top-[60px] h-3 ${(baseFret || 1) === 1 ? "bg-on-surface" : "bg-outline-variant/80"} z-10`} />
+            <div
+              className={`absolute left-0 right-0 top-[60px] h-3 ${(baseFret || 1) === 1 ? "bg-on-surface" : "bg-outline-variant/80"} z-10`}
+            />
 
             {[1, 2, 3, 4].map((f) => (
               <div
@@ -351,11 +361,14 @@ export const CustomChordEditor: React.FC = () => {
               />
             ))}
 
-            {['E', 'A', 'D', 'G', 'B', 'e'].map((label, s) => (
+            {["E", "A", "D", "G", "B", "e"].map((label, s) => (
               <div
                 key={`label-${s}`}
                 className="absolute -bottom-8 w-10 text-center text-xs font-bold text-on-surface-variant/50"
-                style={{ left: `${40 + s * 56}px`, transform: "translateX(-50%)" }}
+                style={{
+                  left: `${40 + s * 56}px`,
+                  transform: "translateX(-50%)",
+                }}
               >
                 {label}
               </div>
@@ -383,7 +396,10 @@ export const CustomChordEditor: React.FC = () => {
                 key={`mute-${s}`}
                 onClick={() => handleStringClick(s)}
                 className="absolute top-0 w-10 h-10 rounded-md flex items-center justify-center font-bold text-lg bg-surface-container-highest hover:bg-outline-variant/40 border border-outline-variant/50 transition-colors z-20 shadow-sm"
-                style={{ left: `${40 + s * 56}px`, transform: "translateX(-50%)" }}
+                style={{
+                  left: `${40 + s * 56}px`,
+                  transform: "translateX(-50%)",
+                }}
               >
                 {frets[s] === null ? (
                   <X size={20} className="text-error" />
@@ -399,12 +415,16 @@ export const CustomChordEditor: React.FC = () => {
               <React.Fragment key={`zone-row-${f}`}>
                 <div
                   onClick={() => toggleBarreRow(f)}
-                  className={`absolute -left-12 w-10 flex items-center justify-center cursor-pointer text-xs font-bold rounded hover:bg-outline-variant/20 transition-colors z-20 ${barres.some((b) => b.fret === f + (baseFret || 1) - 1)
-                    ? "text-primary bg-primary/10"
-                    : "text-on-surface-variant/40"}`}
+                  className={`absolute -left-12 w-10 flex items-center justify-center cursor-pointer text-xs font-bold rounded hover:bg-outline-variant/20 transition-colors z-20 ${
+                    barres.some((b) => b.fret === f + (baseFret || 1) - 1)
+                      ? "text-primary bg-primary/10"
+                      : "text-on-surface-variant/40"
+                  }`}
                   style={{ top: `${60 + (f - 1) * 80 + 20}px`, height: "40px" }}
                 >
-                  {barres.some((b) => b.fret === f + (baseFret || 1) - 1) ? "-Bar" : "+Bar"}
+                  {barres.some((b) => b.fret === f + (baseFret || 1) - 1)
+                    ? "-Bar"
+                    : "+Bar"}
                 </div>
 
                 <div
@@ -418,7 +438,10 @@ export const CustomChordEditor: React.FC = () => {
                   const absFret = f + (baseFret || 1) - 1;
                   const isPlaced = frets[s] === absFret;
                   const isBarreCovered = barres.some(
-                    (b) => b.fret === absFret && s >= b.fromString && s <= b.toString,
+                    (b) =>
+                      b.fret === absFret &&
+                      s >= b.fromString &&
+                      s <= b.toString,
                   );
 
                   return (
@@ -507,7 +530,9 @@ export const CustomChordEditor: React.FC = () => {
 
             <div className="flex gap-4 mb-4">
               <div className="flex-1">
-                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Root Note</label>
+                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+                  Root Note
+                </label>
                 <select
                   value={root}
                   onChange={(e) => setRoot(e.target.value as NoteName)}
@@ -521,7 +546,9 @@ export const CustomChordEditor: React.FC = () => {
                 </select>
               </div>
               <div className="flex-1">
-                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Chord Type</label>
+                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+                  Chord Type
+                </label>
                 <select
                   value={chordType}
                   onChange={(e) => setChordType(e.target.value)}
@@ -537,7 +564,9 @@ export const CustomChordEditor: React.FC = () => {
             </div>
 
             <div className="mb-4">
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Display Name</label>
+              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+                Display Name
+              </label>
               <input
                 type="text"
                 value={name}
@@ -549,7 +578,9 @@ export const CustomChordEditor: React.FC = () => {
 
             <div className="flex gap-4 mb-4">
               <div className="flex-1">
-                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Position Label</label>
+                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+                  Position Label
+                </label>
                 <input
                   type="text"
                   value={positionLabel}
@@ -559,7 +590,9 @@ export const CustomChordEditor: React.FC = () => {
                 />
               </div>
               <div className="flex-1">
-                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Root String</label>
+                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+                  Root String
+                </label>
                 <select
                   value={rootString}
                   onChange={(e) => setRootString(e.target.value)}
@@ -576,7 +609,9 @@ export const CustomChordEditor: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Starting (Base) Fret</label>
+              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+                Starting Base Fret
+              </label>
               <input
                 type="number"
                 min="1"
@@ -595,8 +630,12 @@ export const CustomChordEditor: React.FC = () => {
                     const diff = num - oldBase;
 
                     if (diff !== 0) {
-                      setFrets((prev) => prev.map((f) => (f === null || f === 0 ? f : f + diff)));
-                      setBarres((prev) => prev.map((b) => ({ ...b, fret: b.fret + diff })));
+                      setFrets((prev) =>
+                        prev.map((f) => (f === null || f === 0 ? f : f + diff)),
+                      );
+                      setBarres((prev) =>
+                        prev.map((b) => ({ ...b, fret: b.fret + diff })),
+                      );
                     }
 
                     setBaseFret(num);
@@ -605,13 +644,15 @@ export const CustomChordEditor: React.FC = () => {
                 onBlur={() => {
                   if (baseFret === "" || Number(baseFret) < 1) setBaseFret(1);
                 }}
-                className="w-full bg-surface-container-highest border border-outline-variant/50 rounded px-3 py-2 text-on-surface outline-none focus:border-primary font-mono"
+                className="base-fret-input w-full bg-surface-container-highest border border-outline-variant/50 rounded px-3 py-2 text-on-surface outline-none focus:border-primary font-mono"
               />
             </div>
           </div>
 
           <div className="bg-surface-container border border-outline-variant/30 rounded-lg p-6 shadow-sm flex flex-col items-center">
-            <h2 className="text-lg font-bold mb-4 w-full text-left">Live Preview</h2>
+            <h2 className="text-lg font-bold mb-4 w-full text-left">
+              Live Preview
+            </h2>
 
             <div className="flex justify-center items-center my-6 py-6 w-full h-[400px] overflow-hidden">
               <ChordDiagram
@@ -657,7 +698,9 @@ export const CustomChordEditor: React.FC = () => {
               >
                 <div>
                   <h3 className="font-bold text-primary">
-                    {chord.root} {CHORD_TYPES_CATALOG.find((t) => t.type === chord.chordType)?.name || chord.chordType}
+                    {chord.root}{" "}
+                    {CHORD_TYPES_CATALOG.find((t) => t.type === chord.chordType)
+                      ?.name || chord.chordType}
                   </h3>
                   <p className="text-sm font-semibold">{chord.voicing.name}</p>
                   <p className="text-xs text-on-surface-variant mt-1">

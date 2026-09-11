@@ -657,10 +657,10 @@ export const ScalesPage: React.FC<ScalesPageProps> = ({
                     }`}
                   >
                     {mode === "name"
-                      ? "Names"
+                      ? "Note Name"
                       : mode === "degree"
-                        ? "Degrees"
-                        : "Intervals"}
+                        ? "Degrees (1 3 5)"
+                        : "Intervals (R M3)"}
                   </button>
                 ),
               )}

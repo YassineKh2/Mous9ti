@@ -70,7 +70,12 @@ export const ChordDiagram: React.FC<ChordDiagramProps> = ({
     audioEngine.playChordArpeggio(notesToPlay, "guitar", 0.05);
   };
 
-  const barreEntries = voicing.barres && voicing.barres.length > 0 ? voicing.barres : voicing.barre ? [voicing.barre] : [];
+  const barreEntries =
+    voicing.barres && voicing.barres.length > 0
+      ? voicing.barres
+      : voicing.barre
+        ? [voicing.barre]
+        : [];
 
   return (
     <div
@@ -191,12 +196,13 @@ export const ChordDiagram: React.FC<ChordDiagramProps> = ({
           return (
             <g key={`barre-${barre.fret}-${index}`}>
               <rect
-                x={Math.min(fromX, toX) - 6}
-                y={y - 6}
-                width={Math.abs(toX - fromX) + 12}
-                height={12}
-                rx={6}
-                fill="var(--color-on-surface)"
+                x={Math.min(fromX, toX) - 5}
+                y={y - 8}
+                width={Math.abs(toX - fromX) + 10}
+                height={16}
+                rx={8}
+                fill="var(--color-on-surface-variant)"
+                opacity={0.4}
               />
               <text
                 x={Math.min(fromX, toX) - 16}
@@ -264,14 +270,13 @@ export const ChordDiagram: React.FC<ChordDiagramProps> = ({
             const isRoot = currentSemi === NOTE_SEMITONES[root];
 
             // Skip drawing individual dot if it is covered by the barre
-            const isCoveredByBarre =
-              barreEntries.some(
-                (barre) =>
-                  barre &&
-                  barre.fret === fret &&
-                  stringIdx >= Math.min(barre.fromString, barre.toString) &&
-                  stringIdx <= Math.max(barre.fromString, barre.toString),
-              );
+            const isCoveredByBarre = barreEntries.some(
+              (barre) =>
+                barre &&
+                barre.fret === fret &&
+                stringIdx >= Math.min(barre.fromString, barre.toString) &&
+                stringIdx <= Math.max(barre.fromString, barre.toString),
+            );
 
             if (isCoveredByBarre) {
               // We might still want to highlight if it's a root note under the barre,

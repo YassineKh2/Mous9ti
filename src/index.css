@@ -213,6 +213,17 @@
   scrollbar-width: none;
 }
 
+.base-fret-input {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.base-fret-input::-webkit-inner-spin-button,
+.base-fret-input::-webkit-outer-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
 .builder-reverb-label-mobile {
   display: none;
 }
