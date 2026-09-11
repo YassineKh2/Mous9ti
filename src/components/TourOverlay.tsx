@@ -120,7 +120,8 @@ function resolveWithRetry(
     if (cancelled) return;
     const el = document.querySelector(selector);
     if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      // instant so getBoundingClientRect() is accurate immediately after
+      el.scrollIntoView({ behavior: "instant", block: "nearest" });
       tid = setTimeout(() => {
         if (cancelled) return;
         const el2 = document.querySelector(selector);
@@ -262,8 +263,8 @@ const RevealOverlay: React.FC<RevealOverlayProps> = ({ spot, step, stepIndex, is
       {/* Mini floating card — top-right corner */}
       <div
         ref={cardRef}
-        style={{ position: "fixed", top: 24, right: 24, width: 276, zIndex: 260 }}
-        className="bg-surface border border-outline-variant/40 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.55)] overflow-hidden"
+        style={{ position: "fixed", top: 24, right: 24, width: 276, minHeight: 220, zIndex: 260 }}
+        className="bg-surface border border-outline-variant/40 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.55)] overflow-hidden flex flex-col"
       >
         {/* Card header */}
         <div className="px-4 pt-4 pb-2 flex items-start gap-3">
@@ -276,50 +277,50 @@ const RevealOverlay: React.FC<RevealOverlayProps> = ({ spot, step, stepIndex, is
             </p>
             <p className="font-mono text-[12px] font-bold text-on-surface leading-snug">{step.title}</p>
           </div>
+          {/* × close button — harder to accidentally hit than a bottom button */}
+          <button
+            onClick={onClose}
+            title="Exit tour (Esc)"
+            className="shrink-0 w-6 h-6 flex items-center justify-center rounded-lg text-on-surface-variant/40 hover:text-on-surface hover:bg-surface-container-high transition-colors"
+          >
+            <X size={12} />
+          </button>
         </div>
 
         {/* Description */}
-        <div className="px-4 pb-2">
+        <div className="px-4 pb-2 flex-1">
           <p className="font-mono text-[11px] text-on-surface-variant leading-relaxed">{step.description}</p>
         </div>
 
         {/* Hint */}
         <div className="px-4 pb-3 flex items-center gap-1.5">
           <MousePointerClick size={10} className="text-primary/60 shrink-0" />
-          <span className="font-mono text-[10px] text-on-surface-variant/50">You can interact with the highlighted element</span>
+          <span className="font-mono text-[10px] text-on-surface-variant/50">Interact with the highlighted element</span>
         </div>
 
         {/* Footer */}
-        <div className="px-3 pt-2 pb-1 border-t border-outline-variant/20 space-y-1.5">
-          <div className="flex items-center gap-1.5">
-            {!isFirst && (
-              <button
-                onClick={onPrev}
-                title="Previous step"
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-mono text-[11px] border border-outline-variant/30 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
-              >
-                <ArrowLeft size={10} />
-              </button>
-            )}
+        <div className="px-3 py-2.5 border-t border-outline-variant/20 flex items-center gap-1.5">
+          {!isFirst && (
             <button
-              onClick={onShowList}
-              title="Show guide list"
+              onClick={onPrev}
+              title="Previous step"
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-mono text-[11px] border border-outline-variant/30 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
             >
-              <List size={10} />
+              <ArrowLeft size={10} />
             </button>
-            <button
-              onClick={onNext}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-[11px] font-semibold bg-primary text-on-primary hover:brightness-110 transition-all"
-            >
-              {isLast ? <><CheckCircle2 size={11} /> Done</> : <>Next <ArrowRight size={10} /></>}
-            </button>
-          </div>
+          )}
           <button
-            onClick={onClose}
-            className="w-full py-1 font-mono text-[10px] text-on-surface-variant/40 hover:text-on-surface-variant transition-colors tracking-wide"
+            onClick={onShowList}
+            title="Show guide list"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-mono text-[11px] border border-outline-variant/30 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
           >
-            Skip tour
+            <List size={10} />
+          </button>
+          <button
+            onClick={onNext}
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-[11px] font-semibold bg-primary text-on-primary hover:brightness-110 transition-all"
+          >
+            {isLast ? <><CheckCircle2 size={11} /> Done</> : <>Next <ArrowRight size={10} /></>}
           </button>
         </div>
       </div>
@@ -548,10 +549,25 @@ function useTourLogic(
     return resolveWithRetry(step.targetSelector, setTargetRect);
   }, [stepIndex]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Re-measure on scroll/resize so spotlight tracks the element even when the
+  // user scrolls the page (rAF-throttled to avoid layout thrashing)
   useEffect(() => {
-    const handler = () => resolveWithRetry(step.targetSelector, setTargetRect);
-    window.addEventListener("resize", handler);
-    return () => window.removeEventListener("resize", handler);
+    if (!step.targetSelector) return;
+    let rafId: number;
+    const track = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        const el = document.querySelector(step.targetSelector!);
+        if (el) setTargetRect(el.getBoundingClientRect());
+      });
+    };
+    window.addEventListener("scroll", track, true);
+    window.addEventListener("resize", track);
+    return () => {
+      window.removeEventListener("scroll", track, true);
+      window.removeEventListener("resize", track);
+      cancelAnimationFrame(rafId);
+    };
   }, [step.targetSelector]);
 
   useEffect(() => {
