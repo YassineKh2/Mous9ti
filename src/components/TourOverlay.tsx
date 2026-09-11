@@ -424,8 +424,8 @@ const TourContent: React.FC<TourContentProps> = ({
             </div>
           )}
 
-          {/* Show me — primary CTA for awaitAction steps, inside content */}
-          {step.awaitAction && (
+          {/* Show me — re-enter reveal mode when user came back to the modal */}
+          {step.targetSelector && (
             <button
               onClick={onShowMe}
               className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-mono text-sm font-bold bg-primary text-on-primary hover:brightness-110 active:scale-95 transition-all shadow-md"
@@ -560,10 +560,14 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({ onClose, onTabChange, 
   const { step, stepIndex, isFirst, isLast, cardRef, targetRect, handleNext, handlePrev, setStepIndex } =
     useTourLogic(onClose, onTabChange, initialStep, onStepChange);
 
-  // revealMode: hide the modal and show the spotlight for awaitAction steps
-  const [revealMode, setRevealMode] = useState(false);
+  // userOpenedModal: true when the user explicitly clicked "Back to guide"
+  // from reveal mode. Resets to false whenever the step changes.
+  const [userOpenedModal, setUserOpenedModal] = useState(false);
+  useEffect(() => { setUserOpenedModal(false); }, [stepIndex]);
 
-  useEffect(() => { setRevealMode(false); }, [stepIndex]);
+  // Reveal mode is on automatically for any step that has a spotlight target,
+  // unless the user explicitly asked to see the full modal ("Back to guide").
+  const revealMode = !!step.targetSelector && !userOpenedModal;
 
   const spot = targetRect
     ? { top: targetRect.top - SP_PAD, left: targetRect.left - SP_PAD, width: targetRect.width + SP_PAD * 2, height: targetRect.height + SP_PAD * 2 }
@@ -571,7 +575,7 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({ onClose, onTabChange, 
 
   const handleRestart = () => {
     setStepIndex(0);
-    setRevealMode(false);
+    setUserOpenedModal(false);
   };
 
   if (revealMode) {
@@ -581,7 +585,7 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({ onClose, onTabChange, 
           spot={spot}
           step={step}
           stepIndex={stepIndex}
-          onBack={() => setRevealMode(false)}
+          onBack={() => setUserOpenedModal(true)}
           onSkip={handleNext}
         />
         <style>{KEYFRAMES}</style>
@@ -635,7 +639,7 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({ onClose, onTabChange, 
             onClose={onClose}
             onNext={handleNext}
             onPrev={handlePrev}
-            onShowMe={() => setRevealMode(true)}
+            onShowMe={() => setUserOpenedModal(false)}
           />
         </motion.div>
       </div>
