@@ -13,6 +13,7 @@ import {
   PanelLeftOpen,
   BookOpen,
 } from "lucide-react";
+import { APP_VERSION } from "../lib/version";
 
 export type ActiveTab =
   | "dashboard"
@@ -178,6 +179,14 @@ export const Navigation: React.FC<NavigationProps> = ({
             )}
           </div>
 
+          {!isSidebarCollapsed && (
+            <div className="px-2 pb-1">
+              <span className="font-mono text-[10px] tracking-widest text-on-surface-variant/50 select-none">
+                v{APP_VERSION}
+              </span>
+            </div>
+          )}
+
           <div className="w-full flex items-center gap-2 px-2 py-2.5 text-on-surface-variant">
             <button
               onClick={onOpenSettings}
@@ -231,6 +240,7 @@ export const Navigation: React.FC<NavigationProps> = ({
               className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant"
             />
             <input
+              data-tour="search-bar"
               type="text"
               placeholder="Search theory, scales, chords, exercises..."
               value={searchQuery}
