@@ -528,12 +528,16 @@ function useTourLogic(
 
   const handleNext = useCallback(() => {
     if (isLast) { onClose(); return; }
-    setStepIndex(stepIndex + 1);
-  }, [isLast, onClose, stepIndex]);
+    // Clear spotlight immediately so it doesn't flash on the old element
+    setTargetRect(null);
+    setStepIndex(i => Math.min(i + 1, STEPS.length - 1));
+  }, [isLast, onClose]);
 
   const handlePrev = useCallback(() => {
-    if (!isFirst) setStepIndex(stepIndex - 1);
-  }, [isFirst, stepIndex]);
+    if (isFirst) return;
+    setTargetRect(null);
+    setStepIndex(i => Math.max(i - 1, 0));
+  }, [isFirst]);
 
   return { step, stepIndex, isFirst, isLast, cardRef, targetRect, handleNext, handlePrev, setStepIndex };
 }
