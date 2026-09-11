@@ -91,18 +91,36 @@ function getStepIcon(id: string, size = 34): React.ReactNode {
 
 // ─── Module-level Effect Helpers ─────────────────────────────────────────────
 
-function resolveElement(
+/**
+ * Retries resolving `selector` up to 12 times every 80ms (starting after 80ms)
+ * so it works even when a tab switch hasn't finished rendering yet.
+ */
+function resolveWithRetry(
   selector: string | undefined,
   setRect: (r: DOMRect | null) => void,
-): void {
-  if (!selector) { setRect(null); return; }
-  const el = document.querySelector(selector);
-  if (!el) { setRect(null); return; }
-  el.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  setTimeout(() => {
-    const el2 = document.querySelector(selector);
-    setRect(el2 ? el2.getBoundingClientRect() : null);
-  }, 120);
+): () => void {
+  if (!selector) { setRect(null); return () => {}; }
+  let cancelled = false;
+  let tid: ReturnType<typeof setTimeout>;
+  let attempts = 0;
+
+  const tryOnce = () => {
+    if (cancelled) return;
+    const el = document.querySelector(selector);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      tid = setTimeout(() => {
+        if (cancelled) return;
+        const el2 = document.querySelector(selector);
+        if (el2) setRect(el2.getBoundingClientRect());
+      }, 50);
+    } else if (attempts++ < 12) {
+      tid = setTimeout(tryOnce, 80);
+    }
+  };
+
+  tid = setTimeout(tryOnce, 80);
+  return () => { cancelled = true; clearTimeout(tid); };
 }
 
 function addListener(
@@ -112,11 +130,6 @@ function addListener(
 ): () => void {
   target.addEventListener(event, handler);
   return () => target.removeEventListener(event, handler);
-}
-
-function addTimeout(fn: () => void, ms: number): () => void {
-  const id = setTimeout(fn, ms);
-  return () => clearTimeout(id);
 }
 
 function attachClickAdvance(
@@ -179,11 +192,13 @@ interface RevealOverlayProps {
   spot: SpotGeometry | null;
   step: TourStep;
   stepIndex: number;
+  isLast: boolean;
   onBack: () => void;
-  onSkip: () => void;
+  onNext: () => void;
+  onClose: () => void;
 }
 
-const RevealOverlay: React.FC<RevealOverlayProps> = ({ spot, step, stepIndex, onBack, onSkip }) => {
+const RevealOverlay: React.FC<RevealOverlayProps> = ({ spot, step, stepIndex, isLast, onBack, onNext, onClose }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const [arrowPath, setArrowPath] = useState<string | null>(null);
 
@@ -261,18 +276,26 @@ const RevealOverlay: React.FC<RevealOverlayProps> = ({ spot, step, stepIndex, on
         </div>
 
         {/* Footer */}
-        <div className="px-3 py-2.5 border-t border-outline-variant/20 flex items-center gap-2">
+        <div className="px-3 pt-2 pb-1 border-t border-outline-variant/20 space-y-1.5">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onBack}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg font-mono text-[11px] border border-outline-variant/30 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
+            >
+              <ArrowLeft size={10} /> Back
+            </button>
+            <button
+              onClick={onNext}
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-[11px] font-semibold bg-primary text-on-primary hover:brightness-110 transition-all"
+            >
+              {isLast ? <><CheckCircle2 size={11} /> Done</> : <>Next <ArrowRight size={10} /></>}
+            </button>
+          </div>
           <button
-            onClick={onBack}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg font-mono text-[11px] border border-outline-variant/30 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
+            onClick={onClose}
+            className="w-full py-1 font-mono text-[10px] text-on-surface-variant/40 hover:text-on-surface-variant transition-colors tracking-wide"
           >
-            <ArrowLeft size={10} /> Back
-          </button>
-          <button
-            onClick={onSkip}
-            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-[11px] font-semibold bg-primary text-on-primary hover:brightness-110 transition-all"
-          >
-            Next <ArrowRight size={10} />
+            Skip tour
           </button>
         </div>
       </div>
@@ -495,26 +518,17 @@ function useTourLogic(
     onStepChange(stepIndex);
   }, [stepIndex]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const resolveTarget = useCallback(
-    (selector?: string) => resolveElement(selector, setTargetRect),
-    [],
-  );
-
-  const resolveCurrent = useCallback(
-    () => resolveTarget(step.targetSelector),
-    [step.targetSelector, resolveTarget],
-  );
-
   useEffect(() => {
     if (step.tab) onTabChange(step.tab);
     setTargetRect(null);
-    return addTimeout(resolveCurrent, 500);
-  }, [stepIndex, resolveCurrent]); // eslint-disable-line react-hooks/exhaustive-deps
+    return resolveWithRetry(step.targetSelector, setTargetRect);
+  }, [stepIndex]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(
-    () => addListener(window, "resize", resolveCurrent as EventListenerOrEventListenerObject),
-    [resolveCurrent],
-  );
+  useEffect(() => {
+    const handler = () => resolveWithRetry(step.targetSelector, setTargetRect);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, [step.targetSelector]);
 
   useEffect(() => {
     if (!step.awaitAction || !step.targetSelector) return;
@@ -547,7 +561,7 @@ function useTourLogic(
 const KEYFRAMES = `
   @keyframes tour-pulse-strong {
     0%,100% { box-shadow:0 0 0 9999px rgba(0,0,0,.78),0 0 0 3px var(--color-primary); }
-    50%      { box-shadow:0 0 0 9999px rgba(0,0,0,.68),0 0 0 8px color-mix(in srgb,var(--color-primary) 30%,transparent); }
+    50%      { box-shadow:0 0 0 9999px rgba(0,0,0,.78),0 0 0 9px color-mix(in srgb,var(--color-primary) 35%,transparent); }
   }
 `;
 
@@ -589,8 +603,10 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({ onClose, onTabChange, 
           spot={spot}
           step={step}
           stepIndex={stepIndex}
+          isLast={isLast}
           onBack={() => setUserOpenedModal(true)}
-          onSkip={handleNext}
+          onNext={handleNext}
+          onClose={onClose}
         />
         <style>{KEYFRAMES}</style>
       </>

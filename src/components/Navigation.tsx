@@ -1,14 +1,13 @@
 import React from "react";
+import { APP_VERSION } from "../lib/version";
 import {
   LayoutDashboard,
   Sparkles,
   Grid3X3,
-  Dumbbell,
   Compass,
   BarChart3,
   Settings,
   Flame,
-  Music,
   Search,
   Sliders,
   PanelLeftClose,
@@ -215,6 +214,11 @@ export const Navigation: React.FC<NavigationProps> = ({
               )}
             </button>
           </div>
+          {!isSidebarCollapsed && (
+            <p className="text-center font-mono text-[9px] text-on-surface-variant/30 tracking-widest pb-2">
+              v{APP_VERSION}
+            </p>
+          )}
         </div>
       </aside>
 
