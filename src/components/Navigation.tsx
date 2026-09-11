@@ -240,7 +240,6 @@ export const Navigation: React.FC<NavigationProps> = ({
               className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant"
             />
             <input
-              data-tour="search-bar"
               type="text"
               placeholder="Search theory, scales, chords, exercises..."
               value={searchQuery}
