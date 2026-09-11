@@ -3,17 +3,17 @@ import {
   LayoutDashboard,
   Sparkles,
   Grid3X3,
-  Dumbbell,
   Compass,
   BarChart3,
   Settings,
   Flame,
-  Music,
   Search,
   Sliders,
   PanelLeftClose,
   PanelLeftOpen,
+  BookOpen,
 } from "lucide-react";
+import { APP_VERSION } from "../lib/version";
 
 export type ActiveTab =
   | "dashboard"
@@ -40,6 +40,7 @@ interface NavigationProps {
   isSidebarCollapsed: boolean;
   onToggleSidebar: () => void;
   onOpenSettings: () => void;
+  onStartTour: () => void;
   streakDays: number;
   graceActive?: boolean;
   searchQuery: string;
@@ -55,6 +56,7 @@ export const Navigation: React.FC<NavigationProps> = ({
   isSidebarCollapsed,
   onToggleSidebar,
   onOpenSettings,
+  onStartTour,
   streakDays,
   graceActive = false,
   searchQuery,
@@ -106,6 +108,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 
         {/* Navigation Links */}
         <nav
+          data-tour="sidebar-nav"
           className={`flex-1 ${isSidebarCollapsed ? "px-2" : "px-4"} py-6 space-y-1.5 overflow-y-auto`}
         >
           {navItems.map((item) => {
@@ -113,6 +116,7 @@ export const Navigation: React.FC<NavigationProps> = ({
             return (
               <button
                 key={item.id}
+                data-tour={`nav-item-${item.id}`}
                 onClick={() => onSelectTab(item.id)}
                 title={isSidebarCollapsed ? item.label : undefined}
                 className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0" : "px-4"} py-3 rounded text-left transition-all duration-200 group border-l-2 ${
@@ -141,6 +145,7 @@ export const Navigation: React.FC<NavigationProps> = ({
           className={`${isSidebarCollapsed ? "p-2" : "p-4"} border-t border-outline-variant/30 space-y-3`}
         >
           <div
+            data-tour="sidebar-streak"
             className={`bg-surface-container-low border border-outline-variant/30 rounded-lg ${isSidebarCollapsed ? "p-1 flex justify-center" : "p-3.5 flex flex-col gap-1.5"}`}
           >
             {isSidebarCollapsed ? (
@@ -174,6 +179,14 @@ export const Navigation: React.FC<NavigationProps> = ({
             )}
           </div>
 
+          {!isSidebarCollapsed && (
+            <div className="px-2 pb-1">
+              <span className="font-mono text-[10px] tracking-widest text-on-surface-variant/50 select-none">
+                v{APP_VERSION}
+              </span>
+            </div>
+          )}
+
           <div className="w-full flex items-center gap-2 px-2 py-2.5 text-on-surface-variant">
             <button
               onClick={onOpenSettings}
@@ -187,6 +200,16 @@ export const Navigation: React.FC<NavigationProps> = ({
                 </span>
               )}
             </button>
+            {!isSidebarCollapsed && (
+              <button
+                onClick={onStartTour}
+                title="App Tour / Guide"
+                aria-label="Restart app tour"
+                className="h-9 w-9 shrink-0 flex items-center justify-center rounded border border-transparent hover:border-outline-variant/30 hover:bg-surface-container-low hover:text-on-surface transition-colors"
+              >
+                <BookOpen size={15} />
+              </button>
+            )}
             <button
               onClick={onToggleSidebar}
               title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -211,7 +234,7 @@ export const Navigation: React.FC<NavigationProps> = ({
       >
         {/* Search Theory Input */}
         <div className="flex items-center gap-3 w-full max-w-md mr-2">
-          <div className="relative w-full">
+          <div data-tour="search-bar" className="relative w-full">
             <Search
               size={16}
               className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant"
