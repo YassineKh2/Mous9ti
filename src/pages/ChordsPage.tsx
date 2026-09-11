@@ -518,7 +518,7 @@ export const ChordsPage: React.FC<ChordsPageProps> = ({
           )}
 
           {/* Voicings / Keyboard area */}
-          <div className="w-full max-w-full min-w-0">
+          <div data-tour="chords-voicing" className="w-full max-w-full min-w-0">
             <div className="mb-5 flex items-center gap-2 sm:mb-6">
               <h3 className="text-2xl font-bold text-on-surface">Voicings</h3>
               <button

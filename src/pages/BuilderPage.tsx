@@ -2208,7 +2208,7 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ settings }) => {
         </div>
 
         {/* Right: Builder Panel */}
-        <div className="builder-panel lg:col-span-4 flex flex-col gap-4">
+        <div data-tour="builder-add" className="builder-panel lg:col-span-4 flex flex-col gap-4">
           <h2 className="text-xl font-bold text-on-surface flex items-center gap-2 mt-2">
             <Settings2 size={20} className="text-primary" />
             Add to Queue

@@ -982,6 +982,7 @@ export const ScalesPage: React.FC<ScalesPageProps> = ({
       </div>
 
       {/* Fretboard Visualization */}
+      <div data-tour="scales-fretboard">
       {(instrumentView === "guitar" || instrumentView === "both") && (
         <Fretboard
           tuning={currentTuning}
@@ -1010,6 +1011,7 @@ export const ScalesPage: React.FC<ScalesPageProps> = ({
           focusRange={pianoFocusRangeObj}
         />
       )}
+      </div>
     </div>
   );
 };

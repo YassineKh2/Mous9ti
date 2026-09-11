@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   X, ArrowRight, ArrowLeft, CheckCircle2, Keyboard, MousePointerClick,
-  ChevronRight, Check, RefreshCw,
+  ChevronRight, Check, RefreshCw, List, Plus, Piano,
   BookOpen, LayoutDashboard, Timer, Clock, Guitar, Play, Flame,
   Music, Music2, Layers, Settings2, Compass, BarChart3, Search, Trophy,
 } from "lucide-react";
@@ -23,26 +23,32 @@ interface TourStep {
 // ─── Step Definitions ────────────────────────────────────────────────────────
 
 const STEPS: TourStep[] = [
-  { id: "welcome",         title: "Welcome to Mousi9ti",  description: "Your practice studio for guitar and piano. This tour walks through every section — about 2 minutes." },
-  { id: "sidebar",         title: "Navigation",            description: "All 6 sections live in the sidebar. Click any item or press 1–6 on your keyboard to switch instantly.", targetSelector: "[data-tour='sidebar-nav']", tab: "dashboard" },
-  { id: "metronome",       title: "Metronome",             description: "Set BPM, time signature, subdivision, and click sound. It keeps running globally even when you switch pages.", targetSelector: "[data-dashboard-widget='metronome']", tab: "dashboard", action: "Press Space to start / stop" },
-  { id: "timer",           title: "Practice Timer",        description: "Countdown timer with one-tap presets. Link it to the metronome so it auto-stops when time's up.", targetSelector: "[data-dashboard-widget='timer']", tab: "dashboard" },
-  { id: "drill",           title: "Random Note Drill",     description: "A random note appears — find it on the fretboard. Builds note recognition and position memory over time.", targetSelector: "[data-dashboard-widget='random-drill']", tab: "dashboard", action: "Press N for the next note" },
-  { id: "session",         title: "Practice Session",      description: "Start a session to log your time. Ending it saves the session and counts toward your daily streak.", targetSelector: "[data-dashboard-widget='session']", tab: "dashboard" },
-  { id: "streak",          title: "Practice Streak",       description: "Your daily streak with a 2-day grace period — one missed day won't reset the counter.", targetSelector: "[data-tour='sidebar-streak']", tab: "dashboard" },
-  { id: "go-scales",       title: "Open Scales",           description: "Click SCALES in the sidebar to explore the scale library.", targetSelector: "[data-tour='nav-item-scales']", tab: "dashboard", awaitAction: true },
-  { id: "scales-panel",    title: "Scale Explorer",        description: "Pick any root note and scale type. The fretboard and keyboard update instantly. Toggle note names, degrees, or intervals — then play the scale with the arrow buttons.", targetSelector: "[data-tour='scales-panel']", tab: "scales" },
-  { id: "go-chords",       title: "Open Chords",           description: "Click CHORDS in the sidebar to browse chord voicings.", targetSelector: "[data-tour='nav-item-chords']", tab: "scales", awaitAction: true },
-  { id: "chords-filters",  title: "Chord Library",         description: "Pick a root note and chord type. The diagram, piano view, and sheet notation update instantly. Tap Play to hear any voicing.", targetSelector: "[data-tour='chords-filters']", tab: "chords" },
-  { id: "go-builder",      title: "Open Builder",          description: "Click BUILDER in the sidebar to open the chord progression builder.", targetSelector: "[data-tour='nav-item-builder']", tab: "chords", awaitAction: true },
-  { id: "builder-controls",title: "Playback Controls",     description: "Choose your instrument, set tempo, and add reverb. Hit Play to loop your full chord progression with real instrument audio.", targetSelector: "[data-tour='builder-controls']", tab: "builder" },
-  { id: "builder-queue",   title: "Chord Queue",           description: "Search for chords and add them to the queue. Set each chord's duration and strumming pattern individually. Load a preset or save your own progressions.", targetSelector: "[data-tour='builder-queue']", tab: "builder" },
-  { id: "go-tools",        title: "Open Tools",            description: "Click TOOLS in the sidebar for the Circle of Fifths, tuner, and ear trainer.", targetSelector: "[data-tour='nav-item-tools']", tab: "builder", awaitAction: true },
-  { id: "tools-tabs",      title: "Theory Tools",          description: "Switch between Circle of Fifths, Ear Trainer, Tuner, Metronome, Timer, and Custom Chord Builder using these tabs.", targetSelector: "[data-tour='tools-tabs']", tab: "tools" },
-  { id: "go-stats",        title: "Open Stats",            description: "Click STATS to view your session history, BPM progression, and streak calendar.", targetSelector: "[data-tour='nav-item-stats']", tab: "tools", awaitAction: true },
-  { id: "stats-metrics",   title: "Practice Analytics",    description: "Total time logged, current streak, longest streak, and peak BPM. Charts below show your daily minutes and BPM progression over time.", targetSelector: "[data-tour='stats-metrics']", tab: "stats" },
-  { id: "search",          title: "Global Search",         description: "Search any scale, chord, or exercise from anywhere in the app. Try \"C minor\" or \"maj7\" to jump straight to it.", targetSelector: "[data-tour='search-bar']", tab: "stats" },
-  { id: "done",            title: "You're all set!",       description: "Everything is ready. Use the book icon in the sidebar anytime to resume this tour.", tab: "dashboard" },
+  { id: "welcome",           title: "Welcome to Mousi9ti",    description: "Your practice studio for guitar and piano. This tour walks through every section — about 3 minutes." },
+  { id: "sidebar",           title: "Navigation",              description: "All 6 sections live in the sidebar. Click any item or press 1–6 on your keyboard to switch instantly.", targetSelector: "[data-tour='sidebar-nav']", tab: "dashboard" },
+  { id: "metronome",         title: "Metronome",               description: "Set BPM, time signature, subdivision, and click sound. It keeps running globally even when you switch pages.", targetSelector: "[data-dashboard-widget='metronome']", tab: "dashboard", action: "Press Space to start / stop" },
+  { id: "timer",             title: "Practice Timer",          description: "Countdown timer with one-tap presets. Link it to the metronome so it auto-stops when time's up.", targetSelector: "[data-dashboard-widget='timer']", tab: "dashboard" },
+  { id: "drill",             title: "Random Note Drill",       description: "A random note appears — find it on the fretboard. Builds note recognition and position memory over time.", targetSelector: "[data-dashboard-widget='random-drill']", tab: "dashboard", action: "Press N for the next note" },
+  { id: "session",           title: "Practice Session",        description: "Start a session to log your time. Ending it saves the session and counts toward your daily streak.", targetSelector: "[data-dashboard-widget='session']", tab: "dashboard" },
+  { id: "instruments-widget",title: "Fretboard & Tuning",      description: "Switch between Guitar, Piano, or Both views. Change the tuning directly on the fretboard — every note updates instantly.", targetSelector: "[data-dashboard-widget='instruments']", tab: "dashboard" },
+  { id: "chord-widget",      title: "Chord Display",           description: "The chord selector widget shows the current chord diagram and piano voicing side by side. Tap any diagram to hear it.", targetSelector: "[data-dashboard-widget='chord-selector']", tab: "dashboard" },
+  { id: "streak",            title: "Practice Streak",         description: "Your daily streak with a 2-day grace period — one missed day won't reset the counter.", targetSelector: "[data-tour='sidebar-streak']", tab: "dashboard" },
+  { id: "go-scales",         title: "Open Scales",             description: "Click SCALES in the sidebar to explore the scale library.", targetSelector: "[data-tour='nav-item-scales']", tab: "dashboard", awaitAction: true },
+  { id: "scales-panel",      title: "Scale Explorer",          description: "Pick any root note and scale type. Toggle note names, degrees, or intervals — then play the scale with the arrow buttons.", targetSelector: "[data-tour='scales-panel']", tab: "scales" },
+  { id: "scales-fretboard",  title: "Fretboard & Tuning",      description: "The fretboard updates live as you change scale or root. Adjust tuning and fret count here. Switch to Piano view or show both instruments at once.", targetSelector: "[data-tour='scales-fretboard']", tab: "scales" },
+  { id: "go-chords",         title: "Open Chords",             description: "Click CHORDS in the sidebar to browse chord voicings.", targetSelector: "[data-tour='nav-item-chords']", tab: "scales", awaitAction: true },
+  { id: "chords-filters",    title: "Chord Library",           description: "Pick a root note and chord type. The diagram, piano view, and sheet notation update instantly. Tap Play to hear any voicing.", targetSelector: "[data-tour='chords-filters']", tab: "chords" },
+  { id: "chords-voicing",    title: "Guitar & Piano Voicings", description: "Browse all guitar fingering positions for the chord. Click any diagram to hear it played. The piano voicing is shown below.", targetSelector: "[data-tour='chords-voicing']", tab: "chords" },
+  { id: "go-builder",        title: "Open Builder",            description: "Click BUILDER in the sidebar to open the chord progression builder.", targetSelector: "[data-tour='nav-item-builder']", tab: "chords", awaitAction: true },
+  { id: "builder-controls",  title: "Playback Controls",       description: "Choose your instrument, set tempo, and add reverb. Hit Play to loop your full chord progression with real instrument audio.", targetSelector: "[data-tour='builder-controls']", tab: "builder" },
+  { id: "builder-queue",     title: "Chord Queue",             description: "Your chord progression lives here. Set each chord's duration and strumming pattern. Load a preset or save your own.", targetSelector: "[data-tour='builder-queue']", tab: "builder" },
+  { id: "builder-add",       title: "Add Chords to Queue",     description: "Search for any chord, pick a voicing, then hit Add to Queue. Build progressions like I–V–vi–IV in seconds.", targetSelector: "[data-tour='builder-add']", tab: "builder" },
+  { id: "go-tools",          title: "Open Tools",              description: "Click TOOLS in the sidebar for the Circle of Fifths, tuner, and ear trainer.", targetSelector: "[data-tour='nav-item-tools']", tab: "builder", awaitAction: true },
+  { id: "tools-tabs",        title: "Theory Tools",            description: "Switch between Circle of Fifths, Ear Trainer, Tuner, Metronome, Timer, and Custom Chord Builder using these tabs.", targetSelector: "[data-tour='tools-tabs']", tab: "tools" },
+  { id: "circle-fifths",     title: "Circle of Fifths",        description: "Click any key to see its related chords. The interactive wheel shows key relationships, chord qualities, and relative minors at a glance.", targetSelector: "[data-tour='circle-of-fifths']", tab: "tools" },
+  { id: "go-stats",          title: "Open Stats",              description: "Click STATS to view your session history, BPM progression, and streak calendar.", targetSelector: "[data-tour='nav-item-stats']", tab: "tools", awaitAction: true },
+  { id: "stats-metrics",     title: "Practice Analytics",      description: "Total time logged, current streak, longest streak, and peak BPM. Charts below show your daily minutes and BPM progression over time.", targetSelector: "[data-tour='stats-metrics']", tab: "stats" },
+  { id: "search",            title: "Global Search",           description: "Search any scale, chord, or exercise from anywhere in the app. Try \"C minor\" or \"maj7\" to jump straight to it.", targetSelector: "[data-tour='search-bar']", tab: "stats" },
+  { id: "done",              title: "You're all set!",         description: "Everything is ready. Use the book icon in the sidebar anytime to restart this tour.", tab: "dashboard" },
 ];
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -50,8 +56,8 @@ const STEPS: TourStep[] = [
 const SP_PAD = 10;
 
 const SECTION_STARTS: Record<number, string> = {
-  0: "Intro", 1: "Dashboard", 7: "Scales", 9: "Chords",
-  11: "Builder", 14: "Tools", 16: "Stats", 18: "Finish",
+  0: "Intro", 1: "Dashboard", 9: "Scales", 12: "Chords",
+  15: "Builder", 19: "Tools", 22: "Stats", 25: "Finish",
 };
 
 // ─── Step Icons ───────────────────────────────────────────────────────────────
@@ -72,19 +78,25 @@ function getStepIcon(id: string, size = 34): React.ReactNode {
     drill:              <Guitar size={S} />,
     session:            <Play size={S} />,
     streak:             <Flame size={S} />,
-    "go-scales":        <Music size={S} />,
-    "scales-panel":     <Music2 size={S} />,
-    "go-chords":        <Layers size={S} />,
-    "chords-filters":   <Layers size={S} />,
-    "go-builder":       <Settings2 size={S} />,
-    "builder-controls": <Settings2 size={S} />,
-    "builder-queue":    <Settings2 size={S} />,
-    "go-tools":         <Compass size={S} />,
-    "tools-tabs":       <Compass size={S} />,
-    "go-stats":         <BarChart3 size={S} />,
-    "stats-metrics":    <BarChart3 size={S} />,
-    search:             <Search size={S} />,
-    done:               <Trophy size={S} />,
+    "go-scales":           <Music size={S} />,
+    "scales-panel":        <Music2 size={S} />,
+    "scales-fretboard":    <Guitar size={S} />,
+    "go-chords":           <Layers size={S} />,
+    "chords-filters":      <Layers size={S} />,
+    "chords-voicing":      <Layers size={S} />,
+    "go-builder":          <Settings2 size={S} />,
+    "builder-controls":    <Settings2 size={S} />,
+    "builder-queue":       <Settings2 size={S} />,
+    "builder-add":         <Plus size={S} />,
+    "go-tools":            <Compass size={S} />,
+    "tools-tabs":          <Compass size={S} />,
+    "circle-fifths":       <Compass size={S} />,
+    "go-stats":            <BarChart3 size={S} />,
+    "stats-metrics":       <BarChart3 size={S} />,
+    "instruments-widget":  <Guitar size={S} />,
+    "chord-widget":        <Piano size={S} />,
+    search:                <Search size={S} />,
+    done:                  <Trophy size={S} />,
   };
   return map[id] ?? <BookOpen size={S} />;
 }
@@ -192,13 +204,15 @@ interface RevealOverlayProps {
   spot: SpotGeometry | null;
   step: TourStep;
   stepIndex: number;
+  isFirst: boolean;
   isLast: boolean;
-  onBack: () => void;
+  onPrev: () => void;
   onNext: () => void;
+  onShowList: () => void;
   onClose: () => void;
 }
 
-const RevealOverlay: React.FC<RevealOverlayProps> = ({ spot, step, stepIndex, isLast, onBack, onNext, onClose }) => {
+const RevealOverlay: React.FC<RevealOverlayProps> = ({ spot, step, stepIndex, isFirst, isLast, onPrev, onNext, onShowList, onClose }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const [arrowPath, setArrowPath] = useState<string | null>(null);
 
@@ -277,12 +291,22 @@ const RevealOverlay: React.FC<RevealOverlayProps> = ({ spot, step, stepIndex, is
 
         {/* Footer */}
         <div className="px-3 pt-2 pb-1 border-t border-outline-variant/20 space-y-1.5">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            {!isFirst && (
+              <button
+                onClick={onPrev}
+                title="Previous step"
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-mono text-[11px] border border-outline-variant/30 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
+              >
+                <ArrowLeft size={10} />
+              </button>
+            )}
             <button
-              onClick={onBack}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg font-mono text-[11px] border border-outline-variant/30 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
+              onClick={onShowList}
+              title="Show guide list"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-mono text-[11px] border border-outline-variant/30 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
             >
-              <ArrowLeft size={10} /> Back
+              <List size={10} />
             </button>
             <button
               onClick={onNext}
@@ -603,9 +627,11 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({ onClose, onTabChange, 
           spot={spot}
           step={step}
           stepIndex={stepIndex}
+          isFirst={isFirst}
           isLast={isLast}
-          onBack={() => setUserOpenedModal(true)}
+          onPrev={handlePrev}
           onNext={handleNext}
+          onShowList={() => setUserOpenedModal(true)}
           onClose={onClose}
         />
         <style>{KEYFRAMES}</style>

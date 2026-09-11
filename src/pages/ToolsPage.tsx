@@ -248,7 +248,11 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({
       )}
 
       {/* Circle of Fifths Tool */}
-      {activeTool === "circle" && <CircleOfFifths />}
+      {activeTool === "circle" && (
+        <div data-tour="circle-of-fifths">
+          <CircleOfFifths />
+        </div>
+      )}
 
       {/* Custom Chord Builder */}
       {activeTool === "custom-chord" && <CustomChordEditor />}
