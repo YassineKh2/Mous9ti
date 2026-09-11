@@ -1,7 +1,7 @@
 # Mousi9ti
 
 <p align="center">
-   <img src="public/Mousi9ti.svg" alt="Mousi9ti logo" width="320">
+   <img src="public/Mousi9tiWhite.svg" alt="Mousi9ti logo" width="320">
 </p>
 
 Mousi9ti is an interactive guitar and piano practice studio for learning music theory, exploring chords and scales, and tracking practice sessions.
