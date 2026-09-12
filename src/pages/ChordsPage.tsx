@@ -6,7 +6,11 @@ import {
   ALL_ROOT_NOTES,
   getSpelledNote,
 } from "../data/musicTheory";
-import { CHORD_TYPES_CATALOG, getChordDefinition } from "../data/chordsData";
+import {
+  CHORD_TYPES_CATALOG,
+  getChordDefinition,
+  getCustomChords,
+} from "../data/chordsData";
 import { ChordDiagram } from "../components/ChordDiagram";
 import { PianoKeyboard } from "../components/PianoKeyboard";
 import { ChordSheetMusic } from "../components/ChordSheetMusic";
@@ -45,6 +49,9 @@ export const ChordsPage: React.FC<ChordsPageProps> = ({
   }, [settings.defaultInstrument]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedInversion, setSelectedInversion] = useState<number>(0);
+  const customVoicings = getCustomChords().filter(
+    (chord) => chord.root === selectedRoot && chord.chordType === selectedType,
+  );
 
   const [redirectNotice, setRedirectNotice] = useState<{
     from: string;
@@ -544,7 +551,10 @@ export const ChordsPage: React.FC<ChordsPageProps> = ({
                   </span>
                 </div>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 sm:gap-6">
-                  {chordDef.voicings
+                  {[
+                    ...chordDef.voicings,
+                    ...customVoicings.map((chord) => chord.voicing),
+                  ]
                     .slice()
                     .sort((a, b) => (a.baseFret || 1) - (b.baseFret || 1))
                     .map((voicing, idx) => (

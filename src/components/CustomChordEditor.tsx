@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Save, Trash2, X } from "lucide-react";
+import { FolderOpen, Save, Trash2, X } from "lucide-react";
 import { ChordDiagram } from "./ChordDiagram";
 import { CHROMATIC_SHARPS } from "../data/musicTheory";
 import {
@@ -309,6 +309,19 @@ export const CustomChordEditor: React.FC = () => {
   const handleDelete = (id: string) => {
     deleteCustomChord(id);
     setCustomChords(getCustomChords());
+  };
+
+  const handleLoad = (chord: CustomChord) => {
+    setRoot(chord.root);
+    setChordType(chord.chordType);
+    setName(chord.voicing.name);
+    setPositionLabel(chord.voicing.positionLabel);
+    setRootString(chord.voicing.rootString);
+    setBaseFret(chord.voicing.baseFret || 1);
+    setFrets([...chord.voicing.frets]);
+    setFingers([...chord.voicing.fingers]);
+    setBarres(chord.voicing.barres ? [...chord.voicing.barres] : []);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
@@ -668,10 +681,19 @@ export const CustomChordEditor: React.FC = () => {
               Live Preview
             </h2>
 
-            <div className="flex justify-center items-center my-6 py-6 w-full h-[400px] overflow-hidden">
+            <div className="flex flex-col justify-center items-center my-6 py-6 w-full h-[400px] overflow-hidden">
+              <div className="relative -translate-y-3 w-full max-w-[340px] flex items-center justify-between gap-8 pb-3 shrink-0">
+                <span className="font-mono text-[10px] tracking-widest text-on-surface-variant uppercase font-bold truncate">
+                  {positionLabel || name}
+                </span>
+                <span className="bg-surface-container border border-outline-variant/20 px-2 py-0.5 rounded text-[10px] font-mono text-on-surface shrink-0">
+                  {rootString || `Root on ${root}`}
+                </span>
+              </div>
               <ChordDiagram
                 noBackground={true}
                 scale={1.4}
+                compact={true}
                 root={root}
                 chordName={`${root} ${CHORD_TYPES_CATALOG.find((c) => c.type === chordType)?.symbol || ""}`}
                 voicing={{
@@ -721,13 +743,22 @@ export const CustomChordEditor: React.FC = () => {
                     {chord.voicing.positionLabel} • {chord.voicing.rootString}
                   </p>
                 </div>
-                <button
-                  onClick={() => handleDelete(chord.id)}
-                  className="p-2 text-on-surface-variant hover:text-error hover:bg-error/10 rounded transition-colors"
-                  title="Delete Custom Chord"
-                >
-                  <Trash2 size={16} />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handleLoad(chord)}
+                    className="p-2 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded transition-colors"
+                    title="Load Custom Chord"
+                  >
+                    <FolderOpen size={16} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(chord.id)}
+                    className="p-2 text-on-surface-variant hover:text-error hover:bg-error/10 rounded transition-colors"
+                    title="Delete Custom Chord"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
             ))}
           </div>

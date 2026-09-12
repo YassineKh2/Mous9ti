@@ -20,6 +20,7 @@ export type NoteName =
 export interface ChordSelection {
   root: NoteName;
   type: string;
+  customChordId?: string;
 }
 
 export type NoteDisplayMode = "name" | "degree" | "interval";

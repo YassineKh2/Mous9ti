@@ -21,13 +21,17 @@ import { ExercisesPage } from "./pages/ExercisesPage";
 import { ToolsPage } from "./pages/ToolsPage";
 import { StatsPage } from "./pages/StatsPage";
 import { ALL_ROOT_NOTES, SCALES_DATABASE } from "./data/musicTheory";
-import { CHORD_TYPES_CATALOG } from "./data/chordsData";
+import { CHORD_TYPES_CATALOG, getCustomChords } from "./data/chordsData";
 import { GlobalSearchResult } from "./components/Navigation";
 import { GlobalSessionToast } from "./components/GlobalSessionToast";
 
 export function App() {
   type PendingScaleTarget = { scaleId: string; root: NoteName };
-  type PendingChordTarget = { chordType: string; root: NoteName };
+  type PendingChordTarget = {
+    chordType: string;
+    root: NoteName;
+    customChordId?: string;
+  };
 
   // Navigation
   const [activeTab, setActiveTab] = useState<ActiveTab>("dashboard");
@@ -521,7 +525,35 @@ export function App() {
       payload: { chordType: c.type, root: parsed?.root ?? "C" },
     }));
 
-    return [...tabResults, ...scaleResults, ...chordResults].slice(0, 12);
+    const customChordResults: GlobalSearchResult[] = getCustomChords()
+      .filter((chord) => {
+        const haystack =
+          `${chord.root} ${chord.voicing.name} ${chord.chordType}`.toLowerCase();
+        return parsed?.root
+          ? chord.root === parsed.root &&
+              haystack.includes(strippedChordQuery || chord.root.toLowerCase())
+          : haystack.includes(q);
+      })
+      .slice(0, 8)
+      .map((chord) => ({
+        id: `custom-chord-${chord.id}`,
+        label: `${chord.root} ${chord.voicing.name}`,
+        subtitle: "Saved guitar chord",
+        tab: "chords",
+        kind: "chord",
+        payload: {
+          chordType: chord.chordType,
+          root: chord.root,
+          customChordId: chord.id,
+        },
+      }));
+
+    return [
+      ...tabResults,
+      ...scaleResults,
+      ...customChordResults,
+      ...chordResults,
+    ].slice(0, 12);
   }, [searchQuery]);
 
   const handleSelectSearchResult = (result: GlobalSearchResult) => {
@@ -545,6 +577,7 @@ export function App() {
       setPendingChordSearch({
         chordType: result.payload.chordType,
         root: result.payload.root as NoteName,
+        customChordId: result.payload.customChordId,
       });
     }
     if (result.kind === "exercise" && result.payload?.exerciseId) {

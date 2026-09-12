@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import { NoteName } from "../types";
-import { getChordDefinition } from "../data/chordsData";
+import { getChordDefinition, getCustomChords } from "../data/chordsData";
 import { ChordDiagram } from "./ChordDiagram";
 import { KeyboardChordDiagram } from "./KeyboardChordDiagram";
 import { ChordSearchInput } from "./ChordSearchInput";
@@ -9,6 +9,7 @@ import { X, Edit2, ChevronLeft, ChevronRight } from "lucide-react";
 interface SwipeableChordCardProps {
   root: NoteName;
   type: string;
+  customChordId?: string;
   instrument: "guitar" | "piano";
   onRemove: () => void;
   onChange?: (root: NoteName, type: string) => void;
@@ -17,13 +18,30 @@ interface SwipeableChordCardProps {
 export const SwipeableChordCard: React.FC<SwipeableChordCardProps> = ({
   root,
   type,
+  customChordId,
   instrument,
   onRemove,
   onChange,
 }) => {
   const chordDef = getChordDefinition(root, type);
+  const normalizeType = (chordType: string) =>
+    chordType === "maj" ? "major" : chordType === "min" ? "minor" : chordType;
+  const customChord = customChordId
+    ? getCustomChords().find((chord) => chord.id === customChordId)
+    : undefined;
+  const customVoicings = getCustomChords()
+    .filter(
+      (chord) =>
+        chord.root === root &&
+        normalizeType(chord.chordType) === normalizeType(type),
+    )
+    .map((chord) => chord.voicing);
   const voicings =
-    instrument === "guitar" ? chordDef.voicings : chordDef.keyboardVoicings;
+    instrument === "guitar"
+      ? customChord
+        ? [customChord.voicing]
+        : [...chordDef.voicings, ...customVoicings]
+      : chordDef.keyboardVoicings;
   const [activeIndex, setActiveIndex] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const dragStartX = useRef<number | null>(null);

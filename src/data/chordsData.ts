@@ -674,6 +674,7 @@ export function saveCustomChord(chord: CustomChord): void {
     const existing = getCustomChords();
     const updated = [...existing, chord];
     localStorage.setItem(CUSTOM_CHORDS_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent("mousi9ti-custom-chords-changed"));
   } catch (error) {
     console.error("Failed to save custom chord", error);
   }
@@ -688,6 +689,7 @@ export function deleteCustomChord(id: string): void {
       CUSTOM_CHORDS_KEY,
       JSON.stringify(existing.filter((chord) => chord.id !== id)),
     );
+    window.dispatchEvent(new CustomEvent("mousi9ti-custom-chords-changed"));
   } catch (error) {
     console.error("Failed to delete custom chord", error);
   }
