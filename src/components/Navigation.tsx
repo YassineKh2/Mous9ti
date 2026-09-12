@@ -11,7 +11,6 @@ import {
   Sliders,
   PanelLeftClose,
   PanelLeftOpen,
-  BookOpen,
 } from "lucide-react";
 import { APP_VERSION } from "../lib/version";
 
@@ -40,7 +39,6 @@ interface NavigationProps {
   isSidebarCollapsed: boolean;
   onToggleSidebar: () => void;
   onOpenSettings: () => void;
-  onStartTour: () => void;
   streakDays: number;
   graceActive?: boolean;
   searchQuery: string;
@@ -56,7 +54,6 @@ export const Navigation: React.FC<NavigationProps> = ({
   isSidebarCollapsed,
   onToggleSidebar,
   onOpenSettings,
-  onStartTour,
   streakDays,
   graceActive = false,
   searchQuery,
@@ -200,16 +197,6 @@ export const Navigation: React.FC<NavigationProps> = ({
                 </span>
               )}
             </button>
-            {!isSidebarCollapsed && (
-              <button
-                onClick={onStartTour}
-                title="App Tour / Guide"
-                aria-label="Restart app tour"
-                className="h-9 w-9 shrink-0 flex items-center justify-center rounded border border-transparent hover:border-outline-variant/30 hover:bg-surface-container-low hover:text-on-surface transition-colors"
-              >
-                <BookOpen size={15} />
-              </button>
-            )}
             <button
               onClick={onToggleSidebar}
               title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}

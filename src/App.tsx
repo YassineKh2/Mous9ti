@@ -624,10 +624,6 @@ export function App() {
           });
         }}
         onOpenSettings={() => setIsSettingsOpen(true)}
-        onStartTour={() => {
-          localStorage.removeItem("Mousi9ti_tour_done");
-          setIsTourOpen(true); // keeps tourStep — resumes where user left off
-        }}
         streakDays={streak.currentStreak}
         graceActive={streak.graceDaysUsed > 0}
         searchQuery={searchQuery}
