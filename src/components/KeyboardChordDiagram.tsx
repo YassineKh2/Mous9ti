@@ -136,16 +136,15 @@ export const KeyboardChordDiagram: React.FC<KeyboardChordDiagramProps> = ({
               offset: "-right-3.5",
             };
 
-  // Black keys positions (after which white key index)
-  // 0: C# (after C), 1: D# (after D), 3: F# (after F), 4: G# (after G), 5: A# (after A)
+  // Black keys keyed by the semitone offset of the white key they follow.
   const blackKeyDefs: {
     [offsetIdx: number]: { note: NoteName; semi: number };
   } = {
     0: { note: "C#", semi: 1 },
-    1: { note: "D#", semi: 3 },
-    3: { note: "F#", semi: 6 },
-    4: { note: "G#", semi: 8 },
-    5: { note: "A#", semi: 10 },
+    2: { note: "D#", semi: 3 },
+    5: { note: "F#", semi: 6 },
+    7: { note: "G#", semi: 8 },
+    9: { note: "A#", semi: 10 },
   };
 
   return (
