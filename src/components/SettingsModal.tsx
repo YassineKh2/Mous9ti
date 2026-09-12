@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { AppSettings } from "../types";
 import { GUITAR_TUNINGS } from "../data/musicTheory";
+import { APP_VERSION } from "../lib/version";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -250,6 +251,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <span>Reset All Data</span>
               </button>
             </div>
+          </div>
+
+          {/* Version */}
+          <div className="pt-4 border-t border-outline-variant/20 flex items-center justify-between">
+            <span className="font-mono text-[10px] tracking-widest text-on-surface-variant/50 uppercase">
+              Mousi9ti
+            </span>
+            <span className="font-mono text-[10px] tracking-widest text-on-surface-variant/50">
+              v{APP_VERSION}
+            </span>
           </div>
         </div>
       </div>
