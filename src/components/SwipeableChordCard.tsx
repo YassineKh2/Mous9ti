@@ -27,15 +27,26 @@ export const SwipeableChordCard: React.FC<SwipeableChordCardProps> = ({
   const normalizeType = (chordType: string) =>
     chordType === "maj" ? "major" : chordType === "min" ? "minor" : chordType;
   const customChord = customChordId
-    ? getCustomChords().find((chord) => chord.id === customChordId)
+    ? getCustomChords().find(
+        (chord) => chord.id === customChordId && chord.instrument !== "piano",
+      )
     : undefined;
   const customVoicings = getCustomChords()
     .filter(
       (chord) =>
+        chord.instrument !== "piano" &&
         chord.root === root &&
         normalizeType(chord.chordType) === normalizeType(type),
     )
     .map((chord) => chord.voicing);
+  const customVoicingFretCounts = getCustomChords()
+    .filter(
+      (chord) =>
+        chord.instrument !== "piano" &&
+        chord.root === root &&
+        normalizeType(chord.chordType) === normalizeType(type),
+    )
+    .map((chord) => chord.fretCount);
   const voicings =
     instrument === "guitar"
       ? customChord
@@ -183,6 +194,10 @@ export const SwipeableChordCard: React.FC<SwipeableChordCardProps> = ({
                     root={root}
                     voicing={voicing as any}
                     compact={true}
+                    fretCount={
+                      customChord?.fretCount ??
+                      customVoicingFretCounts[i - chordDef.voicings.length]
+                    }
                   />
                 ) : (
                   <KeyboardChordDiagram

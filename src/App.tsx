@@ -526,6 +526,7 @@ export function App() {
     }));
 
     const customChordResults: GlobalSearchResult[] = getCustomChords()
+      .filter((chord) => chord.instrument !== "piano")
       .filter((chord) => {
         const haystack =
           `${chord.root} ${chord.voicing.name} ${chord.chordType}`.toLowerCase();

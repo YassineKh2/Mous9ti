@@ -251,7 +251,9 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({
       {activeTool === "circle" && <CircleOfFifths />}
 
       {/* Custom Chord Builder */}
-      {activeTool === "custom-chord" && <CustomChordEditor />}
+      {activeTool === "custom-chord" && (
+        <CustomChordEditor defaultInstrument={settings.defaultInstrument} />
+      )}
 
       {/* Pitch Reference Tuner */}
       {activeTool === "tuner" && (

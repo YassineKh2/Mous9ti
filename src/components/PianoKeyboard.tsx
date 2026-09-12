@@ -21,6 +21,7 @@ interface PianoKeyboardProps {
   displayMode?: NoteDisplayMode;
   chordNotes?: NoteName[];
   exactVoicing?: { noteName: string; octave: number }[];
+  onNoteToggle?: (note: NoteName, octave: number) => void;
   focusRange?: {
     startNote: NoteName;
     startOctave: number;
@@ -28,6 +29,7 @@ interface PianoKeyboardProps {
     endOctave: number;
   } | null;
   autoCenterChord?: boolean;
+  bare?: boolean;
 }
 
 export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
@@ -41,8 +43,10 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
   displayMode = "name",
   chordNotes = [],
   exactVoicing,
+  onNoteToggle,
   focusRange = null,
   autoCenterChord = true,
+  bare = false,
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   // Scale Map
@@ -176,17 +180,29 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
   ]);
 
   const handleKeyClick = (noteName: NoteName, octave: number) => {
+    if (onNoteToggle) {
+      onNoteToggle(noteName, octave);
+      return;
+    }
     audioEngine.playPianoNote(noteName, octave);
   };
 
   return (
-    <div className="w-full max-w-full overflow-hidden bg-surface-container border border-outline-variant/30 rounded-lg p-4 sm:p-5 flex flex-col gap-4 shadow-xl select-none">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-outline-variant/10 pb-2">
-        <span className="text-[10px] font-mono text-on-surface-variant uppercase tracking-widest font-semibold">
-          Interactive Piano Keyboard (Range: C{startOctave} - C
-          {startOctave + octaves})
-        </span>
-      </div>
+    <div
+      className={`w-full max-w-full overflow-hidden flex flex-col gap-4 select-none ${
+        bare
+          ? ""
+          : "bg-surface-container border border-outline-variant/30 rounded-lg p-4 sm:p-5 shadow-xl"
+      }`}
+    >
+      {!bare && (
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-outline-variant/10 pb-2">
+          <span className="text-[10px] font-mono text-on-surface-variant uppercase tracking-widest font-semibold">
+            Interactive Piano Keyboard (Range: C{startOctave} - C
+            {startOctave + octaves})
+          </span>
+        </div>
+      )}
 
       {/* Piano Stage */}
       <div

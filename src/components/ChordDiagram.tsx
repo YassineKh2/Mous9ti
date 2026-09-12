@@ -16,6 +16,7 @@ interface ChordDiagramProps {
   onPlay?: () => void;
   noBackground?: boolean;
   scale?: number;
+  fretCount?: number;
 }
 
 export const ChordDiagram: React.FC<ChordDiagramProps> = ({
@@ -26,6 +27,7 @@ export const ChordDiagram: React.FC<ChordDiagramProps> = ({
   onPlay,
   noBackground = false,
   scale = 1,
+  fretCount = 5,
 }) => {
   // SVG Dimensions & Layout
   const svgWidth = 240;
@@ -35,7 +37,7 @@ export const ChordDiagram: React.FC<ChordDiagramProps> = ({
   const height = svgHeight - margin.top - margin.bottom;
 
   const numStrings = 6;
-  const numFrets = 5;
+  const numFrets = Math.min(8, Math.max(5, fretCount));
   const stringSpacing = width / (numStrings - 1);
   const fretSpacing = height / numFrets;
 

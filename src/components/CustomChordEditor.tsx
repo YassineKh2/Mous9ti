@@ -1,26 +1,79 @@
 import React, { useEffect, useState } from "react";
-import { FolderOpen, Save, Trash2, X } from "lucide-react";
+import { FolderOpen, Guitar, Piano, Save, Trash2, X } from "lucide-react";
 import { ChordDiagram } from "./ChordDiagram";
-import { CHROMATIC_SHARPS } from "../data/musicTheory";
+import { KeyboardChordDiagram } from "./KeyboardChordDiagram";
+import { PianoKeyboard } from "./PianoKeyboard";
+import { CHROMATIC_SHARPS, NOTE_SEMITONES } from "../data/musicTheory";
 import {
   CHORD_TYPES_CATALOG,
   CustomChord,
   deleteCustomChord,
   getCustomChords,
   saveCustomChord,
+  getChordDefinition,
 } from "../data/chordsData";
-import { GuitarVoicing, NoteName } from "../types";
+import {
+  GuitarVoicing,
+  KeyboardVoicing,
+  KeyboardVoicingNote,
+  NoteName,
+} from "../types";
 
-export const CustomChordEditor: React.FC = () => {
+function createPianoVoicing(
+  root: NoteName,
+  chordType: string,
+  notes: KeyboardVoicingNote[],
+): KeyboardVoicing {
+  const chordDefinition = getChordDefinition(root, chordType);
+  const bass = notes[0] || {
+    note: root,
+    octave: 4,
+    degree: "1",
+    isRoot: true,
+  };
+
+  return {
+    id: `custom-piano-${Date.now()}`,
+    name: "Custom Piano Chord",
+    shortLabel: "Custom Position",
+    category: "open",
+    positionLabel: "Custom Position",
+    bassNote: bass.note,
+    bassOctave: bass.octave,
+    notes: notes.map((note) => ({
+      ...note,
+      isRoot: note.note === root || note.isRoot,
+    })),
+    startOctave: Math.min(...notes.map((note) => note.octave), 3),
+    octavesCount: 3,
+    description: `${chordDefinition.name} custom piano voicing`,
+  };
+}
+
+interface CustomChordEditorProps {
+  defaultInstrument: "guitar" | "piano";
+}
+
+export const CustomChordEditor: React.FC<CustomChordEditorProps> = ({
+  defaultInstrument,
+}) => {
   const [customChords, setCustomChords] = useState<CustomChord[]>([]);
 
   const [root, setRoot] = useState<NoteName>("C");
   const [chordType, setChordType] = useState<string>("major");
+  const [editorInstrument, setEditorInstrument] = useState<"guitar" | "piano">(
+    defaultInstrument,
+  );
+
+  useEffect(() => {
+    setEditorInstrument(defaultInstrument);
+  }, [defaultInstrument]);
 
   const [name, setName] = useState("Custom Chord");
   const [positionLabel, setPositionLabel] = useState("Custom Position");
   const [rootString, setRootString] = useState("Root: 6th String");
   const [baseFret, setBaseFret] = useState<number | "">(1);
+  const [fretCount, setFretCount] = useState(5);
 
   const [frets, setFrets] = useState<(number | null)[]>([
     null,
@@ -42,6 +95,9 @@ export const CustomChordEditor: React.FC = () => {
   const [barres, setBarres] = useState<
     { fret: number; fromString: number; toString: number; finger: number }[]
   >([]);
+  const [pianoNotes, setPianoNotes] = useState<KeyboardVoicingNote[]>(
+    () => getChordDefinition("C", "major").keyboardVoicings?.[0]?.notes || [],
+  );
 
   const [dragStart, setDragStart] = useState<{ s: number; f: number } | null>(
     null,
@@ -300,6 +356,16 @@ export const CustomChordEditor: React.FC = () => {
       root,
       chordType,
       voicing,
+      fretCount: editorInstrument === "guitar" ? fretCount : undefined,
+      pianoVoicing:
+        editorInstrument === "piano"
+          ? {
+              ...createPianoVoicing(root, chordType, pianoNotes),
+              name,
+              positionLabel,
+            }
+          : undefined,
+      instrument: editorInstrument,
     };
 
     saveCustomChord(newChord);
@@ -314,29 +380,101 @@ export const CustomChordEditor: React.FC = () => {
   const handleLoad = (chord: CustomChord) => {
     setRoot(chord.root);
     setChordType(chord.chordType);
-    setName(chord.voicing.name);
-    setPositionLabel(chord.voicing.positionLabel);
-    setRootString(chord.voicing.rootString);
-    setBaseFret(chord.voicing.baseFret || 1);
-    setFrets([...chord.voicing.frets]);
-    setFingers([...chord.voicing.fingers]);
-    setBarres(chord.voicing.barres ? [...chord.voicing.barres] : []);
+    const instrument =
+      chord.instrument || (chord.pianoVoicing ? "piano" : "guitar");
+    setEditorInstrument(instrument);
+    if (instrument === "piano" && chord.pianoVoicing) {
+      setName(chord.pianoVoicing.name);
+      setPositionLabel(chord.pianoVoicing.positionLabel);
+      setPianoNotes([...chord.pianoVoicing.notes]);
+    } else {
+      setName(chord.voicing.name);
+      setPositionLabel(chord.voicing.positionLabel);
+      setRootString(chord.voicing.rootString);
+      setBaseFret(chord.voicing.baseFret || 1);
+      setFretCount(Math.min(8, Math.max(5, chord.fretCount ?? 5)));
+      setFrets([...chord.voicing.frets]);
+      setFingers([...chord.voicing.fingers]);
+      setBarres(chord.voicing.barres ? [...chord.voicing.barres] : []);
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handlePianoNoteToggle = (note: NoteName, octave: number) => {
+    setPianoNotes((current) => {
+      const isSelected = current.some(
+        (selected) => selected.note === note && selected.octave === octave,
+      );
+      if (isSelected) {
+        return current.filter(
+          (selected) => selected.note !== note || selected.octave !== octave,
+        );
+      }
+
+      const chordDefinition = getChordDefinition(root, chordType);
+      const chordTypeDefinition = CHORD_TYPES_CATALOG.find(
+        (chord) => chord.type === chordType,
+      );
+      const noteIndex = chordDefinition.notes.indexOf(note);
+      return [
+        ...current,
+        {
+          note,
+          octave,
+          degree:
+            noteIndex >= 0 && chordTypeDefinition
+              ? chordTypeDefinition.degrees[noteIndex]
+              : "",
+          isRoot: note === root,
+        },
+      ].sort(
+        (a, b) =>
+          a.octave * 12 +
+          (NOTE_SEMITONES[a.note] || 0) -
+          (b.octave * 12 + (NOTE_SEMITONES[b.note] || 0)),
+      );
+    });
+  };
+
   return (
-    <div className="flex flex-col gap-6 max-w-7xl mx-auto pb-12 animate-fade-in">
+    <div className="custom-chord-editor flex w-full min-w-0 flex-col gap-6 pb-12 animate-fade-in">
       <div className="flex justify-between items-center bg-surface-container border border-outline-variant/30 p-6 rounded-lg shadow-sm">
         <div>
           <h1 className="text-2xl font-black text-on-surface">Chord Editor</h1>
           <p className="text-sm text-on-surface-variant mt-1">
-            Design, preview, and save custom guitar chord voicings.
+            Design, preview, and save custom chord voicings.
           </p>
+        </div>
+        <div className="flex items-center gap-1 rounded-lg border border-outline-variant/30 bg-surface-container-low p-1">
+          <button
+            type="button"
+            onClick={() => setEditorInstrument("guitar")}
+            className={`flex items-center gap-2 rounded px-3 py-2 text-xs font-bold transition-colors ${
+              editorInstrument === "guitar"
+                ? "bg-primary text-on-primary"
+                : "text-on-surface-variant hover:text-on-surface"
+            }`}
+          >
+            <Guitar size={14} /> Guitar
+          </button>
+          <button
+            type="button"
+            onClick={() => setEditorInstrument("piano")}
+            className={`flex items-center gap-2 rounded px-3 py-2 text-xs font-bold transition-colors ${
+              editorInstrument === "piano"
+                ? "bg-primary text-on-primary"
+                : "text-on-surface-variant hover:text-on-surface"
+            }`}
+          >
+            <Piano size={14} /> Piano
+          </button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-        <div className="xl:col-span-7 bg-surface-container border border-outline-variant/30 rounded-lg p-6 lg:p-10 flex flex-col items-center shadow-sm">
+        <div
+          className={`${editorInstrument === "guitar" ? "flex" : "hidden"} xl:col-span-7 bg-surface-container border border-outline-variant/30 rounded-lg p-6 lg:p-10 flex-col items-center shadow-sm`}
+        >
           <div className="w-full max-w-[400px]">
             <h2 className="text-xl font-bold mb-1">Interactive Designer</h2>
             <p className="text-xs text-on-surface-variant mb-8">
@@ -348,14 +486,25 @@ export const CustomChordEditor: React.FC = () => {
             </p>
           </div>
 
-          <div className="relative w-[360px] h-[480px] select-none mx-auto mb-4 touch-none">
+          <div
+            className="custom-chord-maker relative w-[360px] h-[720px] select-none mx-auto mb-4 touch-none"
+            style={
+              {
+                height: `${(fretCount + 1) * 80}px`,
+                "--mobile-maker-collapse": `${16 - (fretCount + 1) * 80 * 0.28}px`,
+              } as React.CSSProperties
+            }
+          >
             <div className="absolute inset-0 top-[60px] border-[3px] border-outline-variant/60 bg-surface-container-highest rounded-b-md shadow-inner" />
 
             <div
               className={`absolute left-0 right-0 top-[60px] h-3 ${(baseFret || 1) === 1 ? "bg-on-surface" : "bg-outline-variant/80"} z-10`}
             />
 
-            {[1, 2, 3, 4].map((f) => (
+            {Array.from(
+              { length: Math.max(0, fretCount - 1) },
+              (_, i) => i + 1,
+            ).map((f) => (
               <div
                 key={`fret-line-${f}`}
                 className="absolute left-0 right-0 h-1 bg-outline-variant/80 shadow-sm"
@@ -388,7 +537,7 @@ export const CustomChordEditor: React.FC = () => {
               </div>
             ))}
 
-            {[1, 2, 3, 4, 5].map((f) => {
+            {Array.from({ length: fretCount }, (_, i) => i + 1).map((f) => {
               const actualFret = f + (baseFret || 1) - 1;
               const hasDot = [3, 5, 7, 9, 15, 17, 19].includes(actualFret);
               if (!hasDot) return null;
@@ -425,11 +574,11 @@ export const CustomChordEditor: React.FC = () => {
               </button>
             ))}
 
-            {[1, 2, 3, 4, 5].map((f) => (
+            {Array.from({ length: fretCount }, (_, i) => i + 1).map((f) => (
               <React.Fragment key={`zone-row-${f}`}>
                 <div
                   onClick={() => toggleBarreRow(f)}
-                  className={`absolute -left-12 w-10 flex items-center justify-center cursor-pointer text-xs font-bold rounded hover:bg-outline-variant/20 transition-colors z-20 ${
+                  className={`custom-chord-bar-control absolute -left-12 w-10 flex items-center justify-center cursor-pointer text-xs font-bold rounded hover:bg-outline-variant/20 transition-colors z-20 ${
                     barres.some((b) => b.fret === f + (baseFret || 1) - 1)
                       ? "text-primary bg-primary/10"
                       : "text-on-surface-variant/40"
@@ -442,7 +591,7 @@ export const CustomChordEditor: React.FC = () => {
                 </div>
 
                 <div
-                  className="absolute -right-8 w-6 flex items-center text-xs font-bold text-on-surface-variant/40 pointer-events-none"
+                  className="custom-chord-fret-label absolute -right-8 w-6 flex items-center text-xs font-bold text-on-surface-variant/40 pointer-events-none"
                   style={{ top: `${60 + (f - 1) * 80}px`, height: "80px" }}
                 >
                   {f + (baseFret || 1) - 1}fr
@@ -496,7 +645,7 @@ export const CustomChordEditor: React.FC = () => {
                             }}
                             onPointerDown={(e) => e.stopPropagation()}
                             onPointerUp={(e) => e.stopPropagation()}
-                            className="absolute -top-1 -right-1 w-5 h-5 bg-error text-on-error rounded-full flex items-center justify-center text-[12px] shadow-sm z-30 opacity-0 group-hover/finger:opacity-100 hover:scale-125 transition-all cursor-pointer"
+                            className="custom-chord-remove absolute -top-1 -right-1 w-5 h-5 bg-error text-on-error rounded-full flex items-center justify-center text-[12px] shadow-sm z-30 opacity-0 group-hover/finger:opacity-100 hover:scale-125 transition-all cursor-pointer"
                           >
                             <X size={12} />
                           </button>
@@ -538,7 +687,7 @@ export const CustomChordEditor: React.FC = () => {
               >
                 {barre.finger || 1}
                 <div
-                  className="absolute -top-1 -right-1 w-5 h-5 bg-error text-on-error rounded-full flex items-center justify-center text-[12px] shadow-sm z-30 opacity-0 group-hover:opacity-100 hover:scale-125 transition-all cursor-pointer"
+                  className="custom-chord-remove absolute -top-1 -right-1 w-5 h-5 bg-error text-on-error rounded-full flex items-center justify-center text-[12px] shadow-sm z-30 opacity-0 group-hover:opacity-100 hover:scale-125 transition-all cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation();
                     removeBarre(barre.fret);
@@ -551,7 +700,9 @@ export const CustomChordEditor: React.FC = () => {
           </div>
         </div>
 
-        <div className="xl:col-span-5 flex flex-col gap-6">
+        <div
+          className={`${editorInstrument === "piano" ? "xl:col-span-6 order-2" : "xl:col-span-5"} flex flex-col gap-6`}
+        >
           <div className="bg-surface-container border border-outline-variant/30 rounded-lg p-6 shadow-sm">
             <h2 className="text-lg font-bold mb-4">Chord Identity</h2>
 
@@ -616,107 +767,194 @@ export const CustomChordEditor: React.FC = () => {
                   className="w-full bg-surface-container-highest border border-outline-variant/50 rounded px-3 py-2 text-on-surface outline-none focus:border-primary text-sm"
                 />
               </div>
-              <div className="flex-1">
-                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
-                  Root String
-                </label>
-                <select
-                  value={rootString}
-                  onChange={(e) => setRootString(e.target.value)}
-                  className="w-full bg-surface-container-highest border border-outline-variant/50 rounded px-3 py-2 text-on-surface outline-none focus:border-primary text-sm"
-                >
-                  <option value="Root: 6th String">Root: 6th String</option>
-                  <option value="Root: 5th String">Root: 5th String</option>
-                  <option value="Root: 4th String">Root: 4th String</option>
-                  <option value="Root: 3rd String">Root: 3rd String</option>
-                  <option value="Root: 2nd String">Root: 2nd String</option>
-                  <option value="Root: 1st String">Root: 1st String</option>
-                </select>
-              </div>
+              {editorInstrument === "guitar" && (
+                <div className="flex-1">
+                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+                    Root String
+                  </label>
+                  <select
+                    value={rootString}
+                    onChange={(e) => setRootString(e.target.value)}
+                    className="w-full bg-surface-container-highest border border-outline-variant/50 rounded px-3 py-2 text-on-surface outline-none focus:border-primary text-sm"
+                  >
+                    <option value="Root: 6th String">Root: 6th String</option>
+                    <option value="Root: 5th String">Root: 5th String</option>
+                    <option value="Root: 4th String">Root: 4th String</option>
+                    <option value="Root: 3rd String">Root: 3rd String</option>
+                    <option value="Root: 2nd String">Root: 2nd String</option>
+                    <option value="Root: 1st String">Root: 1st String</option>
+                  </select>
+                </div>
+              )}
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
-                Starting Base Fret
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="28"
-                value={baseFret}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (val === "") {
-                    setBaseFret("");
-                  } else {
-                    let num = Number.parseInt(val, 10);
-                    if (num > 28) num = 28;
-                    if (num < 1 && val !== "0") num = 1;
+            {editorInstrument === "guitar" && (
+              <>
+                <div>
+                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+                    Starting Base Fret
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="28"
+                    value={baseFret}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "") {
+                        setBaseFret("");
+                      } else {
+                        let num = Number.parseInt(val, 10);
+                        if (num > 28) num = 28;
+                        if (num < 1 && val !== "0") num = 1;
 
-                    const oldBase = baseFret || 1;
-                    const diff = num - oldBase;
+                        const oldBase = baseFret || 1;
+                        const diff = num - oldBase;
 
-                    if (diff !== 0) {
-                      setFrets((prev) =>
-                        prev.map((f) => (f === null || f === 0 ? f : f + diff)),
-                      );
-                      setBarres((prev) =>
-                        prev.map((b) => ({ ...b, fret: b.fret + diff })),
-                      );
-                    }
+                        if (diff !== 0) {
+                          setFrets((prev) =>
+                            prev.map((f) =>
+                              f === null || f === 0 ? f : f + diff,
+                            ),
+                          );
+                          setBarres((prev) =>
+                            prev.map((b) => ({ ...b, fret: b.fret + diff })),
+                          );
+                        }
 
-                    setBaseFret(num);
-                  }
-                }}
-                onBlur={() => {
-                  if (baseFret === "" || Number(baseFret) < 1) setBaseFret(1);
-                }}
-                className="base-fret-input w-full bg-surface-container-highest border border-outline-variant/50 rounded px-3 py-2 text-on-surface outline-none focus:border-primary font-mono"
+                        setBaseFret(num);
+                      }
+                    }}
+                    onBlur={() => {
+                      if (baseFret === "" || Number(baseFret) < 1)
+                        setBaseFret(1);
+                    }}
+                    className="base-fret-input w-full bg-surface-container-highest border border-outline-variant/50 rounded px-3 py-2 text-on-surface outline-none focus:border-primary font-mono"
+                  />
+                </div>
+                <div className="mt-4">
+                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+                    Available Frets
+                  </label>
+                  <select
+                    value={fretCount}
+                    onChange={(e) => setFretCount(Number(e.target.value))}
+                    className="w-full bg-surface-container-highest border border-outline-variant/50 rounded px-3 py-2 text-on-surface outline-none focus:border-primary font-mono"
+                  >
+                    {[5, 6, 7, 8].map((count) => (
+                      <option key={count} value={count}>
+                        {count} frets
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
+          </div>
+
+          {editorInstrument === "guitar" && (
+            <div className="bg-surface-container border border-outline-variant/30 rounded-lg p-6 shadow-sm flex flex-col items-center">
+              <h2 className="text-lg font-bold mb-4 w-full text-left">
+                Live Preview
+              </h2>
+
+              <div className="flex flex-col justify-center items-center my-6 py-6 w-full h-[400px] overflow-hidden">
+                <div className="relative -translate-y-3 w-full max-w-[340px] flex items-center justify-between gap-8 pb-3 shrink-0">
+                  <span className="font-mono text-[10px] tracking-widest text-on-surface-variant uppercase font-bold truncate">
+                    {positionLabel || name}
+                  </span>
+                  <span className="bg-surface-container border border-outline-variant/20 px-2 py-0.5 rounded text-[10px] font-mono text-on-surface shrink-0">
+                    {rootString || `Root on ${root}`}
+                  </span>
+                </div>
+                <ChordDiagram
+                  noBackground={true}
+                  scale={1.4}
+                  compact={true}
+                  root={root}
+                  chordName={`${root} ${CHORD_TYPES_CATALOG.find((c) => c.type === chordType)?.symbol || ""}`}
+                  voicing={{
+                    name,
+                    positionLabel,
+                    rootString,
+                    baseFret: baseFret === "" ? 1 : baseFret,
+                    frets,
+                    fingers,
+                    barres,
+                  }}
+                  fretCount={fretCount}
+                />
+              </div>
+
+              <button
+                onClick={handleSave}
+                className="flex items-center justify-center gap-2 w-full py-3.5 bg-primary text-on-primary rounded font-black hover:scale-[1.02] transition-transform shadow-md text-lg"
+              >
+                <Save size={20} />
+                SAVE TO LIBRARY
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div
+          className={`${editorInstrument === "piano" ? "flex" : "hidden"} order-first xl:col-span-12 bg-surface-container border border-outline-variant/30 rounded-lg p-6 lg:p-10 flex-col items-center shadow-sm`}
+        >
+          <div className="w-full">
+            <h2 className="text-xl font-bold mb-1">Piano Note Designer</h2>
+            <p className="text-xs text-on-surface-variant mb-6">
+              Click keys to add or remove notes from the custom piano voicing.
+            </p>
+            <div className="h-[340px] w-full overflow-hidden">
+              <PianoKeyboard
+                octaves={3}
+                startOctave={3}
+                selectedRoot={root}
+                displayMode="name"
+                autoCenterChord={false}
+                bare={true}
+                exactVoicing={pianoNotes.map((note) => ({
+                  noteName: note.note,
+                  octave: note.octave,
+                }))}
+                onNoteToggle={handlePianoNoteToggle}
               />
             </div>
           </div>
+        </div>
 
-          <div className="bg-surface-container border border-outline-variant/30 rounded-lg p-6 shadow-sm flex flex-col items-center">
-            <h2 className="text-lg font-bold mb-4 w-full text-left">
-              Live Preview
-            </h2>
-
-            <div className="flex flex-col justify-center items-center my-6 py-6 w-full h-[400px] overflow-hidden">
-              <div className="relative -translate-y-3 w-full max-w-[340px] flex items-center justify-between gap-8 pb-3 shrink-0">
-                <span className="font-mono text-[10px] tracking-widest text-on-surface-variant uppercase font-bold truncate">
-                  {positionLabel || name}
-                </span>
-                <span className="bg-surface-container border border-outline-variant/20 px-2 py-0.5 rounded text-[10px] font-mono text-on-surface shrink-0">
-                  {rootString || `Root on ${root}`}
-                </span>
-              </div>
-              <ChordDiagram
-                noBackground={true}
-                scale={1.4}
-                compact={true}
+        {editorInstrument === "piano" && (
+          <div className="order-3 xl:col-span-6 bg-surface-container border border-outline-variant/30 rounded-lg p-6 shadow-sm flex flex-col items-center">
+            <div className="w-full flex items-center justify-between mb-3">
+              <span className="font-mono text-sm font-bold uppercase tracking-wider text-on-surface">
+                {root}{" "}
+                {CHORD_TYPES_CATALOG.find((chord) => chord.type === chordType)
+                  ?.symbol || ""}
+              </span>
+              <span className="text-[10px] font-mono text-on-surface-variant uppercase tracking-wider truncate max-w-[45%]">
+                {positionLabel || name}
+              </span>
+            </div>
+            <div className="w-full min-h-[220px] overflow-visible rounded-xl border border-outline-variant/30 bg-transparent p-2">
+              <KeyboardChordDiagram
                 root={root}
-                chordName={`${root} ${CHORD_TYPES_CATALOG.find((c) => c.type === chordType)?.symbol || ""}`}
-                voicing={{
-                  name,
-                  positionLabel,
-                  rootString,
-                  baseFret: baseFret === "" ? 1 : baseFret,
-                  frets,
-                  fingers,
-                  barres,
-                }}
+                instrument="acoustic_grand_piano"
+                compact={true}
+                voicing={createPianoVoicing(root, chordType, pianoNotes)}
               />
             </div>
-
+            <div className="flex items-center justify-center gap-1.5 mt-3 h-4">
+              <span className="h-2 w-2 rounded-full bg-primary" />
+            </div>
             <button
               onClick={handleSave}
-              className="flex items-center justify-center gap-2 w-full py-3.5 bg-primary text-on-primary rounded font-black hover:scale-[1.02] transition-transform shadow-md text-lg"
+              className="flex items-center justify-center gap-2 w-full py-3.5 bg-primary text-on-primary rounded font-black hover:scale-[1.02] transition-transform shadow-md text-lg mt-4"
             >
               <Save size={20} />
               SAVE TO LIBRARY
             </button>
           </div>
-        </div>
+        )}
       </div>
 
       <div className="bg-surface-container border border-outline-variant/30 rounded-lg p-6 shadow-sm mt-2">
@@ -738,9 +976,15 @@ export const CustomChordEditor: React.FC = () => {
                     {CHORD_TYPES_CATALOG.find((t) => t.type === chord.chordType)
                       ?.name || chord.chordType}
                   </h3>
-                  <p className="text-sm font-semibold">{chord.voicing.name}</p>
+                  <p className="text-sm font-semibold">
+                    {chord.instrument === "piano"
+                      ? chord.pianoVoicing?.name
+                      : chord.voicing.name}
+                  </p>
                   <p className="text-xs text-on-surface-variant mt-1">
-                    {chord.voicing.positionLabel} • {chord.voicing.rootString}
+                    {chord.instrument === "piano"
+                      ? `${chord.pianoVoicing?.positionLabel || "Piano voicing"} • ${chord.pianoVoicing?.notes.length || 0} notes`
+                      : `${chord.voicing.positionLabel} • ${chord.voicing.rootString}`}
                   </p>
                 </div>
                 <div className="flex items-center gap-1">

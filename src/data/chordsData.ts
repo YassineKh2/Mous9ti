@@ -647,6 +647,9 @@ export interface CustomChord {
   root: NoteName;
   chordType: string;
   voicing: GuitarVoicing;
+  fretCount?: number;
+  pianoVoicing?: KeyboardVoicing;
+  instrument?: "guitar" | "piano";
 }
 
 const CUSTOM_CHORDS_KEY = "Mousi9ti_custom_chords_v1";

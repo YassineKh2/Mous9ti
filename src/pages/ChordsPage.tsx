@@ -50,7 +50,10 @@ export const ChordsPage: React.FC<ChordsPageProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedInversion, setSelectedInversion] = useState<number>(0);
   const customVoicings = getCustomChords().filter(
-    (chord) => chord.root === selectedRoot && chord.chordType === selectedType,
+    (chord) =>
+      chord.instrument !== "piano" &&
+      chord.root === selectedRoot &&
+      chord.chordType === selectedType,
   );
 
   const [redirectNotice, setRedirectNotice] = useState<{
@@ -552,17 +555,27 @@ export const ChordsPage: React.FC<ChordsPageProps> = ({
                 </div>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 sm:gap-6">
                   {[
-                    ...chordDef.voicings,
-                    ...customVoicings.map((chord) => chord.voicing),
+                    ...chordDef.voicings.map((voicing) => ({
+                      voicing,
+                      fretCount: 5,
+                    })),
+                    ...customVoicings.map((chord) => ({
+                      voicing: chord.voicing,
+                      fretCount: chord.fretCount ?? 5,
+                    })),
                   ]
                     .slice()
-                    .sort((a, b) => (a.baseFret || 1) - (b.baseFret || 1))
-                    .map((voicing, idx) => (
+                    .sort(
+                      (a, b) =>
+                        (a.voicing.baseFret || 1) - (b.voicing.baseFret || 1),
+                    )
+                    .map(({ voicing, fretCount }, idx) => (
                       <ChordDiagram
                         key={idx}
                         chordName={chordDef.name}
                         voicing={voicing}
                         root={selectedRoot}
+                        fretCount={fretCount}
                       />
                     ))}
                 </div>

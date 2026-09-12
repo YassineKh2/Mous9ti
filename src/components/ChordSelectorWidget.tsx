@@ -29,16 +29,18 @@ export const ChordSelectorWidget: React.FC<ChordSelectorWidgetProps> = ({
       ),
     );
 
-    getCustomChords().forEach((chord) => {
-      const key = `${chord.root}-${normalizeType(chord.chordType)}`;
-      if (!selectionKeys.has(key)) {
-        selections.unshift({
-          root: chord.root,
-          type: normalizeType(chord.chordType),
-        });
-        selectionKeys.add(key);
-      }
-    });
+    getCustomChords()
+      .filter((chord) => chord.instrument !== "piano")
+      .forEach((chord) => {
+        const key = `${chord.root}-${normalizeType(chord.chordType)}`;
+        if (!selectionKeys.has(key)) {
+          selections.unshift({
+            root: chord.root,
+            type: normalizeType(chord.chordType),
+          });
+          selectionKeys.add(key);
+        }
+      });
 
     if (selections.length === 0) {
       return [
