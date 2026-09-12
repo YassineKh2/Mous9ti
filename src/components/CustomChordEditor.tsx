@@ -98,23 +98,24 @@ export const CustomChordEditor: React.FC = () => {
     if (frets[stringIdx] === null || frets[stringIdx] === 0) return;
     const current = fingers[stringIdx];
 
-    if (current === 5) {
-      const newFrets = [...frets];
-      newFrets[stringIdx] = null;
-      setFrets(newFrets);
+    const newFingers = [...fingers];
+    if (current === null) newFingers[stringIdx] = 1;
+    else if (current === 1) newFingers[stringIdx] = 2;
+    else if (current === 2) newFingers[stringIdx] = 3;
+    else if (current === 3) newFingers[stringIdx] = 4;
+    else if (current === 4) newFingers[stringIdx] = 5;
+    else if (current === 5) newFingers[stringIdx] = 1;
+    setFingers(newFingers);
+  };
 
-      const newFingers = [...fingers];
-      newFingers[stringIdx] = null;
-      setFingers(newFingers);
-    } else {
-      const newFingers = [...fingers];
-      if (current === null) newFingers[stringIdx] = 1;
-      else if (current === 1) newFingers[stringIdx] = 2;
-      else if (current === 2) newFingers[stringIdx] = 3;
-      else if (current === 3) newFingers[stringIdx] = 4;
-      else if (current === 4) newFingers[stringIdx] = 5;
-      setFingers(newFingers);
-    }
+  const removeFinger = (stringIdx: number) => {
+    const newFrets = [...frets];
+    newFrets[stringIdx] = null;
+    setFrets(newFrets);
+
+    const newFingers = [...fingers];
+    newFingers[stringIdx] = null;
+    setFingers(newFingers);
   };
 
   const removeBarre = (fret: number) => {
@@ -470,9 +471,22 @@ export const CustomChordEditor: React.FC = () => {
                           }}
                           onPointerDown={(e) => e.stopPropagation()}
                           onPointerUp={(e) => e.stopPropagation()}
-                          className="w-10 h-10 rounded-full bg-secondary text-on-secondary font-bold flex items-center justify-center text-lg shadow-lg hover:scale-110 transition-transform"
+                          className="group/finger relative w-10 h-10 rounded-full bg-secondary text-on-secondary font-bold flex items-center justify-center text-lg shadow-lg hover:scale-110 transition-transform"
                         >
                           {fingers[s] === 5 ? "T" : fingers[s] || ""}
+                          <button
+                            type="button"
+                            aria-label={`Remove note from string ${s + 1}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeFinger(s);
+                            }}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onPointerUp={(e) => e.stopPropagation()}
+                            className="absolute -top-1 -right-1 w-5 h-5 bg-error text-on-error rounded-full flex items-center justify-center text-[12px] shadow-sm z-30 opacity-0 group-hover/finger:opacity-100 hover:scale-125 transition-all cursor-pointer"
+                          >
+                            <X size={12} />
+                          </button>
                         </div>
                       )}
                     </div>
