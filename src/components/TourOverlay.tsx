@@ -106,12 +106,28 @@ function getStepIcon(id: string, size = 34): React.ReactNode {
 // ─── Module-level Effect Helpers ─────────────────────────────────────────────
 
 /**
- * Retries resolving `selector` up to 12 times every 80ms (starting after 80ms)
- * so it works even when a tab switch hasn't finished rendering yet.
+ * Returns the first element matching `selector` that has non-zero dimensions.
+ * Elements hidden via display:none (e.g. the desktop sidebar on mobile) return
+ * a zero rect from getBoundingClientRect, so they are skipped. This lets us
+ * fall through to a mobile-visible duplicate (e.g. the bottom tab bar).
+ */
+function findVisible(selector: string): HTMLElement | null {
+  for (const el of document.querySelectorAll<HTMLElement>(selector)) {
+    const r = el.getBoundingClientRect();
+    if (r.width > 0 || r.height > 0) return el;
+  }
+  return null;
+}
+
+/**
+ * Retries finding a *visible* element matching `selector` up to 12 times every
+ * 80ms. Calls `onNotFound` after all attempts if no visible element is found —
+ * used to fall back from reveal mode to the full modal on mobile.
  */
 function resolveWithRetry(
   selector: string | undefined,
   setRect: (r: DOMRect | null) => void,
+  onNotFound?: () => void,
 ): () => void {
   if (!selector) { setRect(null); return () => {}; }
   let cancelled = false;
@@ -120,17 +136,24 @@ function resolveWithRetry(
 
   const tryOnce = () => {
     if (cancelled) return;
-    const el = document.querySelector(selector);
+    const el = findVisible(selector);
     if (el) {
-      // instant so getBoundingClientRect() is accurate immediately after
       el.scrollIntoView({ behavior: "instant", block: "nearest" });
       tid = setTimeout(() => {
         if (cancelled) return;
-        const el2 = document.querySelector(selector);
-        if (el2) setRect(el2.getBoundingClientRect());
+        const el2 = findVisible(selector);
+        if (el2) {
+          setRect(el2.getBoundingClientRect());
+        } else if (attempts++ < 12) {
+          tid = setTimeout(tryOnce, 80);
+        } else {
+          onNotFound?.();
+        }
       }, 50);
     } else if (attempts++ < 12) {
       tid = setTimeout(tryOnce, 80);
+    } else {
+      onNotFound?.();
     }
   };
 
@@ -147,16 +170,19 @@ function addListener(
   return () => target.removeEventListener(event, handler);
 }
 
+/** Attaches a click-advance handler to ALL elements matching `selector`.
+ *  This covers both the desktop sidebar button and the mobile bottom-nav button
+ *  that share the same data-tour attribute. */
 function attachClickAdvance(
   selector: string,
   setStep: React.Dispatch<React.SetStateAction<number>>,
 ): () => void {
-  const el = document.querySelector(selector);
-  if (!el) return () => {};
+  const elements = document.querySelectorAll(selector);
+  if (!elements.length) return () => {};
   const handler = () =>
     setTimeout(() => setStep((i) => Math.min(i + 1, STEPS.length - 1)), 80);
-  el.addEventListener("click", handler);
-  return () => el.removeEventListener("click", handler);
+  elements.forEach(el => el.addEventListener("click", handler));
+  return () => elements.forEach(el => el.removeEventListener("click", handler));
 }
 
 function makeKeyHandler(
@@ -237,6 +263,16 @@ const RevealOverlay: React.FC<RevealOverlayProps> = ({ spot, step, stepIndex, is
 
   return (
     <>
+      {/* When the element hasn't been located yet, block interaction with a
+          plain dark backdrop so the page isn't freely tappable during search */}
+      {!spot && (
+        <div
+          aria-hidden="true"
+          className="fixed inset-0 bg-black/65 backdrop-blur-[2px] z-[200]"
+          style={{ pointerEvents: "all" }}
+        />
+      )}
+
       <TourSpotlight spot={spot} />
 
       {/* Dashed curved arrow from card → spotlight */}
@@ -294,11 +330,13 @@ const RevealOverlay: React.FC<RevealOverlayProps> = ({ spot, step, stepIndex, is
           <p className="font-mono text-[11px] text-on-surface-variant leading-relaxed">{step.description}</p>
         </div>
 
-        {/* Hint */}
-        <div className="px-4 pb-3 flex items-center gap-1.5">
-          <MousePointerClick size={10} className="text-primary/60 shrink-0" />
-          <span className="font-mono text-[10px] text-on-surface-variant/50">Interact with the highlighted element</span>
-        </div>
+        {/* Hint — only shown once the spotlight is visible */}
+        {spot && (
+          <div className="px-4 pb-3 flex items-center gap-1.5">
+            <MousePointerClick size={10} className="text-primary/60 shrink-0" />
+            <span className="font-mono text-[10px] text-on-surface-variant/50">Interact with the highlighted element</span>
+          </div>
+        )}
 
         {/* Footer */}
         <div className="px-3 py-2.5 border-t border-outline-variant/20 flex items-center gap-1.5">
@@ -535,6 +573,8 @@ function useTourLogic(
     initialStep >= 0 && initialStep < STEPS.length ? initialStep : 0,
   );
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
+  // true when resolveWithRetry exhausted all attempts without finding a visible element
+  const [elementNotFound, setElementNotFound] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   const step = STEPS[stepIndex];
@@ -548,18 +588,23 @@ function useTourLogic(
   useEffect(() => {
     if (step.tab) onTabChange(step.tab);
     setTargetRect(null);
-    return resolveWithRetry(step.targetSelector, setTargetRect);
+    setElementNotFound(false);
+    return resolveWithRetry(
+      step.targetSelector,
+      setTargetRect,
+      () => setElementNotFound(true),
+    );
   }, [stepIndex]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Re-measure on scroll/resize so spotlight tracks the element even when the
-  // user scrolls the page (rAF-throttled to avoid layout thrashing)
+  // Re-measure on scroll/resize so spotlight tracks visible element even when
+  // user scrolls (rAF-throttled to avoid layout thrashing).
   useEffect(() => {
     if (!step.targetSelector) return;
     let rafId: number;
     const track = () => {
       cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(() => {
-        const el = document.querySelector(step.targetSelector!);
+        const el = findVisible(step.targetSelector!);
         if (el) setTargetRect(el.getBoundingClientRect());
       });
     };
@@ -584,7 +629,6 @@ function useTourLogic(
 
   const handleNext = useCallback(() => {
     if (isLast) { onClose(); return; }
-    // Clear spotlight immediately so it doesn't flash on the old element
     setTargetRect(null);
     setStepIndex(i => Math.min(i + 1, STEPS.length - 1));
   }, [isLast, onClose]);
@@ -595,7 +639,7 @@ function useTourLogic(
     setStepIndex(i => Math.max(i - 1, 0));
   }, [isFirst]);
 
-  return { step, stepIndex, isFirst, isLast, cardRef, targetRect, handleNext, handlePrev, setStepIndex };
+  return { step, stepIndex, isFirst, isLast, cardRef, targetRect, elementNotFound, handleNext, handlePrev, setStepIndex };
 }
 
 // ─── Keyframes ────────────────────────────────────────────────────────────────
@@ -617,7 +661,7 @@ interface TourOverlayProps {
 }
 
 export const TourOverlay: React.FC<TourOverlayProps> = ({ onClose, onTabChange, initialStep, onStepChange }) => {
-  const { step, stepIndex, isFirst, isLast, cardRef, targetRect, handleNext, handlePrev, setStepIndex } =
+  const { step, stepIndex, isFirst, isLast, cardRef, targetRect, elementNotFound, handleNext, handlePrev, setStepIndex } =
     useTourLogic(onClose, onTabChange, initialStep, onStepChange);
 
   // userOpenedModal: true when the user explicitly clicked "Back to guide"
@@ -625,9 +669,10 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({ onClose, onTabChange, 
   const [userOpenedModal, setUserOpenedModal] = useState(false);
   useEffect(() => { setUserOpenedModal(false); }, [stepIndex]);
 
-  // Reveal mode is on automatically for any step that has a spotlight target,
-  // unless the user explicitly asked to see the full modal ("Back to guide").
-  const revealMode = !!step.targetSelector && !userOpenedModal;
+  // Reveal mode: step has a target AND the element was found visible in the DOM.
+  // elementNotFound flips true after ~960ms of failed retries (e.g. desktop
+  // sidebar elements on mobile), falling back to the full centered modal.
+  const revealMode = !!step.targetSelector && !userOpenedModal && !elementNotFound;
 
   // Focus trap for the full modal (non-reveal mode)
   useEffect(() => {

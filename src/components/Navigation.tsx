@@ -284,12 +284,13 @@ export const Navigation: React.FC<NavigationProps> = ({
       </header>
 
       {/* Mobile Bottom Tab Bar */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface-container-lowest border-t border-outline-variant/30 z-50 flex items-center justify-start gap-1 overflow-x-auto px-2 no-scrollbar">
+      <nav data-tour="sidebar-nav" className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface-container-lowest border-t border-outline-variant/30 z-50 flex items-center justify-start gap-1 overflow-x-auto px-2 no-scrollbar">
         {navItems.map((item) => {
           const isActive = activeTab === item.id;
           return (
             <button
               key={item.id}
+              data-tour={`nav-item-${item.id}`}
               onClick={() => onSelectTab(item.id)}
               className={`flex min-w-[3.5rem] shrink-0 flex-col items-center gap-1 py-1 px-2 transition-colors ${
                 isActive
