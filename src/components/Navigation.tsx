@@ -218,7 +218,7 @@ export const Navigation: React.FC<NavigationProps> = ({
             />
             <input
               type="text"
-              placeholder="Search theory, scales, chords, exercises..."
+              placeholder="Search theory, scales, chords..."
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               className="w-full bg-surface-container border border-outline-variant/30 rounded py-1.5 pl-9 pr-4 text-xs font-mono text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all"

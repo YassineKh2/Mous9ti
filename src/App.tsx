@@ -22,7 +22,6 @@ import { ToolsPage } from "./pages/ToolsPage";
 import { StatsPage } from "./pages/StatsPage";
 import { ALL_ROOT_NOTES, SCALES_DATABASE } from "./data/musicTheory";
 import { CHORD_TYPES_CATALOG } from "./data/chordsData";
-import { EXERCISES_DATABASE } from "./data/exercisesData";
 import { GlobalSearchResult } from "./components/Navigation";
 import { GlobalSessionToast } from "./components/GlobalSessionToast";
 
@@ -252,9 +251,7 @@ export function App() {
 
   // Log BPM to session tracker
   const handleLogBpm = (bpm: number) => {
-    setCurrentSessionBpms((prev) =>
-      prev.includes(bpm) ? prev : [...prev, bpm],
-    );
+    setCurrentSessionBpms((prev) => [...prev, bpm]);
   };
 
   // Switch to exercise practice directly with suggested tempo
@@ -524,28 +521,7 @@ export function App() {
       payload: { chordType: c.type, root: parsed?.root ?? "C" },
     }));
 
-    const exerciseResults: GlobalSearchResult[] = EXERCISES_DATABASE.filter(
-      (e) =>
-        `${e.title} ${e.category} ${e.description} ${e.difficulty}`
-          .toLowerCase()
-          .includes(q),
-    )
-      .slice(0, 8)
-      .map((e) => ({
-        id: `exercise-${e.id}`,
-        label: e.title,
-        subtitle: `${e.category} • ${e.difficulty} • ${e.suggestedBpm} BPM`,
-        tab: "exercises",
-        kind: "exercise",
-        payload: { exerciseId: e.id },
-      }));
-
-    return [
-      ...tabResults,
-      ...scaleResults,
-      ...chordResults,
-      ...exerciseResults,
-    ].slice(0, 12);
+    return [...tabResults, ...scaleResults, ...chordResults].slice(0, 12);
   }, [searchQuery]);
 
   const handleSelectSearchResult = (result: GlobalSearchResult) => {
