@@ -245,21 +245,23 @@ const RevealOverlay: React.FC<RevealOverlayProps> = ({ spot, step, stepIndex, is
   const cardRef = useRef<HTMLDivElement>(null);
   const [arrowPath, setArrowPath] = useState<string | null>(null);
 
-  useEffect(() => {
+  const computeArrow = useCallback(() => {
     if (!spot || !cardRef.current) { setArrowPath(null); return; }
-    const id = setTimeout(() => {
-      if (!cardRef.current) return;
-      const r = cardRef.current.getBoundingClientRect();
-      const cx = r.left;
-      const cy = r.top + r.height / 2;
-      const sx = spot.left + spot.width / 2;
-      const sy = spot.top + spot.height / 2;
-      const cpx = (cx + sx) / 2;
-      const cpy = Math.min(cy, sy) - 70;
-      setArrowPath(`M ${cx} ${cy} Q ${cpx} ${cpy} ${sx} ${sy}`);
-    }, 60);
+    const r = cardRef.current.getBoundingClientRect();
+    const cx = r.left;
+    const cy = r.top + r.height / 2;
+    const sx = spot.left + spot.width / 2;
+    const sy = spot.top + spot.height / 2;
+    const cpx = (cx + sx) / 2;
+    const cpy = Math.min(cy, sy) - 70;
+    setArrowPath(`M ${cx} ${cy} Q ${cpx} ${cpy} ${sx} ${sy}`);
+  }, [spot]);
+
+  useEffect(() => {
+    if (!spot) { setArrowPath(null); return; }
+    const id = setTimeout(computeArrow, 60);
     return () => clearTimeout(id);
-  }, [spot, stepIndex]);
+  }, [spot, stepIndex, computeArrow]);
 
   return (
     <>
@@ -298,14 +300,23 @@ const RevealOverlay: React.FC<RevealOverlayProps> = ({ spot, step, stepIndex, is
         </svg>
       )}
 
-      {/* Mini floating card — top-right corner */}
-      <div
+      {/* Mini floating card — draggable so users can move it to see the element */}
+      <motion.div
         ref={cardRef}
-        style={{ position: "fixed", top: 24, right: 24, width: 276, minHeight: 220, zIndex: 260 }}
-        className="bg-surface border border-outline-variant/40 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.55)] overflow-hidden flex flex-col"
+        drag
+        dragMomentum={false}
+        dragElastic={0}
+        onDrag={computeArrow}
+        style={{ position: "fixed", top: 24, right: 24, width: 276, minHeight: 220, zIndex: 260, touchAction: "none" }}
+        className="bg-surface border border-outline-variant/40 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.55)] overflow-hidden flex flex-col cursor-grab active:cursor-grabbing"
       >
+        {/* Drag handle bar */}
+        <div className="flex justify-center pt-2.5 pb-0 shrink-0">
+          <div className="w-8 h-[3px] rounded-full bg-outline-variant/40" />
+        </div>
+
         {/* Card header */}
-        <div className="px-4 pt-4 pb-2 flex items-start gap-3">
+        <div className="px-4 pt-3 pb-2 flex items-start gap-3">
           <div className="w-8 h-8 rounded-xl bg-primary/12 border border-primary/20 flex items-center justify-center text-primary shrink-0">
             {getStepIcon(step.id, 16)}
           </div>
@@ -363,7 +374,7 @@ const RevealOverlay: React.FC<RevealOverlayProps> = ({ spot, step, stepIndex, is
             {isLast ? <><CheckCircle2 size={11} /> Done</> : <>Next <ArrowRight size={10} /></>}
           </button>
         </div>
-      </div>
+      </motion.div>
     </>
   );
 };
@@ -384,7 +395,7 @@ const TourSidebar: React.FC<TourSidebarProps> = ({ stepIndex, onGoToStep, onRest
   }, [stepIndex]);
 
   return (
-    <div className="flex flex-col h-full" style={{ width: 220, minWidth: 220 }}>
+    <div className="flex flex-col h-full w-full">
       {/* Panel header */}
       <div className="px-5 py-4 border-b border-outline-variant/20 shrink-0">
         <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-on-surface-variant/50 mb-0.5">
@@ -456,95 +467,135 @@ interface TourContentProps {
   onNext: () => void;
   onPrev: () => void;
   onShowMe: () => void;
+  onGoToStep: (i: number) => void;
+  onRestart: () => void;
 }
 
 const TourContent: React.FC<TourContentProps> = ({
-  step, stepIndex, isFirst, isLast, onClose, onNext, onPrev, onShowMe,
-}) => (
-  <div className="flex flex-col flex-1 min-w-0 h-full">
-    {/* Header */}
-    <div className="flex items-center justify-between px-7 py-4 border-b border-outline-variant/15 shrink-0">
-      <span className="font-mono text-[11px] text-on-surface-variant">
-        Step {stepIndex + 1} of {STEPS.length}
-      </span>
-      <button
-        onClick={onClose}
-        title="Close tour (Esc)"
-        className="w-7 h-7 rounded flex items-center justify-center text-on-surface-variant/60 hover:text-on-surface hover:bg-surface-container-high transition-colors"
-      >
-        <X size={14} />
-      </button>
-    </div>
+  step, stepIndex, isFirst, isLast, onClose, onNext, onPrev, onShowMe, onGoToStep, onRestart,
+}) => {
+  // Mobile-only toggle: show the full step list instead of the content area
+  const [showList, setShowList] = useState(false);
+  useEffect(() => { setShowList(false); }, [stepIndex]);
 
-    {/* Scrollable step content */}
-    <div className="overflow-y-auto flex-1">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={step.id}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.2, ease: "easeOut" }}
-          className="px-7 py-6 flex flex-col gap-5"
-        >
-          {/* Icon */}
-          <div className="flex justify-center">
-            <div className="w-[72px] h-[72px] rounded-2xl bg-primary/12 border border-primary/20 flex items-center justify-center text-primary shadow-sm">
-              {getStepIcon(step.id)}
-            </div>
-          </div>
+  const handleGoToStep = (i: number) => { onGoToStep(i); setShowList(false); };
 
-          {/* Title + description */}
-          <div className="text-center">
-            <h2 className="font-mono font-bold text-[17px] text-on-surface mb-2 leading-snug">
-              {step.title}
-            </h2>
-            <p className="font-mono text-[12.5px] text-on-surface-variant leading-relaxed">
-              {step.description}
-            </p>
-          </div>
-
-          {/* Keyboard shortcut hint */}
-          {step.action && (
-            <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-primary/8 border border-primary/18">
-              <Keyboard size={14} className="text-primary shrink-0" />
-              <span className="font-mono text-[11px] text-on-surface">{step.action}</span>
-            </div>
-          )}
-
-          {/* Show me — re-enter reveal mode when user came back to the modal */}
-          {step.targetSelector && (
+  return (
+    <div className="flex flex-col flex-1 min-w-0 h-full">
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 sm:px-7 py-4 border-b border-outline-variant/15 shrink-0">
+        {showList ? (
+          <button
+            onClick={() => setShowList(false)}
+            className="flex items-center gap-1.5 font-mono text-[11px] text-on-surface-variant hover:text-on-surface transition-colors"
+          >
+            <ArrowLeft size={12} /> Back
+          </button>
+        ) : (
+          <span className="font-mono text-[11px] text-on-surface-variant">
+            Step {stepIndex + 1} of {STEPS.length}
+          </span>
+        )}
+        <div className="flex items-center gap-1">
+          {/* Step list toggle — mobile only (desktop has the left sidebar) */}
+          {!showList && (
             <button
-              onClick={onShowMe}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-mono text-sm font-bold bg-primary text-on-primary hover:brightness-110 active:scale-95 transition-all shadow-md"
+              onClick={() => setShowList(true)}
+              title="Show all steps"
+              className="sm:hidden w-7 h-7 rounded flex items-center justify-center text-on-surface-variant/60 hover:text-on-surface hover:bg-surface-container-high transition-colors"
             >
-              <MousePointerClick size={16} /> Show me
+              <List size={14} />
             </button>
           )}
+          <button
+            onClick={onClose}
+            title="Close tour (Esc)"
+            className="w-7 h-7 rounded flex items-center justify-center text-on-surface-variant/60 hover:text-on-surface hover:bg-surface-container-high transition-colors"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      </div>
 
-        </motion.div>
-      </AnimatePresence>
+      {/* Step list (mobile only, toggled via List button) */}
+      {showList ? (
+        <div className="flex-1 overflow-hidden">
+          <TourSidebar stepIndex={stepIndex} onGoToStep={handleGoToStep} onRestart={onRestart} />
+        </div>
+      ) : (
+        <>
+          {/* Scrollable step content */}
+          <div className="overflow-y-auto flex-1">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={step.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="px-7 py-6 flex flex-col gap-5"
+              >
+                {/* Icon */}
+                <div className="flex justify-center">
+                  <div className="w-[72px] h-[72px] rounded-2xl bg-primary/12 border border-primary/20 flex items-center justify-center text-primary shadow-sm">
+                    {getStepIcon(step.id)}
+                  </div>
+                </div>
+
+                {/* Title + description */}
+                <div className="text-center">
+                  <h2 className="font-mono font-bold text-[17px] text-on-surface mb-2 leading-snug">
+                    {step.title}
+                  </h2>
+                  <p className="font-mono text-[12.5px] text-on-surface-variant leading-relaxed">
+                    {step.description}
+                  </p>
+                </div>
+
+                {/* Keyboard shortcut hint */}
+                {step.action && (
+                  <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-primary/8 border border-primary/18">
+                    <Keyboard size={14} className="text-primary shrink-0" />
+                    <span className="font-mono text-[11px] text-on-surface">{step.action}</span>
+                  </div>
+                )}
+
+                {/* Show me — re-enter reveal mode when user came back to the modal */}
+                {step.targetSelector && (
+                  <button
+                    onClick={onShowMe}
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-mono text-sm font-bold bg-primary text-on-primary hover:brightness-110 active:scale-95 transition-all shadow-md"
+                  >
+                    <MousePointerClick size={16} /> Show me
+                  </button>
+                )}
+
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          {/* Footer navigation */}
+          <div className="px-5 sm:px-7 py-4 border-t border-outline-variant/15 shrink-0 flex items-center gap-3">
+            {!isFirst ? (
+              <button
+                onClick={onPrev}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg font-mono text-xs text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high border border-outline-variant/35 transition-colors"
+              >
+                <ArrowLeft size={12} /> Back
+              </button>
+            ) : <span />}
+
+            <span className="flex-1 text-center font-mono text-[10px] text-on-surface-variant/40 hidden sm:block">
+              Navigate with ← → keys
+            </span>
+
+            <TourNextButton isLast={isLast} stepIndex={stepIndex} onClick={onNext} />
+          </div>
+        </>
+      )}
     </div>
-
-    {/* Footer navigation */}
-    <div className="px-7 py-4 border-t border-outline-variant/15 shrink-0 flex items-center gap-3">
-      {!isFirst ? (
-        <button
-          onClick={onPrev}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg font-mono text-xs text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high border border-outline-variant/35 transition-colors"
-        >
-          <ArrowLeft size={12} /> Back
-        </button>
-      ) : <span />}
-
-      <span className="flex-1 text-center font-mono text-[10px] text-on-surface-variant/40 hidden sm:block">
-        Navigate with ← → keys
-      </span>
-
-      <TourNextButton isLast={isLast} stepIndex={stepIndex} onClick={onNext} />
-    </div>
-  </div>
-);
+  );
+};
 
 const TourNextButton: React.FC<{ isLast: boolean; stepIndex: number; onClick: () => void }> = ({ isLast, stepIndex, onClick }) => {
   const nextTitle = !isLast ? STEPS[stepIndex + 1]?.title : undefined;
@@ -753,7 +804,7 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({ onClose, onTabChange, 
           className="bg-surface border-0 sm:border border-outline-variant/40 rounded-t-3xl sm:rounded-3xl shadow-[0_32px_96px_rgba(0,0,0,0.7)] overflow-hidden flex h-[85svh] sm:h-[min(540px,calc(100vh-2rem))]"
         >
           {/* Left sidebar — step list (desktop only) */}
-          <div className="border-r border-outline-variant/20 bg-surface-container/50 hidden sm:flex h-full overflow-hidden">
+          <div style={{ width: 220, minWidth: 220 }} className="border-r border-outline-variant/20 bg-surface-container/50 hidden sm:flex h-full overflow-hidden">
             <TourSidebar
               stepIndex={stepIndex}
               onGoToStep={setStepIndex}
@@ -771,6 +822,8 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({ onClose, onTabChange, 
             onNext={handleNext}
             onPrev={handlePrev}
             onShowMe={() => setUserOpenedModal(false)}
+            onGoToStep={setStepIndex}
+            onRestart={handleRestart}
           />
         </motion.div>
       </div>
